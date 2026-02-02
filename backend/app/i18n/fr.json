@@ -1,0 +1,51 @@
+{
+  "auth": {
+    "missing_token": "Token d’authentification manquant",
+    "invalid_token": "Token d’authentification invalide ou expiré",
+    "user_not_found": "Utilisateur introuvable"
+  },
+  "compte": {
+    "not_found": "Compte introuvable.",
+    "invalid_start_day": "Le jour de début doit être compris entre 1 et 31.",
+    "name_required": "Le nom du compte est obligatoire.",
+    "forbidden": "Accès interdit à ce compte."
+  },
+  "transaction": {
+    "error": {
+      "not_found": "La transaction n'a pas été trouvée."
+    },
+    "amount": {
+      "positive": "Le montant doit être strictement positif."
+    },
+    "debit": {
+      "requires_sous_pot": "Une transaction DEBIT nécessite un sous-pot.",
+      "forbidden_compte": "Une transaction DEBIT ne doit pas avoir de compte."
+    },
+    "credit": {
+      "requires_compte": "Une transaction CREDIT nécessite un compte.",
+      "forbidden_sous_pot": "Une transaction CREDIT ne doit pas avoir de sous-pot."
+    }
+  },
+  "pot": {
+    "not_found": "Pot introuvable.",
+    "created": "Pot créé.",
+    "updated": "Pot mis à jour.",
+    "deleted": "Pot supprimé."
+  },
+  "sous_pot": {
+    "not_found": "Sous-pot introuvable.",
+    "created": "Sous-pot créé.",
+    "updated": "Sous-pot mis à jour.",
+    "deleted": "Sous-pot supprimé.",
+    "invalid_prevision": "La prévision ne peut pas être négative."
+  },
+  "user": {
+    "not_found": "L'utilisateur n'a pas été trouvé",
+    "username": {
+      "exists": "L'identifiant existe déjà."
+    },
+    "login": {
+      "incorrect": "L'identifiant et/ou le mot de passe sont incorrects."
+    }
+  }
+}
