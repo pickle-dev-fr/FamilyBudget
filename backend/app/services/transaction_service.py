@@ -1,13 +1,17 @@
 from datetime import date
 from sqlmodel import Session, select
+from sqlalchemy import or_
+
 
 from app.models import (
     Transaction,
     Compte,
+    Pot,
     Sous_Pot,
     TypeTransaction,
 )
 from app.i18n.messages import msg
+from typing import Optional
 
 
 class TransactionService:
@@ -80,4 +84,50 @@ class TransactionService:
         sous_pot_id: str,
     ) -> list[Transaction]:
         query = select(Transaction).where(Transaction.sous_pot_id == sous_pot_id)
+        return session.exec(query).all()
+
+    @staticmethod
+    def delete(session: Session, transaction_id: str) -> None:
+        transaction_id = TransactionService.get_by_id(session, transaction_id)
+        session.delete(sous_pot)
+        session.commit()
+
+
+    @staticmethod
+    def list_all_by_user_and(
+        session: Session,
+        user_id: str,
+        date_filter: Optional[date] = None,
+    ) -> list[Transaction]:
+        """
+        Retourne les transactions d'un utilisateur.
+        Filtres optionnels :
+        - date_filter : date exacte
+        """
+
+        query = (
+            select(Transaction)
+            .outerjoin(
+                Sous_Pot,
+                Transaction.sous_pot_id == Sous_Pot.id,
+            )
+            .outerjoin(
+                Pot,
+                Sous_Pot.pot_id == Pot.id,
+            )
+            .join(
+                Compte,
+                or_(
+                    Transaction.compte_id == Compte.id,
+                    Pot.compte_id == Compte.id,
+                ),
+            )
+            .where(Compte.user_id == user_id)
+        )
+
+        if date_filter is not None:
+            query = query.where(
+                Transaction.transaction_date == date_filter
+            )
+
         return session.exec(query).all()

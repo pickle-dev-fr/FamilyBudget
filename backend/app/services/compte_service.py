@@ -1,7 +1,9 @@
 from sqlmodel import Session, select
 
-from app.models import Compte, User
+from app.models import Compte, User, Sous_Pot, Pot, Transaction
 from app.i18n.messages import msg
+from sqlalchemy import or_
+
 
 
 class CompteService:
@@ -83,3 +85,45 @@ class CompteService:
         session.commit()
         session.refresh(compte)
         return compte
+
+    def calculer_solde_compte(
+        session: Session,
+        compte: Compte,
+    ) -> float:
+        """
+        Calcule la somme des transactions d'un compte.
+        Inclut :
+        - transactions liées directement au compte
+        - transactions liées aux sous-pots du compte
+        """
+
+        query = (
+            select(Transaction)
+            .outerjoin(
+                Sous_Pot,
+                Transaction.sous_pot_id == Sous_Pot.id,
+            )
+            .outerjoin(
+                Pot,
+                Sous_Pot.pot_id == Pot.id,
+            )
+            .where(
+                or_(
+                    Transaction.compte_id == compte.id,
+                    Pot.compte_id == compte.id,
+                )
+            )
+        )
+
+        transactions = session.exec(query).all()
+
+        total = 0.0
+        for t in transactions:
+            if t.transaction_type == TypeTransaction.DEBIT:
+                total -= t.amount
+            else:
+                total += t.amount
+
+        total += compte.initial_value
+        total += compte.archived_value
+        return total

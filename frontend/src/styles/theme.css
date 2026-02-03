@@ -1,0 +1,46 @@
+:root {
+  /* Couleurs */
+  --color-bg: #0b1220;
+  --color-bg-soft: #111827;
+  --color-border: #1f2937;
+
+  --color-text: #e5e7eb;
+  --color-text-muted: #9ca3af;
+
+  --color-accent: #3b82f6;
+
+  /* États */
+  --color-ok: #22c55e;
+  --color-nok: #ef4444;
+
+  /* Layout */
+  --radius: 6px;
+  --radius-lg: 8px;
+
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+
+  /* Typo */
+  --font-sm: 13px;
+  --font-md: 14px;
+  --font-lg: 18px;
+}
+:root[data-theme="dark"] {
+  --color-bg: #0b1220;
+  --color-bg-soft: #111827;
+  --color-border: #1f2937;
+  --color-text: #e5e7eb;
+  --color-text-muted: #9ca3af;
+  --color-accent: #3b82f6;
+}
+
+:root[data-theme="light"] {
+  --color-bg: #f9fafb;
+  --color-bg-soft: #ffffff;
+  --color-border: #d1d5db;
+  --color-text: #020617;
+  --color-text-muted: #6b7280;
+  --color-accent: #2563eb;
+}

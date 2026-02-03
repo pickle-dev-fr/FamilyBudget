@@ -1,0 +1,42 @@
+{
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "username": "Nom d'utilisateur",
+      "password": "Mot de passe",
+      "submit": "Se connecter",
+      "link_register": "Créer un compte"
+    },
+    "register": {
+      "title": "Inscription",
+      "username": "Nom d'utilisateur",
+      "password": "Mot de passe",
+      "submit": "Créer le compte",
+      "link_login": "Connexion",
+      "already_account":"Déjà un compte ?"
+    },
+    "disconnect": "Déconnexion"
+  },
+  "common": {
+    "loading": "Chargement",
+    "error": "Erreur"
+  },
+  "menu": {
+    "home": "Accueil",
+    "accounts": "Comptes",
+    "pots": "Pots",
+    "transactions": "Transactions",
+    "stats": "Statistiques",
+    "options": "Options"
+  },
+  "home": {
+    "title": "Accueil",
+    "total_balance": "Solde total",
+    "accounts_list": "Mes comptes",
+    "accounts_table": "Détail des comptes",
+    "account_name": "Compte",
+    "account_balance": "Solde",
+    "today_transactions": "Transactions aujourd’hui",
+    "tomorrow_transactions": "Transactions demain"
+  }
+}

@@ -32,6 +32,7 @@ class Compte(SQLModel, table=True):
     id: str = Field(default_factory=generate_ulid, primary_key=True)
     name: str
     initial_value: float = 0.0
+    archived_value: float = 0.0
     start_day: int = 1  # 1 ≤ start_day ≤ 31
 
     user_id: str = Field(foreign_key="user.id")

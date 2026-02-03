@@ -1,0 +1,39 @@
+{
+  "auth": {
+    "login": {
+      "title": "Login",
+      "username": "Username",
+      "password": "Password",
+      "submit": "Sign in",
+      "link_register": "Create account"
+    },
+    "register": {
+      "title": "Register",
+      "submit": "Create account",
+      "link_login": "Login"
+    },
+    "disconnect": "Disconnect"
+  },
+  "common": {
+    "loading": "Loading",
+    "error": "Error"
+  },
+  "menu": {
+    "home": "Home",
+    "accounts": "Accounts",
+    "pots": "Pots",
+    "transactions": "Transactions",
+    "stats": "Statistics",
+    "options": "Settings"
+  },
+  "home": {
+    "title": "Home",
+    "total_balance": "Total balance",
+    "accounts_list": "My accounts",
+    "accounts_table": "Account's Detail",
+    "account_name": "Account",
+    "account_balance": "Balance",
+    "today_transactions": "Today’s transactions",
+    "tomorrow_transactions": "Tomorrow’s transactions"
+  }
+}

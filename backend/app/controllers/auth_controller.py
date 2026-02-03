@@ -10,7 +10,7 @@ from app.schemas.user_schema import (
 )
 from app.services.auth_service import AuthService
 from app.security.dependencies import get_current_user
-from app.security.jwt import create_access_token
+from app.security.jwt import create_access_token, validate_token
 from app.i18n.messages import msg
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -55,3 +55,10 @@ def login(
 
     token = create_access_token(user.id)
     return TokenRead(access_token=token)
+
+@router.head("/me")
+def me(
+    _: dict = Depends(validate_token),
+):
+    return
+    

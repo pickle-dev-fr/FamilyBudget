@@ -76,3 +76,20 @@ def update_compte(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/{compte_id}/solde", response_model=float)
+def get_solde_by_compte(
+    compte_id: str,
+    session: Session = Depends(get_session),
+    current_user = Depends(get_current_user),
+):
+    compte = CompteService.get_by_id(
+        session=session,
+        compte_id=compte_id,
+        user=current_user,
+    )
+
+    return CompteService.calculer_solde_compte(
+        session=session,
+        compte=compte,
+    )
