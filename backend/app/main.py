@@ -1,4 +1,6 @@
+import os
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.controllers.auth_controller import router as auth_controller
 from app.controllers.transaction_controller import router as transaction_router
@@ -15,3 +17,15 @@ app.include_router(user_router)
 app.include_router(compte_router)
 app.include_router(pot_router)
 app.include_router(sous_pot_router)
+
+origins = os.getenv("CORS_ORIGINS", "")
+
+allow_origins = origins.split(",") if origins else []
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
