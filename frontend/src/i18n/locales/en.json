@@ -30,9 +30,6 @@
     "title": "Home",
     "total_balance": "Total balance",
     "accounts_list": "My accounts",
-    "accounts_table": "Account's Detail",
-    "account_name": "Account",
-    "account_balance": "Balance",
     "today_transactions": "Today’s transactions",
     "tomorrow_transactions": "Tomorrow’s transactions"
   }

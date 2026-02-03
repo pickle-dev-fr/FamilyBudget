@@ -33,9 +33,6 @@
     "title": "Accueil",
     "total_balance": "Solde total",
     "accounts_list": "Mes comptes",
-    "accounts_table": "Détail des comptes",
-    "account_name": "Compte",
-    "account_balance": "Solde",
     "today_transactions": "Transactions aujourd’hui",
     "tomorrow_transactions": "Transactions demain"
   }

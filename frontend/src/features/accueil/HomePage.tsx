@@ -99,44 +99,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Comptes - tableau */}
-      <section>
-        <h2 className="section-title">
-          {t("home.accounts_table")}
-        </h2>
-
-        <div className="card">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>{t("home.account_name")}</th>
-                <th>{t("home.account_balance")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {accounts.length === 0 && (
-                <tr>
-                  <td colSpan={2}>—</td>
-                </tr>
-              )}
-
-              {accounts.map((a) => {
-                const balance = balances[a.id];
-
-                return (
-                  <tr key={a.id}>
-                    <td>{a.name}</td>
-                    <td className={balance >= 0 ? "ok" : "nok"}>
-                      {formatAmount(balance)} €
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
       {/* Transactions aujourd’hui */}
       <section>
         <h2 className="section-title">
