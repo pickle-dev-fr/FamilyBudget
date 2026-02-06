@@ -6,31 +6,23 @@ import LanguageSelector from "../ui/LanguageSelector";
 import ThemeSelector from "../ui/ThemeSelector";
 
 export default function PrivateHeader() {
-
   const navigate = useNavigate();
   const { refreshAuth } = useAuth();
   const { t } = useTranslation();
 
   function logout() {
-      clearToken();
-      refreshAuth();
-      navigate("/login", { replace: true });
-    }
+    clearToken();
+    refreshAuth();
+    navigate("/login", { replace: true });
+  }
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 16,
-        right: 16,
-        display: "flex",
-        gap: 8,
-        zIndex: 10,
-      }}
-    >
+    <header className="private-header">
       <LanguageSelector />
       <ThemeSelector />
-      <button onClick={logout}>{t("auth.disconnect")}</button>
-    </div>
+      <button onClick={logout}>
+        {t("auth.disconnect")}
+      </button>
+    </header>
   );
 }

@@ -19,7 +19,9 @@
   },
   "common": {
     "loading": "Chargement",
-    "error": "Erreur"
+    "error": "Erreur",
+    "save": "Enregistrer",
+    "cancel": "Annuler"
   },
   "menu": {
     "home": "Accueil",
@@ -35,5 +37,16 @@
     "accounts_list": "Mes comptes",
     "today_transactions": "Transactions aujourd’hui",
     "tomorrow_transactions": "Transactions demain"
+  },
+  "accounts": {
+    "create": "Créer un compte",
+    "title": "Gestion des comptes",
+    "add": "Ajouter un compte",
+    "name": "Nom",
+    "balance": "Solde",
+    "start_day": "Début mois",
+    "initial_value": "Valeur initiale",
+    "actions": "Actions",
+    "edit": "Modifier"
   }
 }

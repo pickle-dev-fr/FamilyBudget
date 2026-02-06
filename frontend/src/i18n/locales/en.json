@@ -16,7 +16,9 @@
   },
   "common": {
     "loading": "Loading",
-    "error": "Error"
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel"
   },
   "menu": {
     "home": "Home",
@@ -32,5 +34,16 @@
     "accounts_list": "My accounts",
     "today_transactions": "Today’s transactions",
     "tomorrow_transactions": "Tomorrow’s transactions"
+  },
+  "accounts": {
+    "create": "Create account",
+    "title": "Accounts management",
+    "add": "Add account",
+    "name": "Name",
+    "balance": "Balance",
+    "start_day": "Month start",
+    "initial_value": "Initial Value",
+    "actions": "Actions",
+    "edit": "Update"
   }
 }
