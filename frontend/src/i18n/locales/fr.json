@@ -18,10 +18,13 @@
     "disconnect": "Déconnexion"
   },
   "common": {
-    "loading": "Chargement",
-    "error": "Erreur",
     "save": "Enregistrer",
-    "cancel": "Annuler"
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "actions": "Actions",
+    "loading": "Chargement…",
+    "confirm": "Confirmation",
+    "confirm_delete": "Confirmer la suppression ?"
   },
   "menu": {
     "home": "Accueil",
@@ -48,5 +51,19 @@
     "initial_value": "Valeur initiale",
     "actions": "Actions",
     "edit": "Modifier"
+  },
+  "pots": {
+    "select_compte": "Selectionner un compte",
+    "title": "Pots",
+    "add": "Ajouter un pot",
+    "empty": "Aucun pot"
+  },
+  "sous_pots": {
+    "aucun": "Aucun sous Pot",
+    "name": "Sous Pot",
+    "prevision": "Prévu",
+    "current": "Actuel",
+    "reste": "Reste",
+    "progression": "Progression"
   }
 }

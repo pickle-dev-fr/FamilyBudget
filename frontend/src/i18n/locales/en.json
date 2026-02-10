@@ -18,7 +18,9 @@
     "loading": "Loading",
     "error": "Error",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete"
   },
   "menu": {
     "home": "Home",
@@ -45,5 +47,21 @@
     "initial_value": "Initial Value",
     "actions": "Actions",
     "edit": "Update"
+  },
+  "pots": {
+    "title": "Pots",
+    "add": "Add pot",
+    "subpot": "Sub pot",
+    "target": "Target",
+    "current": "Current",
+    "remaining": "Remaining",
+    "progress": "Progress",
+    "empty": "No pots",
+    "subpot_empty": "No sub pots",
+    "actions": "Actions",
+    "add_subpot": "Add sub pot",
+    "edit": "Edit",
+    "delete": "Delete"
   }
+
 }

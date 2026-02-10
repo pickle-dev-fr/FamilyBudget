@@ -8,6 +8,7 @@ import RegisterPage from "@/features/auth/RegisterPage";
 import AppLayout from "@/components/layout/AppLayout";
 import HomePage from "@/features/accueil/HomePage";
 import ComptesPage from "@/features/comptes/ComptesPage";
+import PotsPage from "@/features/pots/PotsPage";
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
         >
           <Route path="/" element={<HomePage />} />
           <Route path="/accounts" element={<ComptesPage />} />
+          <Route path="/pots" element={<PotsPage />} />
         </Route>
       </Routes>
     </AuthProvider>

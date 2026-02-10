@@ -37,3 +37,9 @@ export function updateCompte(
 ) {
   return apiClient.put(`/comptes/${compteId}`, payload);
 }
+
+export function reorderComptes(orderedIds: string[]) {
+    return apiClient.put("/comptes/reorder", {
+        ordered_ids: orderedIds
+    });
+}

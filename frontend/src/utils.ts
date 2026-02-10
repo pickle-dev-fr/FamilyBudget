@@ -10,3 +10,7 @@ export function formatAmount(value?: number | null) {
     maximumFractionDigits: 2
   });
 }
+
+export function reorderIds<T extends { id: string }>(items: T[]): string[] {
+    return items.map(i => i.id);
+}
