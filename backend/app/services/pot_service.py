@@ -2,6 +2,7 @@ from sqlmodel import Session, select
 
 from app.models import Pot, Compte, User, Sous_Pot
 from app.services.sous_pot_service import SousPotService
+from app.schemas.reorder_schema import PotReorderPayload
 from app.i18n.messages import msg
 from fastapi import HTTPException, status
 from sqlalchemy import func
@@ -100,48 +101,6 @@ class PotService:
         )
         return session.exec(stmt).one()
 
-
-    @staticmethod
-    def reorder(
-        session: Session,
-        *,
-        user: User,
-        compte_id: str,
-        ordered_ids: list[str],
-    ) -> None:
-        compte = session.get(Compte, compte_id)
-        if not compte:
-            raise ValueError(msg("compte.not_found"))
-
-        if compte.user_id != user.id:
-            raise ValueError(msg("compte.forbidden"))
-
-        pots = session.exec(
-            select(Pot).where(Pot.compte_id == compte_id)
-        ).all()
-
-        pot_map = {p.id: p for p in pots}
-
-        if set(ordered_ids) != set(pot_map.keys()):
-            raise ValueError(msg("pot.reorder.invalid_payload"))
-
-        # Pot par défaut
-        default_pot = next(
-            (p for p in pots if p.position == 0),
-            None,
-        )
-
-        if not default_pot:
-            raise ValueError(msg("pot.default.missing"))
-
-        if ordered_ids[0] != default_pot.id:
-            raise ValueError(msg("pot.default.not_movable"))
-
-        for index, pot_id in enumerate(ordered_ids):
-            pot_map[pot_id].position = index
-
-        session.commit()
-
     @staticmethod
     def get_default_for_compte(session: Session, compte_id: str) -> dict[str, str]:
         sous_pot = session.exec(
@@ -158,3 +117,113 @@ class PotService:
             "pot_id": sous_pot.pot_id,
             "sous_pot_id": sous_pot.id,
         }
+
+    @staticmethod
+    def reorder(
+        *,
+        session: Session,
+        user,
+        payload: PotReorderPayload,
+    ) -> None:
+
+        # --- récupération pot défaut + sous-pot défaut ---
+        pot_defaut = session.exec(
+            select(Pot)
+            .where(
+                Pot.compte_id.in_(
+                    select(Pot.compte_id)
+                    .where(Pot.id == payload.pots[0].id)
+                ),
+                Pot.name == msg("pot.default.name"),
+            )
+        ).one_or_none()
+
+        if not pot_defaut:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=msg("pot.default.not_found"),
+            )
+
+        sous_pot_defaut = session.exec(
+            select(Sous_Pot)
+            .where(
+                Sous_Pot.pot_id == pot_defaut.id,
+                Sous_Pot.name == msg("sous_pot.default.name"),
+            )
+        ).one()
+
+        # --- validations structure ---
+        first = payload.pots[0]
+
+        if first.id != pot_defaut.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=msg("pot.default.must_be_first"),
+            )
+
+        if first.sous_pots != [{"id": sous_pot_defaut.id}]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=msg("sous_pot.default.invalid_position"),
+            )
+
+        seen_pots = set()
+        seen_sous_pots = set()
+
+        # --- transaction SQL ---
+        with session.begin():
+
+            # pots utilisateurs
+            for pot_position, pot_data in enumerate(payload.pots):
+
+                if pot_data.id in seen_pots:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=msg("pot.duplicate"),
+                    )
+                seen_pots.add(pot_data.id)
+
+                pot = session.get(Pot, pot_data.id)
+                if not pot:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=msg("pot.not_found"),
+                    )
+
+                # pot défaut → déjà OK
+                if pot_position == 0:
+                    continue
+
+                pot.position = pot_position
+                session.add(pot)
+
+                # sous-pots utilisateurs
+                sous_position = 1
+                for sp in pot_data.sous_pots:
+
+                    if sp.id == sous_pot_defaut.id:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=msg("sous_pot.default.forbidden_move"),
+                        )
+
+                    if sp.id in seen_sous_pots:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=msg("sous_pot.duplicate"),
+                        )
+
+                    seen_sous_pots.add(sp.id)
+
+                    sous_pot = session.get(Sous_Pot, sp.id)
+                    if not sous_pot:
+                        raise HTTPException(
+                            status_code=status.HTTP_404_NOT_FOUND,
+                            detail=msg("sous_pot.not_found"),
+                        )
+
+                    sous_pot.pot_id = pot.id
+                    sous_pot.position = sous_position
+                    sous_position += 1
+
+                    session.add(sous_pot)

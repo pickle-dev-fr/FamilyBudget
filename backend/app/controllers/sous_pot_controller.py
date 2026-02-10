@@ -11,7 +11,6 @@ from app.schemas.sous_pot_schema import (
     SousPotRead,
     SousPotUpdate
 )
-from app.schemas.reorder_schema import ReorderIds
 from app.i18n.messages import msg
 
 
@@ -37,20 +36,6 @@ def _check_pot_owner(session: Session, pot_id: str, user: User) -> Pot:
         )
 
     return pot
-
-@router.put("/pots/{pot_id}/sous-pots/reorder", status_code=204)
-def reorder_sous_pots(
-    pot_id: str,
-    payload: ReorderIds,
-    session: Session = Depends(get_session),
-    user=Depends(get_current_user),
-):
-    SousPotService.reorder(
-        session=session,
-        user=user,
-        pot_id=pot_id,
-        ordered_ids=payload.ordered_ids,
-    )
 
 @router.post(
     "/pots/{pot_id}/sous-pots",

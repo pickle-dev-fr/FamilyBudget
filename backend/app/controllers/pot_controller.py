@@ -6,7 +6,7 @@ from app.security.dependencies import get_current_user
 from app.models import User, Compte
 from app.services.pot_service import PotService
 from app.schemas.pot_schema import PotCreate, PotRead, PotUpdate, ControlPotRead
-from app.schemas.reorder_schema import ReorderIds
+from app.schemas.reorder_schema import PotReorderPayload
 from app.i18n.messages import msg
 from fastapi import HTTPException
 
@@ -26,18 +26,16 @@ def _check_compte_owner(session: Session, compte_id: str, user: User) -> Compte:
         )
     return compte
     
-@router.put("/comptes/{compte_id}/pots/reorder", status_code=204)
+@router.put("/reorder", status_code=204)
 def reorder_pots(
-    compte_id: str,
-    payload: ReorderIds,
+    payload: PotReorderPayload,
     session: Session = Depends(get_session),
-    user=Depends(get_current_user),
+    user = Depends(get_current_user),
 ):
     PotService.reorder(
         session=session,
         user=user,
-        compte_id=compte_id,
-        ordered_ids=payload.ordered_ids,
+        payload=payload,
     )
 
 @router.post(
