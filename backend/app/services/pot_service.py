@@ -18,7 +18,7 @@ class PotService:
                 detail=msg("compte.not_found"),
             )
 
-        pot = Pot(name=name, compte_id=compte_id)
+        pot = Pot(name=name, compte_id=compte_id, position=PotService._get_next_position(session, compte.id))
         session.add(pot)
         session.commit()
         session.refresh(pot)
@@ -93,7 +93,7 @@ class PotService:
 
 
     @staticmethod
-    def _get_next_pot_position(session: Session, compte_id: str) -> int:
+    def _get_next_position(session: Session, compte_id: str) -> int:
         stmt = (
             select(func.coalesce(func.max(Pot.position), 0) + 1)
             .where(Pot.compte_id == compte_id)

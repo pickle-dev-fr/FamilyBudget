@@ -38,7 +38,7 @@ def _check_pot_owner(session: Session, pot_id: str, user: User) -> Pot:
 
     return pot
 
-@router.post("/pots/{pot_id}/sous-pots/reorder", status_code=204)
+@router.put("/pots/{pot_id}/sous-pots/reorder", status_code=204)
 def reorder_sous_pots(
     pot_id: str,
     payload: ReorderIds,

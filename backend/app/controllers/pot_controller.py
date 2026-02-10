@@ -26,7 +26,7 @@ def _check_compte_owner(session: Session, compte_id: str, user: User) -> Compte:
         )
     return compte
     
-@router.post("/comptes/{compte_id}/pots/reorder", status_code=204)
+@router.put("/comptes/{compte_id}/pots/reorder", status_code=204)
 def reorder_pots(
     compte_id: str,
     payload: ReorderIds,
