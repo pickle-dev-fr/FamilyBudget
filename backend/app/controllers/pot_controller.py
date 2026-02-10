@@ -5,7 +5,8 @@ from app.database import get_session
 from app.security.dependencies import get_current_user
 from app.models import User, Compte
 from app.services.pot_service import PotService
-from app.schemas.pot_schema import PotCreate, PotRead, PotUpdate
+from app.schemas.pot_schema import PotCreate, PotRead, PotUpdate, ControlPotRead
+from app.schemas.reorder_schema import ReorderIds
 from app.i18n.messages import msg
 from fastapi import HTTPException
 
@@ -24,7 +25,20 @@ def _check_compte_owner(session: Session, compte_id: str, user: User) -> Compte:
             detail=msg("compte.not_found"),
         )
     return compte
-
+    
+@router.post("/comptes/{compte_id}/pots/reorder", status_code=204)
+def reorder_pots(
+    compte_id: str,
+    payload: ReorderIds,
+    session: Session = Depends(get_session),
+    user=Depends(get_current_user),
+):
+    PotService.reorder(
+        session=session,
+        user=user,
+        compte_id=compte_id,
+        ordered_ids=payload.ordered_ids,
+    )
 
 @router.post(
     "/comptes/{compte_id}/pots",
@@ -67,7 +81,6 @@ def get_pot(
     _check_compte_owner(session, pot.compte_id, current_user)
     return pot
 
-
 @router.put(
     "/pots/{pot_id}",
     response_model=PotRead,
@@ -95,3 +108,18 @@ def delete_pot(
     pot = PotService.get_by_id(session, pot_id)
     _check_compte_owner(session, pot.compte_id, current_user)
     PotService.delete(session, pot_id)
+
+@router.get(
+    "/pot/defaut",
+    response_model=ControlPotRead,
+)
+def get_default_pot(
+    compte_id: str,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    compte = session.get(Compte, compte_id)
+    if not compte or compte.user_id != user.id:
+        raise HTTPException(status_code=404, detail=msg("compte.not_found"))
+    
+    return PotService.get_default_for_compte(session, compte_id)

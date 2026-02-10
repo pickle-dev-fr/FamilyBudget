@@ -5,11 +5,13 @@ from app.database import get_session
 from app.security.dependencies import get_current_user
 from app.models import User, Compte, Pot
 from app.services.sous_pot_service import SousPotService
+from app.services.compte_service import CompteService
 from app.schemas.sous_pot_schema import (
     SousPotCreate,
     SousPotRead,
-    SousPotUpdate,
+    SousPotUpdate
 )
+from app.schemas.reorder_schema import ReorderIds
 from app.i18n.messages import msg
 
 
@@ -36,6 +38,19 @@ def _check_pot_owner(session: Session, pot_id: str, user: User) -> Pot:
 
     return pot
 
+@router.post("/pots/{pot_id}/sous-pots/reorder", status_code=204)
+def reorder_sous_pots(
+    pot_id: str,
+    payload: ReorderIds,
+    session: Session = Depends(get_session),
+    user=Depends(get_current_user),
+):
+    SousPotService.reorder(
+        session=session,
+        user=user,
+        pot_id=pot_id,
+        ordered_ids=payload.ordered_ids,
+    )
 
 @router.post(
     "/pots/{pot_id}/sous-pots",
@@ -116,3 +131,4 @@ def delete_sous_pot(
     sous_pot = SousPotService.get_by_id(session, sous_pot_id)
     _check_pot_owner(session, sous_pot.pot_id, current_user)
     SousPotService.delete(session, sous_pot_id)
+

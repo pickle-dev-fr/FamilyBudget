@@ -17,3 +17,6 @@ class SousPotRead(SQLModel):
     name: str
     prevision: float
     pot_id: str
+    current: float
+    position: int
+

@@ -1,43 +1,52 @@
 from sqlmodel import Session, select
 
-from app.models import Compte, User, Sous_Pot, Pot, Transaction
+from app.models import Compte, User, Sous_Pot, Pot, Transaction, TypeTransaction
 from app.i18n.messages import msg
-from sqlalchemy import or_
+from sqlalchemy import or_, func
+
+from app.schemas.compte_schema import CompteCreate
 
 
 
 class CompteService:
 
     @staticmethod
-    def create(
-        session: Session,
-        *,
-        user: User,
-        name: str,
-        initial_value: float,
-        start_day: int,
-    ) -> Compte:
-        if not name:
-            raise ValueError(msg("compte.name_required"))
-
-        if start_day < 1 or start_day > 31:
-            raise ValueError(msg("compte.invalid_start_day"))
-
+    def create(session: Session, data: CompteCreate, user: User) -> Compte:
         compte = Compte(
-            name=name,
-            initial_value=initial_value,
-            start_day=start_day,
+            **data.model_dump(),
             user_id=user.id,
+            position=CompteService._get_next_position(session, user.id),
         )
-
         session.add(compte)
+        session.flush()
+
+        pot_defaut = Pot(
+            name=msg("pot.default.name"),
+            compte_id=compte.id,
+            position=0,
+        )
+        session.add(pot_defaut)
+        session.flush()
+
+        sous_pot_defaut = Sous_Pot(
+            name=msg("sous_pot.default.name"),
+            prevision=0.0,
+            pot_id=pot_defaut.id,
+            position=0,
+        )
+        session.add(sous_pot_defaut)
+
         session.commit()
         session.refresh(compte)
         return compte
 
     @staticmethod
     def list_by_user(session: Session, user: User) -> list[Compte]:
-        query = select(Compte).where(Compte.user_id == user.id)
+        query = (
+            select(Compte)
+            .where(Compte.user_id == user.id)
+            .order_by(Compte.position)
+        )
         return session.exec(query).all()
 
     @staticmethod
@@ -127,3 +136,31 @@ class CompteService:
         total += compte.initial_value
         total += compte.archived_value
         return total
+
+    @staticmethod
+    def _get_next_position(session: Session, user_id: str) -> int:
+        stmt = (
+            select(func.coalesce(func.max(Compte.position), -1) + 1)
+            .where(Compte.user_id == user_id)
+        )
+        return session.exec(stmt).one()
+
+    @staticmethod
+    def reorder(
+        session: Session,
+        *,
+        user: User,
+        ordered_ids: list[str],
+    ) -> None:
+        comptes = CompteService.list_by_user(session, user)
+
+        compte_map = {c.id: c for c in comptes}
+        print(compte_map)
+
+        if set(ordered_ids) != set(compte_map.keys()):
+            raise ValueError(msg("compte.reorder.invalid_payload"))
+
+        for index, compte_id in enumerate(ordered_ids):
+            compte_map[compte_id].position = index
+
+        session.commit()

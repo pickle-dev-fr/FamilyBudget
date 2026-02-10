@@ -7,6 +7,7 @@ from app.schemas.compte_schema import (
     CompteUpdate,
     CompteRead,
 )
+from app.schemas.reorder_schema import ReorderIds
 from app.security.dependencies import get_current_user
 from app.services.compte_service import CompteService
 from app.i18n.messages import msg
@@ -28,9 +29,7 @@ def create_compte(
         return CompteService.create(
             session=session,
             user=user,
-            name=payload.name,
-            initial_value=payload.initial_value,
-            start_day=payload.start_day,
+            data=payload
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -43,6 +42,18 @@ def list_comptes(
 ):
     return CompteService.list_by_user(session, user)
 
+# Avant get_compte
+@router.put("/reorder", status_code=204)
+def reorder_comptes(
+    payload: ReorderIds,
+    session: Session = Depends(get_session),
+    user=Depends(get_current_user),
+):
+    CompteService.reorder(
+        session=session,
+        user=user,
+        ordered_ids=payload.ordered_ids,
+    )
 
 @router.get("/{compte_id}", response_model=CompteRead)
 def get_compte(
@@ -93,3 +104,4 @@ def get_solde_by_compte(
         session=session,
         compte=compte,
     )
+

@@ -4,6 +4,9 @@ from datetime import date
 from enum import Enum
 import ulid
 from sqlmodel import SQLModel, Field, Relationship
+from sqlalchemy.orm import relationship
+from sqlalchemy import UniqueConstraint
+
 
 # --- Helpers ---
 def generate_ulid() -> str:
@@ -25,7 +28,10 @@ class User(SQLModel, table=True):
     username: str = Field(index=True, unique=True)
     hashed_password: str
 
-    comptes: List["Compte"] = Relationship(back_populates="user")
+    comptes: List["Compte"] = Relationship(back_populates="user",
+        sa_relationship_kwargs={            
+            "order_by": "Compte.position",
+        })
 
 
 class Compte(SQLModel, table=True):
@@ -35,27 +41,63 @@ class Compte(SQLModel, table=True):
     archived_value: float = 0.0
     start_day: int = 1  # 1 ≤ start_day ≤ 31
 
+    position: int = Field(index=True)
+
     user_id: str = Field(foreign_key="user.id")
     user: Optional[User] = Relationship(back_populates="comptes")
 
-    pots: List["Pot"] = Relationship(back_populates="compte")
-    transactions: List["Transaction"] = Relationship(back_populates="compte")
+    pots: List["Pot"] = Relationship(
+        back_populates="compte",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan",
+            "order_by": "Pot.position",
+        })
+    transactions: List["Transaction"] = Relationship(
+        back_populates="compte",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan"
+        })
 
 
 class Pot(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint(
+            "compte_id",
+            "name",
+            name="uq_pot_compte_name",
+        ),
+    )
+
     id: str = Field(default_factory=generate_ulid, primary_key=True)
     name: str
+
+    position: int = Field(index=True)
 
     compte_id: str = Field(foreign_key="compte.id")
     compte: Optional[Compte] = Relationship(back_populates="pots")
 
-    sous_pots: List["Sous_Pot"] = Relationship(back_populates="pot")
+    sous_pots: List["Sous_Pot"] = Relationship(
+        back_populates="pot",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan",
+            "order_by": "Sous_Pot.position",
+        })
 
 
 class Sous_Pot(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint(
+            "pot_id",
+            "name",
+            name="uq_sous_pot_pot_name",
+        ),
+    )
+
     id: str = Field(default_factory=generate_ulid, primary_key=True)
     name: str
     prevision: float
+
+    position: int = Field(index=True)
 
     pot_id: str = Field(foreign_key="pot.id")
     pot: Optional[Pot] = Relationship(back_populates="sous_pots")
