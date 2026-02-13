@@ -6,40 +6,45 @@ export type ApiError = {
 };
 
 async function request(
-    method: string,
-    path: string,
-    body?: unknown
+  method: string,
+  path: string,
+  body?: unknown
 ) {
-    const token = localStorage.getItem("auth_token");
+  const token = localStorage.getItem("auth_token");
 
-    const response = await fetch(`${API_URL}${path}`, {
-        method,
-        headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: body && method !== "HEAD" ? JSON.stringify(body) : undefined,
-    });
+  const response = await fetch(`${API_URL}${path}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: body && method !== "HEAD" ? JSON.stringify(body) : undefined,
+  });
 
-    let data = null;
+  let data = null;
 
-    if (method !== "HEAD") {
-        const contentType = response.headers.get("content-type");
-        data =
-            contentType && contentType.includes("application/json")
-                ? await response.json()
-                : null;
+  if (method !== "HEAD") {
+    const text = await response.text();
+
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = null;
+      }
     }
+  }
 
-    if (!response.ok) {
-        throw {
-            status: response.status,
-            data,
-        } as ApiError;
-    }
+  if (!response.ok) {
+    throw {
+      status: response.status,
+      data,
+    };
+  }
 
-    return data;
+  return data;
 }
+
 
 function buildUrl(
     path: string,

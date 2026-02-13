@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Security, status
+from fastapi import APIRouter, Depends, Security, status, Query
 from sqlmodel import Session
 
 from app.database import get_session
@@ -26,7 +26,7 @@ def _check_compte_owner(session: Session, compte_id: str, user: User) -> Compte:
         )
     return compte
     
-@router.put("/reorder", status_code=204)
+@router.put("/pots/reorder", status_code=204)
 def reorder_pots(
     payload: PotReorderPayload,
     session: Session = Depends(get_session),
@@ -38,20 +38,6 @@ def reorder_pots(
         payload=payload,
     )
 
-@router.post(
-    "/comptes/{compte_id}/pots",
-    response_model=PotRead,
-    status_code=status.HTTP_201_CREATED,
-)
-def create_pot(
-    compte_id: str,
-    data: PotCreate,
-    session: Session = Depends(get_session),
-    current_user: User = Security(get_current_user),
-):
-    _check_compte_owner(session, compte_id, current_user)
-    return PotService.create(session, compte_id, data.name)
-
 
 @router.get(
     "/comptes/{compte_id}/pots",
@@ -59,12 +45,18 @@ def create_pot(
 )
 def list_pots(
     compte_id: str,
+    include: bool = Query(False, description="Inclure les sous-pots"),
     session: Session = Depends(get_session),
     current_user: User = Security(get_current_user),
 ):
-    _check_compte_owner(session, compte_id, current_user)
-    return PotService.list_by_compte(session, compte_id)
 
+    _check_compte_owner(session, compte_id, current_user)
+
+    return PotService.list_by_compte(
+        session,
+        compte_id,
+        include=include,
+    )
 
 @router.get(
     "/pots/{pot_id}",

@@ -18,6 +18,7 @@
     "disconnect": "Déconnexion"
   },
   "common": {
+    "create": "Valider",
     "save": "Enregistrer",
     "edit": "Modifier",
     "delete": "Supprimer",
@@ -53,6 +54,7 @@
     "edit": "Modifier"
   },
   "pots": {
+    "name": "Nom du pot",
     "select_compte": "Selectionner un compte",
     "title": "Pots",
     "add": "Ajouter un pot",

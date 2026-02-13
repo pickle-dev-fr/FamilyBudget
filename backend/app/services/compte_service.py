@@ -21,7 +21,7 @@ class CompteService:
         session.flush()
 
         pot_defaut = Pot(
-            name=msg("pot.default.name"),
+            name=msg("pot.default"),
             compte_id=compte.id,
             position=0,
         )
@@ -29,7 +29,7 @@ class CompteService:
         session.flush()
 
         sous_pot_defaut = Sous_Pot(
-            name=msg("sous_pot.default.name"),
+            name=msg("sous_pot.default"),
             prevision=0.0,
             pot_id=pot_defaut.id,
             position=0,

@@ -66,6 +66,13 @@ class Pot(SQLModel, table=True):
             "name",
             name="uq_pot_compte_name",
         ),
+        UniqueConstraint(
+            "compte_id",
+            "position",
+            name="uq_pot_compte_position",
+            deferrable=True,
+            initially="DEFERRED",
+        ),
     )
 
     id: str = Field(default_factory=generate_ulid, primary_key=True)
@@ -90,6 +97,13 @@ class Sous_Pot(SQLModel, table=True):
             "pot_id",
             "name",
             name="uq_sous_pot_pot_name",
+        ),
+        UniqueConstraint(
+            "pot_id",
+            "position",
+            name="uq_sous_pot_pot_position",
+            deferrable=True,
+            initially="DEFERRED",
         ),
     )
 

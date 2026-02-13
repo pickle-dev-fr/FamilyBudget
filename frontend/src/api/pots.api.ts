@@ -5,6 +5,7 @@ export type Pot = {
   name: string;
   icon?: string;
   compte_id: string;
+  position: number;
 };
 
 export type CreatePotPayload = {
@@ -17,8 +18,26 @@ export type UpdatePotPayload = {
   icon?: string;
 };
 
+export type ReorderSousPotPayload = {
+    id: string;
+};
+
+export type ReorderPotPayload = {
+    id: string;
+    sous_pots: ReorderSousPotPayload[];
+};
+
+export type ReorderPotsPayload = {
+    compte_id: string
+    ordered_ids: string[]
+}
+
 export function getPotsByCompte(compteId: string) {
   return apiClient.get(`/comptes/${compteId}/pots`);
+}
+
+export function getPotsAndSousPotsByCompte(compteId: string) {
+  return apiClient.get(`/comptes/${compteId}/pots?include=true`);
 }
 
 export function createPot(compteId: string, payload: CreatePotPayload) {
@@ -38,12 +57,7 @@ export function getDefaultPot(compteId: string) {
         compte_id: compteId,
     });
 }
-export function reorderPots(
-    compteId: string,
-    orderedIds: string[]
-) {
-    return apiClient.put(
-        `/comptes/${compteId}/pots/reorder`,
-        { ordered_ids: orderedIds }
-    );
+
+export function reorderPots(payload: ReorderPotsPayload) {
+    return apiClient.put("/pots/reorder", payload)
 }

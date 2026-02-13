@@ -6,6 +6,7 @@ export type SousPot = {
   prevision: number;
   current: number;
   pot_id: string;
+  position: number;
 };
 
 export type CreateSousPotPayload = {
@@ -18,10 +19,16 @@ export type UpdateSousPotPayload = {
   prevision: number;
 };
 
-export type DefaultSousPot = {
-    id: string;
-    pot_id: string;
-};
+export type ReorderSousPotsPayload = {
+    ancien_pot: {
+        pot_id: string
+        sous_pot_ids?: string[]
+    }
+    nouveau_pot: {
+        pot_id: string
+        sous_pot_ids: string[]
+    }
+}
 
 export function getSousPotsByPot(potId: string) {
   return apiClient.get(`/pots/${potId}/sous-pots`);
@@ -42,12 +49,6 @@ export function deleteSousPot(sousPotId: string) {
   return apiClient.delete(`/sous-pots/${sousPotId}`);
 }
 
-export function reorderSousPots(
-    potId: string,
-    orderedIds: string[]
-) {
-    return apiClient.put(
-        `/pots/${potId}/sous-pots/reorder`,
-        { ordered_ids: orderedIds }
-    );
+export function reorderSousPots(compte_id: string, payload: ReorderSousPotsPayload) {
+    return apiClient.put(`/comptes/${compte_id}/sous-pots/reorder`, payload)
 }

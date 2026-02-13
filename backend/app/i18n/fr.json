@@ -27,12 +27,14 @@
     }
   },
   "pot": {
+    "default": "Défaut",
     "not_found": "Pot introuvable.",
     "created": "Pot créé.",
     "updated": "Pot mis à jour.",
     "deleted": "Pot supprimé."
   },
   "sous_pot": {
+    "default": "Défaut",
     "not_found": "Sous-pot introuvable.",
     "created": "Sous-pot créé.",
     "updated": "Sous-pot mis à jour.",

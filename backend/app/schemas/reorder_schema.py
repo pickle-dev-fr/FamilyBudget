@@ -2,18 +2,18 @@ from typing import List
 from pydantic import BaseModel, Field
 from sqlmodel import SQLModel
 
+class SousPotReorderBlock(BaseModel):
+    pot_id: str
+    sous_pot_ids: list[str]
 
-class SousPotOrder(BaseModel):
-    id: str
 
-
-class PotOrder(BaseModel):
-    id: str
-    sous_pots: List[SousPotOrder] = Field(default_factory=list)
-
+class SousPotReorderPayload(BaseModel):
+    ancien_pot: SousPotReorderBlock
+    nouveau_pot: SousPotReorderBlock
 
 class PotReorderPayload(BaseModel):
-    pots: List[PotOrder]
+    compte_id: str
+    ordered_ids: List[str]
 
 class ReorderIds(SQLModel):
     ordered_ids: list[str]

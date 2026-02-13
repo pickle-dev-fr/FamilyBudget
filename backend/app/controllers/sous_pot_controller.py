@@ -9,8 +9,10 @@ from app.services.compte_service import CompteService
 from app.schemas.sous_pot_schema import (
     SousPotCreate,
     SousPotRead,
-    SousPotUpdate
+    SousPotUpdate,
+    SousPotReadCreate
 )
+from app.schemas.reorder_schema import SousPotReorderPayload
 from app.i18n.messages import msg
 
 
@@ -28,18 +30,35 @@ def _check_pot_owner(session: Session, pot_id: str, user: User) -> Pot:
             detail=msg("pot.not_found"),
         )
 
-    compte = session.get(Compte, pot.compte_id)
+    _check_compte_owner(session, pot.compte_id, user)
+
+    return pot
+
+def _check_compte_owner(session: Session, compte_id: str, user: User):
+    compte = session.get(Compte, compte_id)
     if not compte or compte.user_id != user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=msg("pot.not_found"),
         )
 
-    return pot
+@router.put("/comptes/{compte_id}/sous-pots/reorder", status_code=204)
+def reorder_sous_pots(
+    compte_id: str,
+    payload: SousPotReorderPayload,
+    session: Session = Depends(get_session),
+    current_user = Depends(get_current_user),
+):
+    _check_compte_owner(session, compte_id, current_user)
+    SousPotService.reorder(
+        compte_id=compte_id,
+        session=session,
+        payload=payload,
+    )
 
 @router.post(
     "/pots/{pot_id}/sous-pots",
-    response_model=SousPotRead,
+    response_model=SousPotReadCreate,
     status_code=status.HTTP_201_CREATED,
 )
 def create_sous_pot(

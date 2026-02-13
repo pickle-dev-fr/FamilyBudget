@@ -1,5 +1,5 @@
 from sqlmodel import Session, select
-from sqlalchemy import and_, func
+from sqlalchemy import and_, func, or_, distinct, text
 from fastapi import HTTPException, status
 from datetime import date
 
@@ -7,6 +7,7 @@ from datetime import date
 from app.models import Sous_Pot, Transaction, TypeTransaction, Pot, Compte
 from app.utils import get_period_start, get_period_end
 from app.schemas.sous_pot_schema import SousPotRead
+from app.schemas.reorder_schema import SousPotReorderPayload
 from app.i18n.messages import msg
 
 
@@ -61,6 +62,7 @@ class SousPotService:
                     name=sp.name,
                     pot_id=sp.pot_id,
                     prevision=sp.prevision,
+                    position=sp.position,
                     current=current,
                 )
             )
@@ -168,3 +170,161 @@ class SousPotService:
                 total -= t.amount
 
         return total
+
+    @staticmethod
+    def _get_next_position(session: Session, pot_id: str) -> int:
+        stmt = (
+            select(func.coalesce(func.max(Sous_Pot.position), 0) + 1)
+            .where(Sous_Pot.pot_id == pot_id)
+        )
+        return session.exec(stmt).one()
+
+    @staticmethod
+    def reorder(
+        session: Session,
+        compte_id: str,
+        payload: SousPotReorderPayload,
+    ) -> None:
+
+        ancien_id = payload.ancien_pot.pot_id
+        nouveau_id = payload.nouveau_pot.pot_id
+
+        # --------------------------------------------------
+        # Vérification des pots et sous_pots
+        # --------------------------------------------------
+
+        ancien_id = payload.ancien_pot.pot_id
+        nouveau_id = payload.nouveau_pot.pot_id
+
+        all_sous_pot_ids = (
+            payload.ancien_pot.sous_pot_ids
+            + payload.nouveau_pot.sous_pot_ids
+        )
+
+        pot_count = session.exec(
+            select(func.count())
+            .select_from(Pot)
+            .where(
+                Pot.compte_id == compte_id,
+                Pot.id.in_([ancien_id, nouveau_id]),
+            )
+        ).one()
+
+        if (ancien_id == nouveau_id and pot_count != 1) or (ancien_id != nouveau_id and pot_count != 2):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=msg("pot.missing_or_invalid"),
+            )
+
+        unique_ids = set(all_sous_pot_ids)
+
+        sp_count = session.exec(
+            select(func.count())
+            .select_from(Sous_Pot)
+            .join(Pot)
+            .where(
+                Sous_Pot.id.in_(unique_ids),
+                Pot.compte_id == compte_id,
+            )
+        ).one()
+
+        if sp_count != len(unique_ids):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=msg("sous_pot.missing_or_invalid"),
+            )
+
+
+        # --------------------------------------------------
+        # Récupération des défauts (position == 0)
+        # --------------------------------------------------
+
+        default_sous_pot = session.exec(
+            select(Sous_Pot)
+            .join(Pot)
+            .where(
+                Pot.compte_id == compte_id,
+                Pot.position == 0,
+                Sous_Pot.position == 0,
+            )
+        ).one()
+
+
+        if not default_sous_pot:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=msg("pot.default.not_found"),
+            )
+
+        default_pot_id = default_sous_pot.pot_id
+        default_sous_pot_id = default_sous_pot.id
+
+        # --------------------------------------------------
+        # Refus immédiat si défaut dans payload
+        # --------------------------------------------------
+
+        if (
+            ancien_id == default_pot_id
+            or nouveau_id == default_pot_id
+            or default_sous_pot_id in payload.ancien_pot.sous_pot_ids
+            or default_sous_pot_id in payload.nouveau_pot.sous_pot_ids
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=msg("sous_pot.default.forbidden_move"),
+            )
+
+        # --------------------------------------------------
+        # traitement ancien pot (seulement si ancien != nouveau)
+        # --------------------------------------------------
+
+        if (nouveau_id != ancien_id):
+            query = text("""
+                UPDATE sous_pot sp
+                SET position = new_order.pos,
+                    pot_id = :pot_id
+                FROM (
+                    SELECT id, ordinality AS pos
+                    FROM unnest(:ordered_ids) WITH ORDINALITY AS t(id, ordinality)
+                ) AS new_order
+                JOIN pot p ON p.id = :pot_id
+                WHERE sp.id = new_order.id
+                AND p.compte_id = :compte_id
+            """)
+
+            session.execute(
+                query,
+                {
+                    "ordered_ids": payload.ancien_pot.sous_pot_ids,
+                    "pot_id":ancien_id,
+                    "compte_id": compte_id,
+                },
+            )
+            
+        # --------------------------------------------------
+        # Traitement nouveau pot
+        # --------------------------------------------------
+
+        query = text("""
+            UPDATE sous_pot sp
+            SET position = new_order.pos,
+                pot_id = :pot_id
+            FROM (
+                SELECT id, ordinality AS pos
+                FROM unnest(:ordered_ids) WITH ORDINALITY AS t(id, ordinality)
+            ) AS new_order
+            JOIN pot p ON p.id = :pot_id
+            WHERE sp.id = new_order.id
+            AND p.compte_id = :compte_id
+        """)
+
+        session.execute(
+            query,
+            {
+                "ordered_ids": payload.nouveau_pot.sous_pot_ids,
+                "pot_id":nouveau_id,
+                "compte_id": compte_id,
+            },
+        )
+        
+        session.commit()

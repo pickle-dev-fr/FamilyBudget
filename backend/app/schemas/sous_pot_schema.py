@@ -11,12 +11,12 @@ class SousPotUpdate(SQLModel):
     name: str
     prevision: float = Field(ge=0)
 
-
-class SousPotRead(SQLModel):
+class SousPotReadCreate(SQLModel):
     id: str
     name: str
     prevision: float
     pot_id: str
-    current: float
     position: int
 
+class SousPotRead(SousPotReadCreate):
+    current: float
