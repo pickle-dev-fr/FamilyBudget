@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session
 from datetime import date
-from app.models import User
+from app.models import User, Compte
 
 from app.database import get_session
 from app.schemas.transaction_schema import (
@@ -13,9 +13,18 @@ from app.security.dependencies import get_current_user
 from app.services.transaction_service import TransactionService
 from app.i18n.messages import msg
 
-router = APIRouter(prefix="/transactions", tags=["Transactions"], dependencies=[Depends(get_current_user)])
+router = APIRouter(prefix="", tags=["Transactions"], dependencies=[Depends(get_current_user)])
 
-@router.post("", response_model=TransactionRead)
+def _check_compte_owner(session: Session, compte_id: str, user: User) -> Compte:
+    compte = session.get(Compte, compte_id)
+    if not compte or compte.user_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=msg("compte.not_found"),
+        )
+    return compte
+
+@router.post("/transactions", response_model=TransactionRead)
 def create_transaction(
     payload: TransactionCreate,
     session: Session = Depends(get_session),
@@ -29,7 +38,7 @@ def create_transaction(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{id}", response_model=TransactionRead)
+@router.get("/transactions/{id}", response_model=TransactionRead)
 def get_transaction_by_id(
     id: str,
     session: Session = Depends(get_session),
@@ -39,15 +48,17 @@ def get_transaction_by_id(
     except Exception:
         raise HTTPException(status_code=404, detail=msg("transaction.error.not_found"))
 
-@router.get("", response_model=list[TransactionRead])
-def list_transactions(
-    date: date | None = Query(None, description="Filtre par date YYYY-MM-DD"),
+@router.get("/compte/{compte_id}/transactions", response_model=list[TransactionRead])
+def list_by_compte_and_date(
+    compte_id: str,
+    date: date = Query(date, description="Filtre par date YYYY-MM-DD"),
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user)
 ): 
-    return TransactionService.list_all_by_user_and(
+    _check_compte_owner(session, compte_id, current_user)
+    return TransactionService.list_by_compte_and_date(
         session=session,
-        user_id=current_user.id,
-        date_filter=date
+        date=date,
+        compte_id=compte_id,
         )
 

@@ -1,11 +1,11 @@
-from sqlmodel import Session, select
+from sqlmodel import Session, select, update
 from sqlalchemy import and_, func, or_, distinct, text
 from fastapi import HTTPException, status
 from datetime import date
 
 
 from app.models import Sous_Pot, Transaction, TypeTransaction, Pot, Compte
-from app.utils import get_period_start, get_period_end
+from app.utils import get_period_start, get_period_end, get_default_for_compte
 from app.schemas.sous_pot_schema import SousPotRead
 from app.schemas.reorder_schema import SousPotReorderPayload
 from app.i18n.messages import msg
@@ -106,7 +106,7 @@ class SousPotService:
             raise ValueError(msg("sous_pot.default.delete_forbidden"))
 
         # Re-rattacher les transactions au sous-pot défaut du compte
-        default_sp = SousPotService.get_default_for_compte(
+        default_sp = get_default_for_compte(
             session,
             sous_pot.pot.compte_id,
         )

@@ -1,6 +1,7 @@
 from datetime import date
 from sqlmodel import Session, select
 from sqlalchemy import or_
+from typing import List
 
 
 from app.models import (
@@ -10,6 +11,7 @@ from app.models import (
     Sous_Pot,
     TypeTransaction,
 )
+from app.utils import get_period_start, get_period_end
 from app.i18n.messages import msg
 from typing import Optional
 
@@ -78,6 +80,41 @@ class TransactionService:
         query = select(Transaction).where(Transaction.id == id)
         return session.exec(query).one()
 
+    def list_by_compte_and_date(session: Session, compte_id: str, date: date) -> List[Transaction]:
+        """
+        Retourne toutes les transactions pour un compte donné dans le cycle budgétaire courant,
+        triées par date croissante.
+        - Transactions CREDIT directes sur le compte
+        - Transactions DEBIT via les Sous_Pot du compte
+        """
+        # Récupérer le compte pour son start_day
+        compte = session.get(Compte, compte_id)
+        if not compte:
+            return []
+
+        start_date = get_period_start(date, compte.start_day)
+        end_date = get_period_end(start_date)
+
+        # Requête unique avec jointures pour inclure DEBIT via Sous_Pot
+        stmt = (
+            select(Transaction)
+            .outerjoin(Sous_Pot, Transaction.sous_pot_id == Sous_Pot.id)
+            .outerjoin(Pot, Sous_Pot.pot_id == Pot.id)
+            .where(
+                Transaction.transaction_date >= start_date,
+                Transaction.transaction_date <= end_date,
+                (
+                    (Transaction.compte_id == compte_id) |  # CREDIT direct
+                    (Pot.compte_id == compte_id)           # DEBIT via SousPot -> Pot -> Compte
+                )
+            )
+            .order_by(Transaction.transaction_date.asc())
+        )
+
+        transactions = session.exec(stmt).all()
+        return transactions
+
+
     @staticmethod
     def list_by_sous_pot(
         session: Session,
@@ -91,43 +128,3 @@ class TransactionService:
         transaction_id = TransactionService.get_by_id(session, transaction_id)
         session.delete(sous_pot)
         session.commit()
-
-
-    @staticmethod
-    def list_all_by_user_and(
-        session: Session,
-        user_id: str,
-        date_filter: Optional[date] = None,
-    ) -> list[Transaction]:
-        """
-        Retourne les transactions d'un utilisateur.
-        Filtres optionnels :
-        - date_filter : date exacte
-        """
-
-        query = (
-            select(Transaction)
-            .outerjoin(
-                Sous_Pot,
-                Transaction.sous_pot_id == Sous_Pot.id,
-            )
-            .outerjoin(
-                Pot,
-                Sous_Pot.pot_id == Pot.id,
-            )
-            .join(
-                Compte,
-                or_(
-                    Transaction.compte_id == Compte.id,
-                    Pot.compte_id == Compte.id,
-                ),
-            )
-            .where(Compte.user_id == user_id)
-        )
-
-        if date_filter is not None:
-            query = query.where(
-                Transaction.transaction_date == date_filter
-            )
-
-        return session.exec(query).all()

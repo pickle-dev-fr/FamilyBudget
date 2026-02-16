@@ -1,6 +1,7 @@
-from sqlmodel import Session, select
+from sqlmodel import Session, select, update
 
-from app.models import Pot, Compte, User, Sous_Pot
+from app.models import Pot, Compte, User, Sous_Pot, Transaction
+from app.utils import get_default_for_compte
 from app.services.sous_pot_service import SousPotService
 from app.schemas.reorder_schema import PotReorderPayload
 from app.schemas.pot_schema import PotRead
@@ -99,11 +100,10 @@ class PotService:
             )
 
         # Sous-pot par défaut du compte
-        default_sous_pot = SousPotService.get_default_for_compte(
+        default_sous_pot = get_default_for_compte(
             session,
             pot.compte_id,
         )
-
         # Re-rattachement des transactions
         session.exec(
             update(Transaction)
@@ -112,7 +112,7 @@ class PotService:
                     select(Sous_Pot.id).where(Sous_Pot.pot_id == pot.id)
                 )
             )
-            .values(sous_pot_id=default_sous_pot.id)
+            .values(sous_pot_id=default_sous_pot["sous_pot_id"])
         )
 
         # Suppression explicite des sous-pots
@@ -130,23 +130,6 @@ class PotService:
             .where(Pot.compte_id == compte_id)
         )
         return session.exec(stmt).one()
-
-    @staticmethod
-    def get_default_for_compte(session: Session, compte_id: str) -> dict[str, str]:
-        sous_pot = session.exec(
-            select(Sous_Pot)
-            .join(Pot)
-            .where(
-                Pot.compte_id == compte_id,
-                Pot.position == 0,
-                Sous_Pot.position == 0,
-            )
-        ).one()
-
-        return {
-            "pot_id": sous_pot.pot_id,
-            "sous_pot_id": sous_pot.id,
-        }
 
     @staticmethod
     def reorder(

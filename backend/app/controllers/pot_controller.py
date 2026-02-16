@@ -38,6 +38,20 @@ def reorder_pots(
         payload=payload,
     )
 
+@router.post(
+    "/comptes/{compte_id}/pots",
+    response_model=PotRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_pot(
+    compte_id: str,
+    data: PotCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Security(get_current_user),
+):
+    _check_compte_owner(session, compte_id, current_user)
+    return PotService.create(session, compte_id, data.name)
+
 
 @router.get(
     "/comptes/{compte_id}/pots",

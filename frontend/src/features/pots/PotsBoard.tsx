@@ -9,45 +9,36 @@ import {
 } from "@dnd-kit/core"
 import {
     SortableContext,
-    useSortable,
     arrayMove,
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-import { getComptes } from "@/api/comptes.api"
-import {
-    getPotsAndSousPotsByCompte,
-    reorderPots,
-} from "@/api/pots.api"
-import {
-    reorderSousPots,
-    type SousPot,
-} from "@/api/sous_pots.api"
 
-type UIPot = {
-    id: string
-    name: string
-    compte_id: string
-    position: number
-    sous_pots: SousPot[]
+import { deletePot, getPotsAndSousPotsByCompte, reorderPots } from "@/api/pots.api"
+import { createSousPot, deleteSousPot, reorderSousPots } from "@/api/sous_pots.api"
+
+import PotColumn from "./PotColumn"
+import type { UIPot, UISousPot } from "./types"
+import { generateTempId, getActiveLabel, } from "./utils"
+
+
+type Props = {
+    compteId: string
+    refreshKey?: number
 }
 
-export default function PotsBoard() {
+export default function PotsBoard({ compteId, refreshKey }: Props) {
+
+
     const [pots, setPots] = useState<UIPot[]>([])
     const [activeId, setActiveId] = useState<string | null>(null)
     const [activeType, setActiveType] = useState<"pot" | "souspot" | null>(null)
     const initialStateRef = useRef<UIPot[]>([])
 
-    /* ============================= */
-    /* ========= LOAD ============== */
-    /* ============================= */
-
     useEffect(() => {
-        async function load() {
-            const comptes = await getComptes()
-            if (!comptes.length) return
+        if (!compteId) return
 
-            const data = await getPotsAndSousPotsByCompte(comptes[0].id)
+        async function load() {
+            const data = await getPotsAndSousPotsByCompte(compteId)
 
             const sorted = [...data].sort(
                 (a, b) => a.position - b.position
@@ -57,11 +48,9 @@ export default function PotsBoard() {
         }
 
         load()
-    }, [])
+    }, [compteId, refreshKey])
 
-    /* ============================= */
-    /* ========= DRAG CORE ========= */
-    /* ============================= */
+
 
     function handleDragStart(event: DragStartEvent) {
         initialStateRef.current = structuredClone(pots)
@@ -73,9 +62,6 @@ export default function PotsBoard() {
         const { active, over } = event
         if (!over || active.id === over.id) return
 
-        // ==========================
-        // REORDER POTS
-        // ==========================
         if (active.data.current?.type === "pot") {
             setPots(prev => {
                 const oldIndex = prev.findIndex(p => p.id === active.id)
@@ -86,19 +72,13 @@ export default function PotsBoard() {
 
                 const moved = arrayMove(prev, oldIndex, newIndex)
 
-                // recalcul propre des positions
                 return moved.map((p, index) => ({
                     ...p,
                     position: index,
                 }))
             })
-
             return
         }
-
-        // ==========================
-        // SOUS POTS
-        // ==========================
 
         setPots(prev => {
             const activePotId = active.data.current!.potId
@@ -164,22 +144,10 @@ export default function PotsBoard() {
             return
         }
 
-        const comptes = await getComptes()
-        if (!comptes.length) return
-        const selectedCompteId = comptes[0].id
+        const selectedCompteId = compteId
 
         try {
             if (active.data.current?.type === "pot") {
-                const firstPot = pots[0]
-
-                // Si le pot en position 0 n'est plus le défaut → rollback
-                if (firstPot.position !== 0) {
-                    setPots(initialStateRef.current)
-                    reset()
-                    return
-                }
-
-                // sécurité supplémentaire : vérifier que le défaut est toujours en index 0
                 const defaultPotBefore = initialStateRef.current.find(p => p.position === 0)
                 if (!defaultPotBefore || pots[0].id !== defaultPotBefore.id) {
                     setPots(initialStateRef.current)
@@ -187,14 +155,11 @@ export default function PotsBoard() {
                     return
                 }
 
-                const orderedIds = pots.map(p => p.id)
-
                 await reorderPots({
                     compte_id: selectedCompteId,
-                    ordered_ids: orderedIds,
+                    ordered_ids: pots.map(p => p.id),
                 })
             }
-
 
             if (active.data.current?.type === "souspot") {
                 const before = initialStateRef.current
@@ -213,7 +178,10 @@ export default function PotsBoard() {
                 await reorderSousPots(selectedCompteId, {
                     ancien_pot: {
                         pot_id: activePotBefore.id,
-                        sous_pot_ids: activePotBefore.id !== activePotAfter.id ? activePotBefore.sous_pots.map(sp => sp.id) : [],
+                        sous_pot_ids:
+                            activePotBefore.id !== activePotAfter.id
+                                ? activePotBefore.sous_pots.map(sp => sp.id)
+                                : [],
                     },
                     nouveau_pot: {
                         pot_id: activePotAfter.id,
@@ -233,28 +201,161 @@ export default function PotsBoard() {
         setActiveType(null)
     }
 
-    function getActiveLabel(): string {
-    if (!activeId) return ""
+    function handleAddSousPot(potId: string, name: string) {
+        setPots(prev =>
+            prev.map(p => {
+                if (p.id !== potId) return p
 
-    if (activeType === "pot") {
-        const pot = pots.find(p => p.id === activeId)
-        return pot?.name ?? ""
+                const newSousPot: UISousPot = {
+                    id: generateTempId(),
+                    name,
+                    pot_id: potId,
+                    prevision: 0,
+                    current: 0,
+                    position: p.sous_pots.length,
+                    __isNew: true,
+                }
+
+                return {
+                    ...p,
+                    sous_pots: [...p.sous_pots, newSousPot],
+                }
+            })
+        )
     }
+    
+    async function handleDeleteSousPot(
+        sousPotId: string
+    ) {
+        if (!compteId) return
 
-    if (activeType === "souspot") {
-        for (const pot of pots) {
-            const sp = pot.sous_pots.find(s => s.id === activeId)
-            if (sp) return sp.name
+        try {
+            await deleteSousPot(sousPotId)
+
+            const refreshed =
+                await getPotsAndSousPotsByCompte(compteId)
+
+            const sorted = [...refreshed].sort(
+                (a, b) => a.position - b.position
+            )
+
+            setPots(sorted)
+
+        } catch {
+            // fallback reload
+            const fallback =
+                await getPotsAndSousPotsByCompte(compteId)
+
+            const sorted = [...fallback].sort(
+                (a, b) => a.position - b.position
+            )
+
+            setPots(sorted)
         }
     }
 
-    return ""
-}
+    async function handleDeletePot(potId: string) {
+        if (!compteId) return
 
+        const pot = pots.find(p => p.id === potId)
+        if (!pot) return
 
-    /* ============================= */
-    /* ========= RENDER ============ */
-    /* ============================= */
+        // sécurité : pot par défaut interdit
+        if (pot.position === 0) return
+
+        try {
+            await deletePot(potId)
+
+            const refreshed =
+                await getPotsAndSousPotsByCompte(compteId)
+
+            const sorted = [...refreshed].sort(
+                (a, b) => a.position - b.position
+            )
+
+            setPots(sorted)
+
+        } catch {
+            const fallback =
+                await getPotsAndSousPotsByCompte(compteId)
+
+            const sorted = [...fallback].sort(
+                (a, b) => a.position - b.position
+            )
+
+            setPots(sorted)
+        }
+    }
+
+    async function handlePersistNewSousPot(
+        potId: string,
+        name: string,
+        prevision: number
+    ) {
+        if (!compteId) return
+
+        try {
+            // 1️⃣ CREATE (backend → ajouté en dernière position)
+            await createSousPot(potId, {
+                name,
+                prevision,
+            })
+
+            // 2️⃣ Reload après création
+            const dataAfterCreate =
+                await getPotsAndSousPotsByCompte(compteId)
+
+            const sortedAfterCreate = [...dataAfterCreate].sort(
+                (a, b) => a.position - b.position
+            )
+
+            const updatedPot = sortedAfterCreate.find(
+                p => p.id === potId
+            )
+
+            if (!updatedPot) return
+
+            const sousPots = [...updatedPot.sous_pots]
+
+            if (sousPots.length > 1) {
+                // déplacer dernier en première position
+                const last = sousPots.pop()!
+                sousPots.unshift(last)
+
+                await reorderSousPots(compteId, {
+                    ancien_pot: {
+                        pot_id: potId,
+                        sous_pot_ids: [],
+                    },
+                    nouveau_pot: {
+                        pot_id: potId,
+                        sous_pot_ids: sousPots.map(sp => sp.id),
+                    },
+                })
+            }
+
+            // 3️⃣ Reload final propre
+            const finalData =
+                await getPotsAndSousPotsByCompte(compteId)
+
+            const finalSorted = [...finalData].sort(
+                (a, b) => a.position - b.position
+            )
+
+            setPots(finalSorted)
+
+        } catch {
+            // Optionnel : reload pour reset propre
+            const fallback =
+                await getPotsAndSousPotsByCompte(compteId)
+
+            const sortedFallback = [...fallback].sort(
+                (a, b) => a.position - b.position
+            )
+
+            setPots(sortedFallback)
+        }
+    }
 
     return (
         <DndContext
@@ -269,8 +370,17 @@ export default function PotsBoard() {
             >
                 <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                     {pots.map(pot => (
-                        <PotColumn key={pot.id} pot={pot} />
+                        <PotColumn
+                            key={pot.id}
+                            pot={pot}
+                            onAddSousPot={handleAddSousPot}
+                            onPersistSousPot={handlePersistNewSousPot}
+                            onDeleteSousPot={handleDeleteSousPot}
+                            onDeletePot={handleDeletePot}
+                        />
+
                     ))}
+
                 </div>
             </SortableContext>
 
@@ -284,180 +394,11 @@ export default function PotsBoard() {
                             borderRadius: 6,
                         }}
                     >
-                        {getActiveLabel()}
+                        {getActiveLabel(pots, activeId, activeType)}
                     </div>
                 )}
             </DragOverlay>
         </DndContext>
     )
 }
-
-/* ============================= */
-/* ========= POT COLUMN ======== */
-/* ============================= */
-
-function PotColumn({ pot }: { pot: UIPot }) {
-    const disabled = pot.position === 0
-
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({
-        id: pot.id,
-        data: { type: "pot" },
-        disabled,
-    })
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        background: "#1e1e1e",
-        padding: 16,
-        borderRadius: 8,
-        opacity: isDragging ? 0 : 1,
-        cursor: disabled ? "not-allowed" : "grab",
-    }
-
-    return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-            <h3 style={{ color: "white" }}>{pot.name}</h3>
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr 1fr 1fr",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: "#888",
-                    padding: "8px 12px",
-                }}
-            >
-                <div>Nom</div>
-                <div style={{ textAlign: "right" }}>Prévision</div>
-                <div style={{ textAlign: "right" }}>Actuel</div>
-                <div style={{ textAlign: "right" }}>%</div>
-            </div>
-
-            <SortableContext
-                items={pot.sous_pots.map(sp => sp.id)}
-                strategy={verticalListSortingStrategy}
-            >
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {pot.sous_pots.map(sp => (
-                        <SousPotItem
-                            key={sp.id}
-                            sousPot={sp}
-                            disabled={pot.position === 0}
-                        />
-                    ))}
-                </div>
-            </SortableContext>
-        </div>
-    )
-}
-
-/* ============================= */
-/* ========= SOUSPOT =========== */
-/* ============================= */
-
-function SousPotItem({
-    sousPot,
-    disabled,
-}: {
-    sousPot: SousPot
-    disabled?: boolean
-}) {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({
-        id: sousPot.id,
-        data: {
-            type: "souspot",
-            potId: sousPot.pot_id,
-        },
-        disabled,
-    })
-
-    const percentage =
-        sousPot.prevision > 0
-            ? (sousPot.current / sousPot.prevision) * 100
-            : 0
-
-    const clamped = Math.min(percentage, 100)
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        background: "#1e1e1e",
-        borderRadius: 6,
-        opacity: disabled ? 0.5 : isDragging ? 0 : 1,
-        cursor: disabled ? "not-allowed" : "grab",
-        padding: "8px 12px",
-        display: "flex",
-        flexDirection: "column" as const,
-        gap: 6,
-    }
-
-    return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-            {/* Ligne principale */}
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr 1fr 1fr",
-                    alignItems: "center",
-                    fontSize: 14,
-                    color: "white",
-                }}
-            >
-                <div>{sousPot.name}</div>
-
-                <div style={{ textAlign: "right" }}>
-                    {sousPot.prevision}
-                </div>
-
-                <div style={{ textAlign: "right" }}>
-                    {sousPot.current}
-                </div>
-
-                <div style={{ textAlign: "right" }}>
-                    {percentage.toFixed(0)}%
-                </div>
-            </div>
-
-            {/* Barre de progression */}
-            <div
-                style={{
-                    height: 6,
-                    background: "#333",
-                    borderRadius: 4,
-                    overflow: "hidden",
-                }}
-            >
-                <div
-                    style={{
-                        width: `${clamped}%`,
-                        height: "100%",
-                        background:
-                            percentage > 100
-                                ? "#e53935"
-                                : percentage > 80
-                                ? "#fb8c00"
-                                : "#4caf50",
-                        transition: "width 0.2s ease",
-                    }}
-                />
-            </div>
-        </div>
-    )
-}
-
 
