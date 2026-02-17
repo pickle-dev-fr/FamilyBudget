@@ -1,5 +1,4 @@
-# app/controllers/transaction_controller.py
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 from sqlmodel import Session
 from datetime import date
 from app.models import User, Compte
@@ -62,3 +61,15 @@ def list_by_compte_and_date(
         compte_id=compte_id,
         )
 
+@router.delete(
+    "/transactions/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete(
+    id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Security(get_current_user),
+):
+    transaction = TransactionService.get_by_id(session, id)
+    ## TODO rajouter contrôle droit suppression
+    TransactionService.delete(session, id)

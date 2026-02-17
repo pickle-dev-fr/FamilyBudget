@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 from sqlmodel import Session
 
 from app.database import get_session
@@ -11,6 +11,7 @@ from app.schemas.reorder_schema import ReorderIds
 from app.security.dependencies import get_current_user
 from app.services.compte_service import CompteService
 from app.i18n.messages import msg
+from app.models import User, Compte
 
 router = APIRouter(
     prefix="/comptes",
@@ -18,6 +19,14 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)],
 )
 
+def _check_compte_owner(session: Session, compte_id: str, user: User) -> Compte:
+    compte = session.get(Compte, compte_id)
+    if not compte or compte.user_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=msg("compte.not_found"),
+        )
+    return compte
 
 @router.post("", response_model=CompteRead, status_code=201)
 def create_compte(
@@ -104,4 +113,17 @@ def get_solde_by_compte(
         session=session,
         compte=compte,
     )
+
+@router.delete(
+    "/comptes/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete(
+    id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Security(get_current_user),
+):
+    compte = CompteService.get_by_id(session, id)
+    _check_compte_owner(session, compte.id, current_user)
+    CompteService.delete(session, id)
 
