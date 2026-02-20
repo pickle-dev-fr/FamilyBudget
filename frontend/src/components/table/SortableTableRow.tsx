@@ -20,21 +20,22 @@ export default function SortableTableRow({
         transform,
         transition
     } = useSortable({
-        id,
-        disabled
+        id
     });
 
     return (
         <tr
             ref={setNodeRef}
+            className="bg-bg-soft rounded-md"
             style={{
                 transform: CSS.Transform.toString(transform),
-                transition
+                transition,
             }}
             {...(!disabled ? attributes : {})}
             {...(!disabled ? listeners : {})}
         >
             {children}
         </tr>
+
     );
 }

@@ -28,7 +28,6 @@ type Props = {
 
 export default function PotsBoard({ compteId, refreshKey }: Props) {
 
-
     const [pots, setPots] = useState<UIPot[]>([])
     const [activeId, setActiveId] = useState<string | null>(null)
     const [activeType, setActiveType] = useState<"pot" | "souspot" | null>(null)
@@ -368,7 +367,7 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
                 items={pots.map(p => p.id)}
                 strategy={verticalListSortingStrategy}
             >
-                <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                <div className="flex flex-col gap-4 pots-list">
                     {pots.map(pot => (
                         <PotColumn
                             key={pot.id}
@@ -378,22 +377,13 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
                             onDeleteSousPot={handleDeleteSousPot}
                             onDeletePot={handleDeletePot}
                         />
-
                     ))}
-
                 </div>
             </SortableContext>
 
-            <DragOverlay>
+            <DragOverlay className="pointer-events-none drag-overlay">
                 {activeId && (
-                    <div
-                        style={{
-                            padding: 12,
-                            background: "#333",
-                            color: "white",
-                            borderRadius: 6,
-                        }}
-                    >
+                    <div className="bg-gray-800 p-4 rounded-lg shadow-lg drag-overlay-item">
                         {getActiveLabel(pots, activeId, activeType)}
                     </div>
                 )}

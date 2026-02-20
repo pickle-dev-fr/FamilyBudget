@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { t } from "i18next";
 
 import {
     createCompte,
@@ -30,7 +30,6 @@ type CompteWithMeta = Compte & {
 };
 
 export default function ComptesPage() {
-    const { t } = useTranslation();
 
     const [comptes, setComptes] = useState<CompteWithMeta[]>([]);
     const [balances, setBalances] = useState<Record<string, number>>({});
@@ -79,35 +78,29 @@ export default function ComptesPage() {
     }
 
     return (
-        <div className="page">
-            <div className="page-header">
-                <h1 className="page-title">{t("accounts.title")}</h1>
-
-                <button onClick={() => setCreateOpen(true)}>
+        <div className="page flex flex-col gap-6 p-4">
+            <div className="flex justify-between items-center mb-4">
+                <h1 className="text-2xl font-bold">{t("accounts.title")}</h1>
+                <button
+                    className="btn btn-primary"
+                    onClick={() => setCreateOpen(true)}
+                >
                     {t("accounts.create")}
                 </button>
             </div>
 
-            <div className="card">
+            <div className="card p-4">
                 <DndContext
                     collisionDetection={closestCenter}
                     onDragEnd={async event => {
                         const { active, over } = event;
-
-                        if (!over || active.id === over.id) {
-                            return;
-                        }
+                        if (!over || active.id === over.id) return;
 
                         setComptes(prev => {
                             const oldIndex = prev.findIndex(c => c.id === active.id);
                             const newIndex = prev.findIndex(c => c.id === over.id);
-
                             const reordered = arrayMove(prev, oldIndex, newIndex);
-
-                            reorderComptes(
-                                reordered.map(c => c.id)
-                            );
-
+                            reorderComptes(reordered.map(c => c.id));
                             return reordered;
                         });
                     }}
@@ -116,9 +109,9 @@ export default function ComptesPage() {
                         items={comptes.map(c => c.id)}
                         strategy={verticalListSortingStrategy}
                     >
-                        <table className="table">
+                        <table className="table w-full">
                             <thead>
-                                <tr>
+                                <tr className="text-left">
                                     <th>{t("accounts.name")}</th>
                                     <th>{t("accounts.balance")}</th>
                                     <th>{t("accounts.start_day")}</th>
@@ -128,22 +121,23 @@ export default function ComptesPage() {
                             <tbody>
                                 {comptes.length === 0 && (
                                     <tr>
-                                        <td colSpan={4}>—</td>
+                                        <td colSpan={4} className="text-center text-gray-400 italic">—</td>
                                     </tr>
                                 )}
 
                                 {comptes.map(a => (
-                                    <SortableTableRow
-                                        key={a.id}
-                                        id={a.id}
-                                    >
+                                    <SortableTableRow key={a.id} id={a.id}>
                                         <td>{a.name}</td>
-                                        <td className={balances[a.id] >= 0 ? "ok" : "nok"}>
+                                        <td className={`${balances[a.id] >= 0 ? "text-green-500" : "text-red-500"}`}>
                                             {formatAmount(balances[a.id])} €
                                         </td>
                                         <td>{a.start_day}</td>
                                         <td>
-                                            <button onClick={() => setEditingAccount(a)}>
+                                            <button
+                                                className="btn btn-sm btn-outline"
+                                                onPointerDown={e => e.stopPropagation()}
+                                                onClick={() => setEditingAccount(a)}
+                                            >
                                                 {t("accounts.edit")}
                                             </button>
                                         </td>
@@ -161,23 +155,19 @@ export default function ComptesPage() {
                 defaultValues={
                     editingAccount
                         ? {
-                              name: editingAccount.name,
-                              startDay: editingAccount.start_day,
-                              initialValue: editingAccount.initial_value,
-                          }
+                            name: editingAccount.name,
+                            startDay: editingAccount.start_day,
+                            initialValue: editingAccount.initial_value,
+                        }
                         : undefined
                 }
                 onSubmit={async data => {
-                    if (!editingAccount) {
-                        return;
-                    }
-
+                    if (!editingAccount) return;
                     await updateCompte(editingAccount.id, {
                         name: data.name,
                         start_day: data.startDay,
                         initial_value: data.initialValue,
                     });
-
                     setEditingAccount(null);
                     await loadComptes();
                 }}

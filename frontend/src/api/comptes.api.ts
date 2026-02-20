@@ -43,3 +43,7 @@ export function reorderComptes(orderedIds: string[]) {
         ordered_ids: orderedIds
     });
 }
+
+export function deleteCompte(id: string) {
+  return apiClient.delete(`/comptes/${id}`);
+}

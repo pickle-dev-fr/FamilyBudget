@@ -3,6 +3,8 @@ import { CSS } from "@dnd-kit/utilities"
 import type { UIPot } from "./types"
 import SousPotItem from "./SousPotItem"
 import { useState } from "react"
+import { ActionsMenu } from "@/components/layout/ActionsMenu"
+import { t } from "i18next"
 
 type Props = {
     pot: UIPot
@@ -48,150 +50,88 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onDelet
         cursor: disabled ? "not-allowed" : "grab",
     }
 
-    const iconButtonStyle = {
-        width: 28,
-        height: 28,
-        borderRadius: 6,
-        border: "none",
-        background: "#2a2a2a",
-        color: "white",
-        cursor: "pointer",
-    }
-
     return (
-        <div ref={setNodeRef} style={style}>
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: 12,
-                }}
-            >
-                <div
-                    {...attributes}
-                    {...listeners}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        cursor: disabled ? "not-allowed" : "grab",
-                        fontWeight: 600,
-                        color: "white",
-                    }}
-                >
+        <div
+            ref={setNodeRef}
+            className={`pot-item bg-gray-800 p-4 rounded-lg ${isDragging ? "opacity-0" : "opacity-100"} ${disabled ? "cursor-not-allowed" : "cursor-grab"}`}
+            style={{
+                transform: CSS.Transform.toString(transform),
+                transition,
+            }}
+        >
+            <div {...attributes} {...listeners} className="flex justify-between items-center mb-2 pot-header">
+                <div className="flex items-center gap-2 pot-handle">
                     <span>☰</span>
-                    {pot.name}
+                    <span>{pot.name}</span>
                 </div>
 
                 {!disabled && (
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div className="flex gap-2 pot-actions">
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                setShowCreate(true)
-                            }}
-                            style={iconButtonStyle}
+                            className="btn btn-sm btn-outline"
+                            onPointerDown={e => e.stopPropagation()}
+                            onClick={() => setShowCreate(true)}
                         >
                             +
                         </button>
 
-                        <PotActionsMenu
-                            onDelete={() => onDeletePot(pot.id)}
-                        />
+                        <ActionsMenu onDelete={() => onDeletePot(pot.id)} />
                     </div>
                 )}
             </div>
 
-
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "24px 2fr 1fr 1fr 1fr 40px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: "#888",
-                    padding: "8px 12px",
-                }}
-            >
-
-            <div />
-            <div>Nom</div>
-            <div style={{ textAlign: "right" }}>Prévision</div>
-            <div style={{ textAlign: "right" }}>Actuel</div>
-            <div style={{ textAlign: "right" }}>%</div>
-            <div style={{ textAlign: "right" }}>Actions</div>
-
+        <div className="flex flex-col gap-2">
+            {/* Header aligned with columns */}
+            <div className="grid grid-cols-5 gap-2 text-sm font-medium mb-2">
+                <div>{t("sous_pots.name")}</div>
+                <div>{t("sous_pots.prevision")}</div>
+                <div>{t("sous_pots.current")}</div>
+                <div>{t("sous_pots.pourcentage")}</div>
+                <div>{t("common.actions")}</div>
             </div>
+
+            {/* Create new SousPot form */}
             {showCreate && (
-                <div style={{ display: "flex", gap: 8 }}>
+                <div className="flex gap-2 mb-2">
                     <input
+                        className="input input-bordered flex-1"
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
-                        placeholder="Nom du sous-pot"
-                        style={{
-                            padding: 6,
-                            background: "#1e1e1e",
-                            color: "white",
-                            borderRadius: 6,
-                            border: "1px solid #333",
-                            flex: 1,
-                        }}
+                        placeholder={t("sous_pots.name")}
                     />
 
                     <button
+                        className="btn btn-sm btn-primary"
                         onClick={async () => {
                             const trimmed = newName.trim()
                             if (!trimmed) return
-
-                            // 1️⃣ Ajout local immédiat
                             onAddSousPot(pot.id, trimmed)
-
                             setNewName("")
                             setShowCreate(false)
-
-                            // 2️⃣ Persistance backend directe (sans dépendre du state)
                             await onPersistSousPot(pot.id, trimmed, 0)
                         }}
-
-
-                        style={{
-                            background: "#4caf50",
-                            border: "none",
-                            padding: "6px 12px",
-                            borderRadius: 6,
-                            color: "white",
-                            cursor: "pointer",
-                        }}
                     >
-                        OK
+                        {t("common.create")}
                     </button>
 
                     <button
+                        className="btn btn-sm btn-ghost"
                         onClick={() => {
                             setShowCreate(false)
                             setNewName("")
                         }}
-                        style={{
-                            background: "#555",
-                            border: "none",
-                            padding: "6px 12px",
-                            borderRadius: 6,
-                            color: "white",
-                            cursor: "pointer",
-                        }}
                     >
-                        X
+                        {t("common.cancel")}
                     </button>
                 </div>
             )}
 
-
+            {/* List of SousPots */}
             <SortableContext
                 items={pot.sous_pots.map(sp => sp.id)}
                 strategy={verticalListSortingStrategy}
             >
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div className="flex flex-col gap-2">
                     {pot.sous_pots.map(sp => (
                         <SousPotItem
                             key={sp.id}
@@ -203,71 +143,8 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onDelet
                 </div>
             </SortableContext>
         </div>
-    )
-}
 
-function PotActionsMenu({
-    onDelete,
-}: {
-    onDelete: () => void
-}) {
-    const [open, setOpen] = useState(false)
-
-    const menuItemStyle = {
-        padding: "6px 10px",
-        cursor: "pointer",
-        borderRadius: 4,
-        color: "white",
-    }
-
-    const iconButtonStyle = {
-        width: 28,
-        height: 28,
-        borderRadius: 6,
-        border: "none",
-        background: "#2a2a2a",
-        color: "white",
-        cursor: "pointer",
-    }
-
-
-    return (
-        <div style={{ position: "relative" }}>
-            <button
-                onClick={(e) => {
-                    e.stopPropagation()
-                    setOpen(prev => !prev)
-                }}
-                style={iconButtonStyle}
-            >
-                ⋯
-            </button>
-
-            {open && (
-                <div
-                    style={{
-                        position: "absolute",
-                        right: 0,
-                        top: 32,
-                        background: "#2a2a2a",
-                        borderRadius: 6,
-                        padding: 6,
-                        minWidth: 120,
-                        zIndex: 10,
-                    }}
-                >
-                    <div
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            onDelete()
-                            setOpen(false)
-                        }}
-                        style={menuItemStyle}
-                    >
-                        Supprimer
-                    </div>
-                </div>
-            )}
         </div>
+
     )
 }

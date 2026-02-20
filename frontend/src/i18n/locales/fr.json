@@ -1,4 +1,5 @@
 {
+  "languageName": "Français",
   "auth": {
     "login": {
       "title": "Connexion",
@@ -27,6 +28,10 @@
     "confirm": "Confirmation",
     "confirm_delete": "Confirmer la suppression ?"
   },
+  "theme": {
+    "dark": "Sombre",
+    "light": "Clair"
+  },
   "menu": {
     "home": "Accueil",
     "accounts": "Comptes",
@@ -53,16 +58,24 @@
     "actions": "Actions",
     "edit": "Modifier"
   },
+  "transactions": {
+    "add": "Ajouter une transaction",
+    "date": "Date",
+    "type": "Type",
+    "motif": "Motif",
+    "amount": "Valeur"
+  },
   "pots": {
     "name": "Nom du pot",
     "select_compte": "Selectionner un compte",
     "title": "Pots",
-    "add": "Ajouter un pot",
+    "add": "+ Ajouter un pot",
     "empty": "Aucun pot"
   },
   "sous_pots": {
     "aucun": "Aucun sous Pot",
-    "name": "Sous Pot",
+    "name": "Nom du Sous Pot",
+    "pourcentage": "Pourcentage",
     "prevision": "Prévu",
     "current": "Actuel",
     "reste": "Reste",

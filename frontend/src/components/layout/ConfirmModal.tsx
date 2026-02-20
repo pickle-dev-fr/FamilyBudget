@@ -1,4 +1,4 @@
-import { useTranslation } from "react-i18next";
+import { t } from "i18next";
 import Modal from "@/components/ui/Modal";
 
 type ConfirmModalProps = {
@@ -20,7 +20,6 @@ export default function ConfirmModal({
     onConfirm,
     onCancel
 }: ConfirmModalProps) {
-    const { t } = useTranslation();
 
     return (
         <Modal
@@ -28,16 +27,16 @@ export default function ConfirmModal({
             title={title}
             onClose={onCancel}
             footer={
-                <div className="modal-actions">
+                <div className="flex justify-end gap-2 mt-4">
                     <button
-                        className="btn"
+                        className="btn btn-ghost"
                         onClick={onCancel}
                     >
                         {cancelLabel ?? t("common.cancel")}
                     </button>
 
                     <button
-                        className="btn btn-danger"
+                        className="btn btn-error"
                         onClick={onConfirm}
                     >
                         {confirmLabel ?? t("common.confirm")}
@@ -45,7 +44,11 @@ export default function ConfirmModal({
                 </div>
             }
         >
-            {message}
+            <div className="py-2 text-text">
+                {message}
+            </div>
         </Modal>
+
+
     );
 }

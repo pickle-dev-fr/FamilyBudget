@@ -9,6 +9,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import HomePage from "@/features/accueil/HomePage";
 import ComptesPage from "@/features/comptes/ComptesPage";
 import PotsPage from "@/features/pots/PotsPage";
+import TransactionsPage from "@/features/transactions/TransactionsPage";
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/accounts" element={<ComptesPage />} />
           <Route path="/pots" element={<PotsPage />} />
+          <Route path="/transactions" element={<TransactionsPage />} />
         </Route>
       </Routes>
     </AuthProvider>

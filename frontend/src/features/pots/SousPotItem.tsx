@@ -1,7 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import type { UISousPot } from "./types"
-import { useState } from "react"
+import { ActionsMenu } from "@/components/layout/ActionsMenu"
 
 type Props = {
     sousPot: UISousPot
@@ -36,7 +36,7 @@ export default function SousPotItem({
     const percentage =
         sousPot.prevision > 0
             ? (current / sousPot.prevision) * 100
-            : 0
+            : current ? 100 : 0
 
     const clamped = Math.min(percentage, 100)
 
@@ -53,140 +53,41 @@ export default function SousPotItem({
     }
 
     return (
-        <div ref={setNodeRef} style={style}>
+        <div
+            ref={setNodeRef}
+            className="flex flex-col gap-1 p-2 rounded-md bg-base-200"
+            style={{
+                transform: CSS.Transform.toString(transform),
+                transition,
+                opacity: disabled ? 0.5 : isDragging ? 0 : 1,
+            }}
+        >
             <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "24px 2fr 1fr 1fr 1fr 32px",
-                    alignItems: "center",
-                    fontSize: 14,
-                    color: "white",
-                    gap: 8,
-                }}
+                {...attributes}
+                {...listeners}
+                className="grid grid-cols-5 items-center gap-2"
             >
-                {/* Drag handle uniquement ici */}
-                <div
-                    {...attributes}
-                    {...listeners}
-                    style={{
-                        cursor: disabled ? "not-allowed" : "grab",
-                        opacity: 0.6,
-                        userSelect: "none",
-                    }}
-                >
-                    ⋮
-                </div>
-
-                <div>{sousPot.name}</div>
-
-                <div style={{ textAlign: "right" }}>
-                    {sousPot.prevision}
-                </div>
-
-                <div style={{ textAlign: "right" }}>
-                    {current}
-                </div>
-
-                <div style={{ textAlign: "right" }}>
-                    {percentage.toFixed(0)}%
-                </div>
-
-                {/* Colonne actions */}
-                <div style={{ textAlign: "right" }}>
-                    <SousPotActionsMenu
-                        onDelete={() => onDelete?.(sousPot.id)}
-                    />
+                <div className="cursor-grab">{sousPot.name}</div>
+                <div className="text-sm opacity-70">{sousPot.prevision}</div>
+                <div className="text-sm">{current}</div>
+                <div className="text-sm">{percentage.toFixed(0)} %</div>
+                <div className="ml-auto">
+                    <ActionsMenu onDelete={() => onDelete?.(sousPot.id)} />
                 </div>
             </div>
 
-            <div
-                style={{
-                    height: 6,
-                    background: "#333",
-                    borderRadius: 4,
-                    overflow: "hidden",
-                }}
-            >
+            <div className="h-2 w-full rounded overflow-hidden">
                 <div
-                    style={{
-                        width: `${clamped}%`,
-                        height: "100%",
-                        background:
-                            percentage > 100
-                                ? "#e53935"
-                                : percentage > 80
-                                ? "#fb8c00"
-                                : "#4caf50",
-                        transition: "width 0.2s ease",
-                    }}
+                    className={`h-full transition-all ${
+                        percentage >= 100
+                            ? "bg-error"
+                            : percentage > 80
+                            ? "bg-warning"
+                            : "bg-success"
+                    }`}
+                    style={{ width: `${clamped}%` }}
                 />
             </div>
-        </div>
-    )
-}
-
-function SousPotActionsMenu({
-    onDelete,
-}: {
-    onDelete: () => void
-}) {
-    const [open, setOpen] = useState(false)
-
-    const menuItemStyle = {
-        padding: "6px 10px",
-        cursor: "pointer",
-        borderRadius: 4,
-        color: "white",
-    }
-
-    const iconButtonStyle = {
-        width: 28,
-        height: 28,
-        borderRadius: 6,
-        border: "none",
-        background: "#2a2a2a",
-        color: "white",
-        cursor: "pointer",
-    }
-
-
-    return (
-        <div style={{ position: "relative" }}>
-            <button
-                onClick={(e) => {
-                    e.stopPropagation()
-                    setOpen(prev => !prev)
-                }}
-                style={iconButtonStyle}
-            >
-                ⋯
-            </button>
-
-            {open && (
-                <div
-                    style={{
-                        position: "absolute",
-                        right: 0,
-                        top: 32,
-                        background: "#2a2a2a",
-                        borderRadius: 6,
-                        padding: 6,
-                        minWidth: 120,
-                        zIndex: 10,
-                    }}
-                >
-                    <div
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            onDelete()
-                            setOpen(false)
-                        }}
-                        style={menuItemStyle}
-                    >
-                        Supprimer
-                    </div>
-                </div>
-            )}
         </div>
     )
 }

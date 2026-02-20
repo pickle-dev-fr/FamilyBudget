@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import PotsBoard from "./PotsBoard"
 import { getComptes } from "@/api/comptes.api"
 import { createPot } from "@/api/pots.api"
+import { t } from "i18next";
 
 type Compte = {
     id: string
@@ -39,22 +40,17 @@ export default function PotsPage(): React.JSX.Element {
 
         setNewPotName("")
         setRefreshKey(prev => prev + 1)
+		setShowCreate(false)
     }
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <div className="flex flex-col gap-6 pots-container">
             {/* Sélecteur de compte */}
-            <div>
+            <div className="w-full compte-selector">
                 <select
                     value={selectedCompteId}
                     onChange={(e) => setSelectedCompteId(e.target.value)}
-                    style={{
-                        padding: 8,
-                        background: "#1e1e1e",
-                        color: "white",
-                        borderRadius: 6,
-                        border: "1px solid #333",
-                    }}
+                    className="select select-bordered w-full compte-select"
                 >
                     {comptes.map((compte) => (
                         <option key={compte.id} value={compte.id}>
@@ -65,74 +61,44 @@ export default function PotsPage(): React.JSX.Element {
             </div>
 
             {/* Création pot */}
-            {/* Bouton afficher formulaire */}
-			<div>
-				{!showCreate && (
-					<button
-						onClick={() => setShowCreate(true)}
-						style={{
-							padding: "8px 16px",
-							background: "#333",
-							color: "white",
-							border: "1px solid #444",
-							borderRadius: 6,
-							cursor: "pointer",
-						}}
-					>
-						+ Ajouter un pot
-					</button>
-				)}
+            <div className="flex flex-col gap-2 pot-creation">
+                {!showCreate && (
+                    <button
+                        className="btn btn-primary pot-add-btn"
+                        onClick={() => setShowCreate(true)}
+                    >
+                        {t("pots.add")}
+                    </button>
+                )}
 
-				{showCreate && (
-					<div style={{ display: "flex", gap: 8 }}>
-						<input
-							value={newPotName}
-							onChange={(e) => setNewPotName(e.target.value)}
-							placeholder="Nom du pot"
-							style={{
-								padding: 8,
-								background: "#1e1e1e",
-								color: "white",
-								borderRadius: 6,
-								border: "1px solid #333",
-								flex: 1,
-							}}
-						/>
+                {showCreate && (
+                    <div className="flex flex-row gap-2 pot-create-form">
+                        <input
+                            className="input input-bordered flex-1 pot-create-input"
+                            value={newPotName}
+                            onChange={(e) => setNewPotName(e.target.value)}
+                            placeholder={t("pots.name")}
+                        />
 
-						<button
-							onClick={handleCreatePot}
-							style={{
-								padding: "8px 16px",
-								background: "#4caf50",
-								color: "white",
-								border: "none",
-								borderRadius: 6,
-								cursor: "pointer",
-							}}
-						>
-							Valider
-						</button>
+                        <button
+                            className="btn btn-success pot-create-submit"
+                            onClick={handleCreatePot}
+                        >
+                            {t("common.create")}
+                        </button>
 
-						<button
-							onClick={() => {
-								setShowCreate(false)
-								setNewPotName("")
-							}}
-							style={{
-								padding: "8px 16px",
-								background: "#555",
-								color: "white",
-								border: "none",
-								borderRadius: 6,
-								cursor: "pointer",
-							}}
-						>
-							Annuler
-						</button>
-					</div>
-				)}
-			</div>
-
+                        <button
+                            className="btn btn-error pot-create-cancel"
+                            onClick={() => {
+                                setShowCreate(false)
+                                setNewPotName("")
+                            }}
+                        >
+                            {t("common.cancel")}
+                        </button>
+                    </div>
+                )}
+            </div>
 
             {/* Board */}
             {selectedCompteId && (

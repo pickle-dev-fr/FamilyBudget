@@ -1,143 +1,132 @@
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { t } from "i18next";
 
 import { formatAmount } from "@/utils";
 import { getComptes, getComptesBalance, type Compte } from "@/api/comptes.api";
 import { getTotalBalance } from "@/api/stats.api";
 import {
-  getTodayTransactions,
-  getTomorrowTransactions,
-  type Transaction
+    getTodayTransactions,
+    getTomorrowTransactions,
+    type Transaction
 } from "@/api/transactions.api";
 
 export default function HomePage() {
-  const { t } = useTranslation();
 
-  const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
 
-  const [total, setTotal] = useState<number | null>(null);
-  const [accounts, setAccounts] = useState<Compte[]>([]);
-  const [balances, setBalances] = useState<Record<string, number>>({});
-  const [todayTx, setTodayTx] = useState<Transaction[]>([]);
-  const [tomorrowTx, setTomorrowTx] = useState<Transaction[]>([]);
+    const [total, setTotal] = useState<number | null>(null);
+    const [accounts, setAccounts] = useState<Compte[]>([]);
+    const [balances, setBalances] = useState<Record<string, number>>({});
+    const [todayTx, setTodayTx] = useState<Transaction[]>([]);
+    const [tomorrowTx, setTomorrowTx] = useState<Transaction[]>([]);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [
-          totalRes,
-          accountsRes,
-          todayRes,
-          tomorrowRes
-        ] = await Promise.all([
-          getTotalBalance(),
-          getComptes(),
-          getTodayTransactions(),
-          getTomorrowTransactions()
-        ]);
+    useEffect(() => {
+        async function load() {
+        try {
+            const [
+            totalRes,
+            accountsRes,
+            todayRes,
+            tomorrowRes
+            ] = await Promise.all([
+            getTotalBalance(),
+            getComptes(),
+            getTodayTransactions(),
+            getTomorrowTransactions()
+            ]);
 
-        setTotal(totalRes);
-        setAccounts(accountsRes);
-        setTodayTx(todayRes);
-        setTomorrowTx(tomorrowRes);
+            setTotal(totalRes);
+            setAccounts(accountsRes);
+            setTodayTx(todayRes);
+            setTomorrowTx(tomorrowRes);
 
-        const balancesEntries = await Promise.all(
-          accountsRes.map(async (a:any) => {
-            const solde = await getComptesBalance(a.id);
-            return [a.id, solde] as const;
-          })
-        );
+            const balancesEntries = await Promise.all(
+            accountsRes.map(async (a:any) => {
+                const solde = await getComptesBalance(a.id);
+                return [a.id, solde] as const;
+            })
+            );
 
-        setBalances(Object.fromEntries(balancesEntries));
-      } finally {
-        setLoading(false);
-      }
+            setBalances(Object.fromEntries(balancesEntries));
+        } finally {
+            setLoading(false);
+        }
+        }
+
+        load();
+    }, []);
+
+    if (loading) {
+        return <div className="page">Loading…</div>;
     }
 
-    load();
-  }, []);
+    return (
+        <div className="flex flex-col gap-8 p-4">
+            <h1 className="text-2xl font-bold">{t("home.title")}</h1>
 
-  if (loading) {
-    return <div className="page">Loading…</div>;
-  }
-
-  return (
-    <div className="page">
-      <h1 className="page-title">{t("home.title")}</h1>
-
-      {/* Solde total */}
-      <section>
-        <div className="card metric">
-          <div className="metric-label">{t("home.total_balance")}</div>
-          <div className="metric-value">
-            {formatAmount(total)} €
-          </div>
-        </div>
-      </section>
-
-      {/* Comptes - cartes */}
-      <section>
-        <h2 className="section-title">{t("home.accounts_list")}</h2>
-
-        <div className="grid grid-2">
-          {accounts.map((a) => {
-            const balance = balances[a.id];
-
-            return (
-              <div key={a.id} className="card account">
-                <div className="account-name">{a.name}</div>
-                <div
-                  className={`account-balance ${
-                    balance >= 0 ? "ok" : "nok"
-                  }`}
-                >
-                  {formatAmount(balance)} €
+            {/* Solde total */}
+            <section className="flex flex-col gap-2">
+                <div className="card p-4 rounded-lg bg-bg-soft flex justify-between items-center">
+                    <div className="font-medium">{t("home.total_balance")}</div>
+                    <div className="text-xl font-bold">{formatAmount(total)} €</div>
                 </div>
-              </div>
-            );
-          })}
+            </section>
+
+            {/* Comptes - cartes */}
+            <section className="flex flex-col gap-4">
+                <h2 className="text-lg font-semibold">{t("home.accounts_list")}</h2>
+
+                <div className="grid grid-cols-2 gap-4">
+                    {accounts.map((a) => {
+                        const balance = balances[a.id];
+
+                        return (
+                            <div key={a.id} className="card p-4 rounded-lg bg-bg-soft flex justify-between items-center">
+                                <div>{a.name}</div>
+                                <div className={balance >= 0 ? "text-success" : "text-error"}>
+                                    {formatAmount(balance)} €
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </section>
+
+            {/* Transactions aujourd’hui */}
+            <section className="flex flex-col gap-2">
+                <h2 className="text-lg font-semibold">{t("home.today_transactions")}</h2>
+                <TransactionsTable items={todayTx} />
+            </section>
+
+            {/* Transactions demain */}
+            <section className="flex flex-col gap-2">
+                <h2 className="text-lg font-semibold">{t("home.tomorrow_transactions")}</h2>
+                <TransactionsTable items={tomorrowTx} />
+            </section>
         </div>
-      </section>
-
-      {/* Transactions aujourd’hui */}
-      <section>
-        <h2 className="section-title">
-          {t("home.today_transactions")}
-        </h2>
-        <TransactionsTable items={todayTx} />
-      </section>
-
-      {/* Transactions demain */}
-      <section>
-        <h2 className="section-title">
-          {t("home.tomorrow_transactions")}
-        </h2>
-        <TransactionsTable items={tomorrowTx} />
-      </section>
-    </div>
-  );
+    );
 }
 
 function TransactionsTable({ items }: { items: Transaction[] }) {
-  if (!items.length) {
-    return <div className="card">—</div>;
-  }
+    if (!items.length) {
+        return <div className="card">—</div>;
+    }
 
-  return (
-    <div className="card">
-      <table className="table">
-        <tbody>
-          {items.map((tx) => (
-            <tr key={tx.id}>
-              <td>{tx.label}</td>
-              <td>{tx.account_name}</td>
-              <td className={tx.amount >= 0 ? "ok" : "nok"}>
-                {formatAmount(tx.amount)} €
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+    return (
+        <div className="card bg-bg-soft p-4 rounded-lg overflow-x-auto">
+            <table className="table w-full border-collapse">
+                <tbody>
+                    {items.map((tx) => (
+                        <tr key={tx.id} className="hover:bg-gray-700">
+                            <td>{tx.transaction_type}</td>
+                            <td>{tx.transaction_date}</td>
+                            <td className={tx.amount >= 0 ? "text-success" : "text-error"} style={{ textAlign: "right" }}>
+                                {formatAmount(tx.amount)} €
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
 }
