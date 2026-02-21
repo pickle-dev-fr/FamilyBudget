@@ -23,7 +23,7 @@ export default function Modal({
             onClick={onClose}
         >
             <div
-                className="bg-bg-soft p-6 rounded-lg shadow-lg max-w-md w-full"
+                className="bg-base-100 p-6 rounded-lg shadow-lg max-w-md w-full"
                 onClick={(e) => e.stopPropagation()}
             >
                 {title && <h2 className="text-lg font-semibold mb-4">{title}</h2>}

@@ -11,7 +11,7 @@ from app.models import (
     Sous_Pot,
     TypeTransaction,
 )
-from app.utils import get_period_start, get_period_end
+from app.utils.budget_cycle import get_budget_cycle_for_month
 from app.i18n.messages import msg
 from typing import Optional
 
@@ -80,7 +80,12 @@ class TransactionService:
         query = select(Transaction).where(Transaction.id == id)
         return session.exec(query).one()
 
-    def list_by_compte_and_date(session: Session, compte_id: str, date: date) -> List[Transaction]:
+    def list_by_compte_and_period(
+        session: Session, 
+        compte_id: str, 
+        date_year: int,
+        date_month: int
+    ) -> List[Transaction]:
         """
         Retourne toutes les transactions pour un compte donné dans le cycle budgétaire courant,
         triées par date croissante.
@@ -92,8 +97,10 @@ class TransactionService:
         if not compte:
             return []
 
-        start_date = get_period_start(date, compte.start_day)
-        end_date = get_period_end(start_date)
+        period = get_budget_cycle_for_month(year=date_year, month=date_month, start_day= compte.start_day)
+
+        start_date = period["start"]
+        end_date = period["end"]
 
         # Requête unique avec jointures pour inclure DEBIT via Sous_Pot
         stmt = (

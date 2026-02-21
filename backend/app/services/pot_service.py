@@ -1,7 +1,7 @@
 from sqlmodel import Session, select, update
 
 from app.models import Pot, Compte, User, Sous_Pot, Transaction
-from app.utils import get_default_for_compte
+from app.utils.utils import get_default_for_compte
 from app.services.sous_pot_service import SousPotService
 from app.schemas.reorder_schema import PotReorderPayload
 from app.schemas.pot_schema import PotRead

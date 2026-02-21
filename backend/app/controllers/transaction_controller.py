@@ -48,16 +48,18 @@ def get_transaction_by_id(
         raise HTTPException(status_code=404, detail=msg("transaction.error.not_found"))
 
 @router.get("/compte/{compte_id}/transactions", response_model=list[TransactionRead])
-def list_by_compte_and_date(
+def list_by_compte_and_period(
     compte_id: str,
-    date: date = Query(date, description="Filtre par date YYYY-MM-DD"),
+    date_year: int,
+    date_month: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ): 
     _check_compte_owner(session, compte_id, current_user)
-    return TransactionService.list_by_compte_and_date(
+    return TransactionService.list_by_compte_and_period(
         session=session,
-        date=date,
+        date_year=date_year,
+        date_month=date_month,
         compte_id=compte_id,
         )
 

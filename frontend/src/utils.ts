@@ -11,6 +11,7 @@ export function formatDate(date: Date): string {
 export function adaptDate(year: number, month: number, day: number): Date {
     // On tente de créer la date
     const tentative = new Date(year, month, day)
+    console.log(tentative)
 
     // Si le jour n'est pas le même, c'est que ça a débordé
     if (tentative.getDate() !== day) {

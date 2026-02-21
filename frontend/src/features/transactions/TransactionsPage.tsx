@@ -1,23 +1,30 @@
 import { useEffect, useState } from "react"
-import { deleteTransaction, getTransactionsMois, type Transaction } from "@/api/transactions.api"
+import { deleteTransaction, getTransactionsMois, createTransaction, updateTransaction, type Transaction, type CreateTransactionPayload, type UpdateTransactionPayload } from "@/api/transactions.api"
 import { getComptes, type Compte } from "@/api/comptes.api"
 import { adaptDate, formatDate } from "@/utils"
 import { ActionsMenu } from "@/components/layout/ActionsMenu"
 import ConfirmModal from "@/components/layout/ConfirmModal"
 import { t } from "i18next"
+import TransactionModal from "./TransactionModal"
+import type { UIPot, UISousPot } from "../pots/types"
+import { getPotsAndSousPotsByCompte } from "@/api/pots.api"
 
 export default function TransactionsPage(): React.JSX.Element {
     const [comptes, setComptes] = useState<Compte[]>([])
     const [selectedCompteId, setSelectedCompteId] = useState<string>("")
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
-    const [createOpen, setCreateOpen] = useState(false)
+    const [modalTarget, setModalTarget] = useState<CreateTransactionPayload | UpdateTransactionPayload | null>(null)
+    const [transactionEditId, setTransactionEditId] = useState<string | undefined>(undefined)
 
-    
-    // Stocke année et mois (0-indexé)
+    // pots déjà chargés depuis le contexte ou parent
+    const [pots, setPots] = useState<UIPot[]>([])
+    const [sous_pots, setSousPots] = useState<UISousPot[]>([])
+
+    const now = new Date()
     const [currentRefMonth, setCurrentRefMonth] = useState<{ year: number; month: number }>({
-        year: 2026,
-        month: 0
+        year: now.getFullYear(),
+        month: now.getMonth()//get Month Range : 0-11
     })
 
     useEffect(() => {
@@ -31,6 +38,20 @@ export default function TransactionsPage(): React.JSX.Element {
         loadComptes()
     }, [])
 
+    useEffect(() => {
+        if (!selectedCompteId) return
+
+        async function loadPotsEtSousPots() {
+            const data: UIPot[] = await getPotsAndSousPotsByCompte(selectedCompteId)
+            setPots(data)
+            const sous_pots: UISousPot[] = [];
+            data.forEach((pot: UIPot)=> {
+                pot.sous_pots.forEach((sous_pot: UISousPot) => sous_pots.push(sous_pot))
+            })
+            setSousPots(sous_pots)
+        }
+        loadPotsEtSousPots()
+    }, [selectedCompteId])
 
     useEffect(() => {
         async function loadTransactions() {
@@ -38,32 +59,17 @@ export default function TransactionsPage(): React.JSX.Element {
             const compte = comptes.find(c => c.id === selectedCompteId)
             if (!compte) return
 
-            // Jour de début du compte
-            const startDay = compte.start_day
-
-            // Construire la date complète et appliquer adaptDate
-            const date = adaptDate(currentRefMonth.year, currentRefMonth.month, startDay)
-            console.log(formatDate(date))
-
-            const data = await getTransactionsMois(selectedCompteId, formatDate(date))
-            setTransactions(data)
+            const data = await getTransactionsMois(selectedCompteId, {date_month: currentRefMonth.month +1, date_year: currentRefMonth.year})
+            setTransactions(data.sort((a: Transaction, b: Transaction) => a.transaction_date.localeCompare(b.transaction_date)))
         }
         loadTransactions()
     }, [selectedCompteId, comptes, currentRefMonth])
 
-    // Méthode générique pour changer le mois (delta = +1 ou -1)
     const changeMonthIndex = (delta: number) => {
         let { year, month } = currentRefMonth
         month += delta
-
-        if (month < 0) {
-            month = 11
-            year -= 1
-        } else if (month > 11) {
-            month = 0
-            year += 1
-        }
-
+        if (month < 0) { month = 11; year -= 1 }
+        else if (month > 11) { month = 0; year += 1 }
         setCurrentRefMonth({ year, month })
     }
 
@@ -75,6 +81,16 @@ export default function TransactionsPage(): React.JSX.Element {
         setTransactions(prev => prev.filter(t => t.id !== id))
     }
 
+    // callback pour modal unique
+    const handleCreate = async (payload: CreateTransactionPayload) => {
+        const tx = await createTransaction(payload)
+        setTransactions(prev => [...prev, tx].sort((a,b) => a.transaction_date.localeCompare(b.transaction_date)))
+    }
+
+    const handleUpdate = async (id: string, payload: UpdateTransactionPayload) => {
+        const tx = await updateTransaction(id, payload)
+        setTransactions(prev => prev.map(t => t.id === tx.id ? tx : t))
+    }
 
     return (
         <div className="flex flex-col gap-6 p-4 transactions-page">
@@ -86,9 +102,7 @@ export default function TransactionsPage(): React.JSX.Element {
                     onChange={(e) => setSelectedCompteId(e.target.value)}
                 >
                     {comptes.map(c => (
-                        <option key={c.id} value={c.id}>
-                            {c.name}
-                        </option>
+                        <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                 </select>
             </div>
@@ -97,27 +111,32 @@ export default function TransactionsPage(): React.JSX.Element {
             <div className="flex items-center gap-2">
                 <button className="btn btn-sm" onClick={prevMonth}>{"<"}</button>
                 <span className="font-medium">
-                    {new Date(currentRefMonth.year, currentRefMonth.month).toLocaleString("default", {
-                        month: "long",
-                        year: "numeric"
-                    })}
+                    {new Date(currentRefMonth.year, currentRefMonth.month).toLocaleString("default", { month: "long", year: "numeric" })}
                 </span>
                 <button className="btn btn-sm" onClick={nextMonth}>{">"}</button>
             </div>
 
-            <button className="btn btn-primary self-start" onClick={() => setCreateOpen(true)}>
-                {t("transactions.add")}
-            </button>
+            {/* Boutons */}
+            <div className="flex gap-2">
+                <button className="btn btn-primary" onClick={() => {setModalTarget({} as CreateTransactionPayload); setTransactionEditId(undefined)}}>
+                    {t("transactions.add")}
+                </button>
+                <button className="btn btn-secondary" onClick={() => setModalTarget({ transaction_type: "DEBIT", amount:0, motif:"", transaction_date: formatDate(new Date()) } as CreateTransactionPayload)}>
+                    {t("transactions.transfer")}
+                </button>
+            </div>
 
-            {/* Liste des transactions */}
+            {/* Tableau */}
             <div>
                 <table className="table w-full">
                     <thead>
                         <tr>
                             <th>{t("transactions.date")}</th>
-                            <th>{t("transactions.type")}</th>
                             <th>{t("transactions.motif")}</th>
+                            <th>{t("transactions.type")}</th>
+                            <th>{t("transactions.sous_pot")}</th>
                             <th className="text-right">{t("transactions.amount")}</th>
+                            <th>{t("transactions.recurrent")}</th>
                             <th>{t("common.actions")}</th>
                         </tr>
                     </thead>
@@ -125,21 +144,41 @@ export default function TransactionsPage(): React.JSX.Element {
                         {transactions.map(tx => (
                             <tr key={tx.id}>
                                 <td>{tx.transaction_date}</td>
+                                <td>{tx.motif}</td>
                                 <td>
                                     <span className={`badge ${tx.transaction_type === "DEBIT" ? "badge-error" : "badge-success"}`}>
                                         {tx.transaction_type}
                                     </span>
                                 </td>
-                                <td>{tx.motif}</td>
+                                <td>{sous_pots.find(sp => sp.id === tx.sous_pot_id)?.name || "-"}</td>
                                 <td className="text-right">{tx.amount.toFixed(2)}</td>
                                 <td>
-                                    <ActionsMenu onDelete={() => setDeleteTarget(tx)} />
+                                    <input type="checkbox" className="checkbox" checked={Boolean(tx.recurrence_type)} readOnly />
+                                </td>
+                                <td>
+                                    <ActionsMenu
+                                        onDelete={() => setDeleteTarget(tx)}
+                                        onEdit={() => {setModalTarget(tx); setTransactionEditId(tx.id)}}
+                                    />
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
+
+            {/* Modales */}
+            {modalTarget && (
+                <TransactionModal
+                    transaction={modalTarget}
+                    id={transactionEditId}
+                    comptes={comptes}
+                    pots={pots}
+                    onClose={() => setModalTarget(null)}
+                    onCreate={handleCreate}
+                    onUpdate={handleUpdate}
+                />
+            )}
 
             <ConfirmModal
                 open={deleteTarget !== null}

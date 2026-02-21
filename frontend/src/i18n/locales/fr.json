@@ -20,6 +20,7 @@
   },
   "common": {
     "create": "Valider",
+    "cancel": "Annuler",
     "save": "Enregistrer",
     "edit": "Modifier",
     "delete": "Supprimer",
@@ -51,19 +52,26 @@
     "create": "Créer un compte",
     "title": "Gestion des comptes",
     "add": "Ajouter un compte",
+    "edit": "Modifier un compte",
     "name": "Nom",
     "balance": "Solde",
     "start_day": "Début mois",
     "initial_value": "Valeur initiale",
-    "actions": "Actions",
-    "edit": "Modifier"
+    "decallage": "Décallage",
+    "decallage_help": "Sert uniquement dans des cas précis"
   },
   "transactions": {
     "add": "Ajouter une transaction",
     "date": "Date",
+    "compte": "Compte",
+    "debit": "Débit",
+    "credit": "Crédit",
     "type": "Type",
     "motif": "Motif",
-    "amount": "Valeur"
+    "amount": "Valeur",
+    "recurrent": "Récurrent",
+    "sous_pot": "Sous-Pot",
+    "transfer": "Effectuer un virement"
   },
   "pots": {
     "name": "Nom du pot",

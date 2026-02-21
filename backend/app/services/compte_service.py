@@ -164,3 +164,20 @@ class CompteService:
             compte_map[compte_id].position = index
 
         session.commit()
+
+    @staticmethod
+    def delete(session: Session, compte_id: str, user_id: str) -> None:
+        statement = select(Compte).where(
+            Compte.id == compte_id,
+            Compte.user_id == user_id,
+        )
+        compte = session.exec(statement).first()
+
+        if not compte:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Compte not found",
+            )
+
+        session.delete(compte)
+        session.commit()

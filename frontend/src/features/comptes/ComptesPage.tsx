@@ -7,7 +7,8 @@ import {
     getComptesBalance,
     updateCompte,
     reorderComptes,
-    type Compte
+    type Compte,
+    deleteCompte
 } from "@/api/comptes.api";
 
 import { formatAmount } from "@/utils";
@@ -24,9 +25,11 @@ import {
 } from "@dnd-kit/sortable";
 
 import SortableTableRow from "@/components/table/SortableTableRow";
+import { ActionsMenu } from "@/components/layout/ActionsMenu";
 
 type CompteWithMeta = Compte & {
     start_day: number;
+    decallage: number;
 };
 
 export default function ComptesPage() {
@@ -67,10 +70,16 @@ export default function ComptesPage() {
             name: data.name,
             start_day: data.startDay,
             initial_value: data.initialValue,
+            decallage: data.decallage,
         });
 
         setCreateOpen(false);
         await loadComptes();
+    }
+    
+    async function handleDelete(id: string) {
+        await deleteCompte(id)
+        setComptes(prev => prev.filter(t => t.id !== id))
     }
 
     if (loading) {
@@ -115,42 +124,43 @@ export default function ComptesPage() {
                                     <th>{t("accounts.name")}</th>
                                     <th>{t("accounts.balance")}</th>
                                     <th>{t("accounts.start_day")}</th>
-                                    <th>{t("accounts.actions")}</th>
+                                    <th>{t("accounts.decallage")}</th>
+                                    <th>{t("common.actions")}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {comptes.length === 0 && (
                                     <tr>
-                                        <td colSpan={4} className="text-center text-gray-400 italic">—</td>
+                                        <td colSpan={5} className="text-center text-gray-400 italic">—</td>
                                     </tr>
                                 )}
 
-                                {comptes.map(a => (
-                                    <SortableTableRow key={a.id} id={a.id}>
-                                        <td>{a.name}</td>
-                                        <td className={`${balances[a.id] >= 0 ? "text-green-500" : "text-red-500"}`}>
-                                            {formatAmount(balances[a.id])} €
-                                        </td>
-                                        <td>{a.start_day}</td>
-                                        <td>
-                                            <button
-                                                className="btn btn-sm btn-outline"
-                                                onPointerDown={e => e.stopPropagation()}
-                                                onClick={() => setEditingAccount(a)}
-                                            >
-                                                {t("accounts.edit")}
-                                            </button>
-                                        </td>
-                                    </SortableTableRow>
-                                ))}
+                            {comptes.map(a => (
+                                <SortableTableRow key={a.id} id={a.id}>
+                                    <td>{a.name}</td>
+                                    <td className={`${balances[a.id] >= 0 ? "text-green-500" : "text-red-500"}`}>
+                                        {formatAmount(balances[a.id])} €
+                                    </td>
+                                    <td>{a.start_day}</td>
+                                    <td>{a.decallage}</td>
+                                    <td>
+                                        <ActionsMenu
+                                            onDelete={() => handleDelete(a.id)}
+                                            onEdit={() => {setEditingAccount(a)}}
+                                        />
+                                    </td>
+                                </SortableTableRow>
+                            ))}
                             </tbody>
                         </table>
                     </SortableContext>
                 </DndContext>
             </div>
+        
 
             <ComptesModal
                 open={!!editingAccount}
+                mode="edit"
                 onClose={() => setEditingAccount(null)}
                 defaultValues={
                     editingAccount
@@ -158,6 +168,7 @@ export default function ComptesPage() {
                             name: editingAccount.name,
                             startDay: editingAccount.start_day,
                             initialValue: editingAccount.initial_value,
+                            decallage: editingAccount.decallage,
                         }
                         : undefined
                 }
@@ -167,6 +178,7 @@ export default function ComptesPage() {
                         name: data.name,
                         start_day: data.startDay,
                         initial_value: data.initialValue,
+                        decallage: data.decallage,
                     });
                     setEditingAccount(null);
                     await loadComptes();
@@ -175,6 +187,7 @@ export default function ComptesPage() {
 
             <ComptesModal
                 open={createOpen}
+                mode="create"
                 onClose={() => setCreateOpen(false)}
                 onSubmit={handleCreate}
             />

@@ -5,18 +5,21 @@ export type Compte = {
   name: string;
   start_day: number;
   initial_value: number;
+  decallage: number;
 };
 
 export type CreateComptePayload = {
   name: string;
   initial_value: number;
   start_day: number;
+  decallage: number;
 };
 
 export type UpdateComptePayload = {
   name: string;
   initial_value: number;
   start_day: number;
+  decallage: number;
 };
 
 export function getComptes() {

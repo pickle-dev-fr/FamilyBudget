@@ -115,7 +115,7 @@ def get_solde_by_compte(
     )
 
 @router.delete(
-    "/comptes/{id}",
+    "/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete(

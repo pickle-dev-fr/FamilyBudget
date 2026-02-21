@@ -5,7 +5,8 @@ from datetime import date
 
 
 from app.models import Sous_Pot, Transaction, TypeTransaction, Pot, Compte
-from app.utils import get_period_start, get_period_end, get_default_for_compte
+from app.utils.utils import get_default_for_compte
+from app.utils.budget_cycle import get_budget_cycle_for_date
 from app.schemas.sous_pot_schema import SousPotRead
 from app.schemas.reorder_schema import SousPotReorderPayload
 from app.i18n.messages import msg
@@ -144,8 +145,9 @@ class SousPotService:
         compte = session.get(Compte, pot.compte_id)
 
         # 3️⃣ Calcul de la période
-        start_date = get_period_start(date.today(), compte.start_day)
-        end_date = get_period_end(start_date)
+        period = get_budget_cycle_for_date(date.today(), compte.start_day)
+        start_date = period["start"]
+        end_date = period["end"]
 
         # 4️⃣ Récupération des transactions du sous-pot sur la période
         query = (
