@@ -82,6 +82,7 @@ export default function TransactionModal({
                     : null,
 
             recurrence_type: recurrence ? "MONTH" : null,
+            recurrent: recurrence ?? false,
             recurrence_end_date: recurrence
                 ? recurrenceEndDate
                 : null

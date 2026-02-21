@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { deleteTransaction, getTransactionsMois, createTransaction, updateTransaction, type Transaction, type CreateTransactionPayload, type UpdateTransactionPayload } from "@/api/transactions.api"
 import { getComptes, type Compte } from "@/api/comptes.api"
-import { adaptDate, formatDate } from "@/utils"
+import { formatDate } from "@/utils"
 import { ActionsMenu } from "@/components/layout/ActionsMenu"
 import ConfirmModal from "@/components/layout/ConfirmModal"
 import { t } from "i18next"

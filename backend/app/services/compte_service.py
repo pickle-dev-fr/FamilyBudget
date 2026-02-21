@@ -52,16 +52,11 @@ class CompteService:
     @staticmethod
     def get_by_id(
         session: Session,
-        *,
-        user: User,
         compte_id: str,
     ) -> Compte:
         compte = session.get(Compte, compte_id)
         if not compte:
             raise ValueError(msg("compte.not_found"))
-
-        if compte.user_id != user.id:
-            raise ValueError(msg("compte.forbidden"))
 
         return compte
 
@@ -75,7 +70,6 @@ class CompteService:
     ) -> Compte:
         compte = CompteService.get_by_id(
             session=session,
-            user=user,
             compte_id=compte_id,
         )
 

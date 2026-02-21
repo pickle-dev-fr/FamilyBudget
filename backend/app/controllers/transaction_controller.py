@@ -7,6 +7,7 @@ from app.database import get_session
 from app.schemas.transaction_schema import (
     TransactionCreate,
     TransactionRead,
+    TransactionUpdate,
 )
 from app.security.dependencies import get_current_user
 from app.services.transaction_service import TransactionService
@@ -37,6 +38,22 @@ def create_transaction(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.put("/transactions/{id}", response_model=TransactionRead)
+def update_transaction(
+    id: str,
+    payload: TransactionUpdate,
+    session: Session = Depends(get_session),
+):
+    try:
+        return TransactionService.update(
+            session=session,
+            transaction_id=id,
+            payload=payload,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.get("/transactions/{id}", response_model=TransactionRead)
 def get_transaction_by_id(
     id: str,
@@ -60,6 +77,18 @@ def list_by_compte_and_period(
         session=session,
         date_year=date_year,
         date_month=date_month,
+        compte_id=compte_id,
+        )
+
+@router.get("/compte/{compte_id}/transactions/recurrente", response_model=list[TransactionRead])
+def list_recurrentes_by_compte(
+    compte_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+): 
+    _check_compte_owner(session, compte_id, current_user)
+    return TransactionService.list_recurrentes_by_compte(
+        session=session,
         compte_id=compte_id,
         )
 

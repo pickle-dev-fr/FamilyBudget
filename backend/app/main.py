@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.scheduler import start_scheduler
 
 from app.controllers.auth_controller import router as auth_controller
 from app.controllers.transaction_controller import router as transaction_router
@@ -31,5 +32,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def startup_event():
+    start_scheduler()
 
 

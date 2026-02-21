@@ -81,6 +81,16 @@ class SousPotService:
         return sous_pot
 
     @staticmethod
+    def get_by_compte(session: Session, compte_id: str) -> Sous_Pot:
+        query = (
+            select(Sous_Pot)
+            .join(Pot, Sous_Pot.pot_id == Pot.id)
+            .where(Pot.compte_id == compte_id)
+        )
+
+        return session.exec(query).all()
+
+    @staticmethod
     def update(
         session: Session,
         sous_pot_id: str,

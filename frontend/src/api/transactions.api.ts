@@ -45,6 +45,10 @@ export function getTransactionsMois(compte_id: string, payload: {date_month: num
   return apiClient.get(`/compte/${compte_id}/transactions/`, payload);
 }
 
+export function getTransactionsRecurrente(compte_id: string) {
+  return apiClient.get(`/compte/${compte_id}/transactions/recurrente`);
+}
+
 export function deleteTransaction(id: string) {
   return apiClient.delete(`/transactions/${id}`);
 }

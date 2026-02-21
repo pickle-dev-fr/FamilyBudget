@@ -71,9 +71,9 @@ def get_compte(
     user=Depends(get_current_user),
 ):
     try:
+        _check_compte_owner(session=session, compte_id=compte_id, user=user)
         return CompteService.get_by_id(
             session=session,
-            user=user,
             compte_id=compte_id,
         )
     except ValueError as e:
@@ -88,9 +88,9 @@ def update_compte(
     user=Depends(get_current_user),
 ):
     try:
+        _check_compte_owner(session=session, compte_id=compte_id, user=current_user)
         return CompteService.update(
             session=session,
-            user=user,
             compte_id=compte_id,
             data=payload,
         )
@@ -103,10 +103,10 @@ def get_solde_by_compte(
     session: Session = Depends(get_session),
     current_user = Depends(get_current_user),
 ):
+    _check_compte_owner(session=session, compte_id=compte_id, user=current_user)
     compte = CompteService.get_by_id(
         session=session,
         compte_id=compte_id,
-        user=current_user,
     )
 
     return CompteService.calculer_solde_compte(

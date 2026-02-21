@@ -114,20 +114,6 @@ export default function ComptesModal({
                         onChange={(e) => setInitialValue(Number(e.target.value))}
                     />
                 </div>
-                <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium text-text">
-                        {t("accounts.decallage")}
-                    </label>
-                    <input
-                        className="input input-bordered w-full bg-bg-soft text-text"
-                        type="number"
-                        value={decallage}
-                        onChange={(e) => setDecallage(Number(e.target.value))}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                        {t("accounts.decallage_help")}
-                    </p>
-                </div>
             </div>
         </Modal>
     );

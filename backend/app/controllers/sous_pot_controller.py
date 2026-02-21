@@ -102,6 +102,19 @@ def get_sous_pot(
     _check_pot_owner(session, sous_pot.pot_id, current_user)
     return sous_pot
 
+@router.get(
+    "/comptes/{id}/sous-pots/",
+    response_model=list[SousPotReadCreate],
+)
+def get_sous_pots_by_compte(
+    id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Security(get_current_user),
+):
+    _check_compte_owner(session=session, compte_id=id, user=current_user)
+    sous_pot = SousPotService.get_by_compte(session, id)
+    return sous_pot
+
 
 @router.put(
     "/sous-pots/{sous_pot_id}",

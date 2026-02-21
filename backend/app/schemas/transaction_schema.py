@@ -19,6 +19,19 @@ class TransactionCreate(SQLModel):
     recurrence_type: Optional[TypeRecurrence] = None
     recurrence_end_date: Optional[date] = None
 
+class TransactionUpdate(SQLModel):
+    amount: Optional[float]
+    transaction_type: Optional[TypeTransaction]
+    transaction_date: Optional[date]
+    motif: Optional[str]
+
+    compte_id: Optional[str]
+    sous_pot_id: Optional[str]
+
+    recurrent: Optional[bool]
+    recurrence_type: Optional[TypeRecurrence]
+    recurrence_end_date: Optional[date]
+
 
 class TransactionRead(SQLModel):
     id: str
@@ -26,6 +39,8 @@ class TransactionRead(SQLModel):
     transaction_type: TypeTransaction
     transaction_date: date
     motif: Optional[str]
-
     compte_id: Optional[str]
     sous_pot_id: Optional[str]
+    recurrent: bool
+    recurrence_type: Optional[TypeRecurrence]
+    recurrence_end_date: Optional[date]

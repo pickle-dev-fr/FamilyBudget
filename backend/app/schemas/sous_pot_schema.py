@@ -1,5 +1,6 @@
 from sqlmodel import SQLModel
 from pydantic import Field
+from typing import Optional
 
 
 class SousPotCreate(SQLModel):

@@ -2,8 +2,9 @@
 from typing import List, Optional
 from datetime import date
 from enum import Enum
+from sqlalchemy import Enum as SAEnum
 import ulid
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy.orm import relationship
 from sqlalchemy import UniqueConstraint
 
@@ -18,9 +19,9 @@ class TypeTransaction(str, Enum):
     DEBIT = "DEBIT"
 
 class TypeRecurrence(str, Enum):
-    jours = "jours"
-    semaines = "semaines"
-    mois = "mois"
+    DAY = "DAY"
+    WEEK = "WEEK"
+    MONTH = "MONTH"
 
 # --- Models ---
 class User(SQLModel, table=True):
@@ -127,8 +128,18 @@ class Transaction(SQLModel, table=True):
     motif: Optional[str] = None
 
     recurrent: bool = False
-    recurrence_type: Optional[TypeRecurrence] = None
+    recurrence_type: Optional[TypeRecurrence] = Field(
+        sa_column=Column(
+            SAEnum(
+                TypeRecurrence,
+                name="typerecurrence"
+            ),
+            nullable=True
+        )
+    )
     recurrence_end_date: Optional[date] = None
+    is_processed: bool = Field(default=False, nullable=False)
+    recurrence_day: Optional[int] = Field(default=None)
 
     # Relations
     compte_id: Optional[str] = Field(default=None, foreign_key="compte.id")

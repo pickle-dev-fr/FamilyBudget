@@ -44,6 +44,15 @@ export default function Menu() {
             </NavLink>
 
             <NavLink
+                to="/recurrents"
+                className={({ isActive }) =>
+                    `px-3 py-2 rounded hover:bg-gray-700 ${isActive ? "bg-gray-800 font-bold" : "text-text"}`
+                }
+            >
+                {t("menu.transactions_recurrent")}
+            </NavLink>
+
+            <NavLink
                 to="/stats"
                 className={({ isActive }) =>
                     `px-3 py-2 rounded hover:bg-gray-700 ${isActive ? "bg-gray-800 font-bold" : "text-text"}`

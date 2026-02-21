@@ -10,7 +10,9 @@ from app.models import (
     Pot,
     Sous_Pot,
     TypeTransaction,
+    TypeRecurrence
 )
+from app.schemas.transaction_schema import TransactionUpdate
 from app.utils.budget_cycle import get_budget_cycle_for_month
 from app.i18n.messages import msg
 from typing import Optional
@@ -58,6 +60,23 @@ class TransactionService:
             if not compte:
                 raise ValueError(msg("compte.not_found"))
 
+        # --- gestion récurrence ---
+
+        recurrence_day = None
+
+        if recurrent:
+
+            if recurrence_type is None:
+                raise ValueError(msg("transaction.recurrence_type.required"))
+
+            if recurrence_type == TypeRecurrence.MONTH:
+                base_date = transaction_date or date.today()
+                recurrence_day = base_date.day
+        if not recurrent:
+            recurrence_type = None
+            recurrence_end_date = None
+            recurrence_day = None
+
         transaction = Transaction(
             amount=amount,
             transaction_type=transaction_type,
@@ -68,6 +87,8 @@ class TransactionService:
             recurrent=recurrent,
             recurrence_type=recurrence_type,
             recurrence_end_date=recurrence_end_date,
+            recurrence_day=recurrence_day,
+            is_processed=False
         )
 
         session.add(transaction)
@@ -129,6 +150,100 @@ class TransactionService:
     ) -> list[Transaction]:
         query = select(Transaction).where(Transaction.sous_pot_id == sous_pot_id)
         return session.exec(query).all()
+
+    @staticmethod
+    def list_recurrentes_by_compte(
+        session: Session,
+        compte_id: str,
+    ) -> list[Transaction]:
+        query = (
+            select(Transaction)
+            .outerjoin(Sous_Pot, Transaction.sous_pot_id == Sous_Pot.id)
+            .outerjoin(Pot, Sous_Pot.pot_id == Pot.id)
+            .where(
+                (
+                    (Transaction.compte_id == compte_id) |
+                    (Pot.compte_id == compte_id)
+                )
+                & (Transaction.recurrent.is_(True))
+            )
+        )
+
+        return session.exec(query).all()
+
+    @staticmethod
+    def update(
+        session: Session,
+        transaction_id: str,
+        payload: TransactionUpdate
+    ) -> Transaction:
+
+        transaction = session.get(Transaction, transaction_id)
+
+        if not transaction:
+            raise HTTPException(status_code=404, detail="transaction.not_found")
+
+        # ----- Mise à jour des champs simples -----
+
+        if payload.amount is not None:
+            if payload.amount <= 0:
+                raise HTTPException(status_code=400, detail="transaction.amount_positive")
+            transaction.amount = payload.amount
+
+        if payload.transaction_date is not None:
+            transaction.transaction_date = payload.transaction_date
+
+        if payload.motif is not None:
+            transaction.motif = payload.motif
+
+        # ----- Gestion changement de type -----
+
+        if payload.transaction_type is not None:
+            transaction.transaction_type = payload.transaction_type
+
+        # ----- Règles métier DEBIT / CREDIT -----
+
+        if transaction.transaction_type == TypeTransaction.DEBIT:
+
+            if payload.sous_pot_id is not None:
+                transaction.sous_pot_id = payload.sous_pot_id
+
+            if not transaction.sous_pot_id:
+                raise HTTPException(status_code=400, detail="transaction.debit_requires_sous_pot")
+
+            if payload.compte_id is not None:
+                raise HTTPException(status_code=400, detail="transaction.debit_forbids_compte")
+
+            transaction.compte_id = None
+
+        elif transaction.transaction_type == TypeTransaction.CREDIT:
+
+            if payload.compte_id is not None:
+                transaction.compte_id = payload.compte_id
+
+            if not transaction.compte_id:
+                raise HTTPException(status_code=400, detail="transaction.credit_requires_compte")
+
+            if payload.sous_pot_id is not None:
+                raise HTTPException(status_code=400, detail="transaction.credit_forbids_sous_pot")
+
+            transaction.sous_pot_id = None
+
+        # ----- Transactions récurrentes -----
+        # Rappel règle :
+        # Une seule transaction future existe.
+        # Modifier = modifie uniquement celle-ci.
+
+        if payload.recurrent is not None:
+            transaction.recurrent = payload.recurrent
+            transaction.recurrence_type = payload.recurrence_type
+            transaction.recurrence_end_date = payload.recurrence_end_date
+
+        session.add(transaction)
+        session.commit()
+        session.refresh(transaction)
+
+        return transaction
 
     @staticmethod
     def delete(session: Session, transaction_id: str) -> None:
