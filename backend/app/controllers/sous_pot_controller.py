@@ -117,8 +117,7 @@ def get_sous_pots_by_compte(
 
 
 @router.put(
-    "/sous-pots/{sous_pot_id}",
-    response_model=SousPotRead,
+    "/sous-pots/{sous_pot_id}"
 )
 def update_sous_pot(
     sous_pot_id: str,
@@ -128,7 +127,7 @@ def update_sous_pot(
 ):
     sous_pot = SousPotService.get_by_id(session, sous_pot_id)
     _check_pot_owner(session, sous_pot.pot_id, current_user)
-    return SousPotService.update(
+    sous_pot = SousPotService.update(
         session,
         sous_pot_id,
         data.name,

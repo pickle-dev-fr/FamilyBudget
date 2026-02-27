@@ -13,8 +13,8 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 
-import { deletePot, getPotsAndSousPotsByCompte, reorderPots } from "@/api/pots.api"
-import { createSousPot, deleteSousPot, reorderSousPots } from "@/api/sous_pots.api"
+import { deletePot, getPotsAndSousPotsByCompte, reorderPots, updatePot, type UpdatePotPayload } from "@/api/pots.api"
+import { createSousPot, deleteSousPot, reorderSousPots, updateSousPot, type UpdateSousPotPayload } from "@/api/sous_pots.api"
 
 import PotColumn from "./PotColumn"
 import type { UIPot, UISousPot } from "./types"
@@ -32,6 +32,8 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
     const [activeId, setActiveId] = useState<string | null>(null)
     const [activeType, setActiveType] = useState<"pot" | "souspot" | null>(null)
     const initialStateRef = useRef<UIPot[]>([])
+    const defaultPot = pots.find(p => p.position === 0)
+    const movablePots = pots.filter(p => p.position !== 0)
 
     useEffect(() => {
         if (!compteId) return
@@ -63,19 +65,26 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
 
         if (active.data.current?.type === "pot") {
             setPots(prev => {
-                const oldIndex = prev.findIndex(p => p.id === active.id)
-                const newIndex = prev.findIndex(p => p.id === over.id)
+                const defaultPot = prev.find(p => p.position === 0)
+                const movable = prev.filter(p => p.position !== 0)
+
+                const oldIndex = movable.findIndex(p => p.id === active.id)
+                const newIndex = movable.findIndex(p => p.id === over.id)
 
                 if (oldIndex === -1 || newIndex === -1) return prev
                 if (oldIndex === newIndex) return prev
 
-                const moved = arrayMove(prev, oldIndex, newIndex)
+                const reordered = arrayMove(movable, oldIndex, newIndex)
 
-                return moved.map((p, index) => ({
-                    ...p,
-                    position: index,
-                }))
+                return [
+                    defaultPot!,
+                    ...reordered.map((p, index) => ({
+                        ...p,
+                        position: index + 1,
+                    })),
+                ]
             })
+
             return
         }
 
@@ -132,6 +141,18 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
                 return p
             })
         })
+    }
+
+    async function reloadPots() {
+        if (!compteId) return
+
+        const data = await getPotsAndSousPotsByCompte(compteId)
+
+        const sorted = [...data].sort(
+            (a, b) => a.position - b.position
+        )
+
+        setPots(sorted)
     }
 
     async function handleDragEnd(event: DragEndEvent) {
@@ -231,14 +252,7 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
         try {
             await deleteSousPot(sousPotId)
 
-            const refreshed =
-                await getPotsAndSousPotsByCompte(compteId)
-
-            const sorted = [...refreshed].sort(
-                (a, b) => a.position - b.position
-            )
-
-            setPots(sorted)
+            await reloadPots()
 
         } catch {
             // fallback reload
@@ -265,14 +279,7 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
         try {
             await deletePot(potId)
 
-            const refreshed =
-                await getPotsAndSousPotsByCompte(compteId)
-
-            const sorted = [...refreshed].sort(
-                (a, b) => a.position - b.position
-            )
-
-            setPots(sorted)
+            await reloadPots()
 
         } catch {
             const fallback =
@@ -294,13 +301,13 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
         if (!compteId) return
 
         try {
-            // 1️⃣ CREATE (backend → ajouté en dernière position)
+            // CREATE (backend → ajouté en dernière position)
             await createSousPot(potId, {
                 name,
                 prevision,
             })
 
-            // 2️⃣ Reload après création
+            // Reload après création
             const dataAfterCreate =
                 await getPotsAndSousPotsByCompte(compteId)
 
@@ -333,26 +340,39 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
                 })
             }
 
-            // 3️⃣ Reload final propre
-            const finalData =
-                await getPotsAndSousPotsByCompte(compteId)
-
-            const finalSorted = [...finalData].sort(
-                (a, b) => a.position - b.position
-            )
-
-            setPots(finalSorted)
+            // Reload final propre
+            await reloadPots()
 
         } catch {
-            // Optionnel : reload pour reset propre
-            const fallback =
-                await getPotsAndSousPotsByCompte(compteId)
+            await reloadPots()
+        }
+    }
+    
+    async function handleUpdateSousPot(
+        sousPotId: string,
+        payload: UpdateSousPotPayload
+    ) {
+        if (!compteId) return
 
-            const sortedFallback = [...fallback].sort(
-                (a, b) => a.position - b.position
-            )
+        try {
+            await updateSousPot(sousPotId, payload)
+            await reloadPots()
+        } catch {
+            await reloadPots()
+        }
+    }
 
-            setPots(sortedFallback)
+    async function handleUpdatePot(
+        potId: string,
+        payload: UpdatePotPayload
+    ) {
+        if (!compteId) return
+
+        try {
+            await updatePot(potId, payload)
+            await reloadPots()
+        } catch {
+            await reloadPots()
         }
     }
 
@@ -363,23 +383,42 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
         >
-            <SortableContext
-                items={pots.map(p => p.id)}
-                strategy={verticalListSortingStrategy}
-            >
-                <div className="flex flex-col gap-4 pots-list">
-                    {pots.map(pot => (
+            <div className="flex flex-col gap-4 pots-list">
+
+                {/* Default fixe (hors SortableContext) */}
+                {defaultPot && (
+                    <PotColumn
+                        key={defaultPot.id}
+                        pot={defaultPot}
+                        onAddSousPot={handleAddSousPot}
+                        onPersistSousPot={handlePersistNewSousPot}
+                        onUpdateSousPot={handleUpdateSousPot}
+                        onUpdatePot={handleUpdatePot}
+                        onDeleteSousPot={handleDeleteSousPot}
+                        onDeletePot={handleDeletePot}
+                    />
+                )}
+
+                {/* Pots déplaçables uniquement */}
+                <SortableContext
+                    items={movablePots.map(p => p.id)}
+                    strategy={verticalListSortingStrategy}
+                >
+                    {movablePots.map(pot => (
                         <PotColumn
                             key={pot.id}
                             pot={pot}
                             onAddSousPot={handleAddSousPot}
                             onPersistSousPot={handlePersistNewSousPot}
+                            onUpdateSousPot={handleUpdateSousPot}
+                            onUpdatePot={handleUpdatePot}
                             onDeleteSousPot={handleDeleteSousPot}
                             onDeletePot={handleDeletePot}
                         />
                     ))}
-                </div>
-            </SortableContext>
+                </SortableContext>
+
+</div>
 
             <DragOverlay className="pointer-events-none">
                 {activeId && (

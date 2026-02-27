@@ -5,6 +5,8 @@ import SousPotItem from "./SousPotItem"
 import { useState } from "react"
 import { ActionsMenu } from "@/components/layout/ActionsMenu"
 import { t } from "i18next"
+import { type UpdateSousPotPayload } from "@/api/sous_pots.api"
+import type { UpdatePotPayload } from "@/api/pots.api"
 
 type Props = {
     pot: UIPot
@@ -14,6 +16,14 @@ type Props = {
         name: string,
         prevision: number
     ) => Promise<void>
+    onUpdateSousPot: (
+        sousPotId: string,
+        payload: UpdateSousPotPayload
+    ) => Promise<void>
+    onUpdatePot: (
+        potId: string,
+        payload: UpdatePotPayload
+    ) => Promise<void>
     onDeleteSousPot: (
         sousPotId: string
     ) => Promise<void>
@@ -21,11 +31,13 @@ type Props = {
 }
 
 
-export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onDeletePot, onDeleteSousPot }: Props) {
+export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onUpdateSousPot, onUpdatePot, onDeletePot, onDeleteSousPot }: Props) {
     const disabled = pot.position === 0
     const [showCreate, setShowCreate] = useState(false)
     const [newName, setNewName] = useState("")
     const [newPrevision, setNewPrevision] = useState<number>(0)
+    const [isEditing, setIsEditing] = useState(false)
+    const [editName, setEditName] = useState(pot.name)
 
 
     const {
@@ -50,24 +62,72 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onDelet
                 transition,
             }}
         >
-            <div {...attributes} {...listeners} className="flex justify-between items-center mb-2 pot-header">
-                <div className="flex items-center gap-2 pot-handle">
+            <div
+                {...attributes}
+                {...listeners}
+                className="flex justify-between items-center mb-2 pot-header"
+            >
+                <div
+                    className="flex items-center gap-2 pot-handle"
+                    onPointerDown={(e) => {
+                        if (isEditing) {
+                            e.stopPropagation()
+                            setEditName(pot.name)
+                            setIsEditing(false)
+                        }
+                    }}
+                >
                     <span>☰</span>
-                    <span>{pot.name}</span>
+
+                    {isEditing && !disabled ? (
+                        <input
+                            className="input input-sm input-bordered"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            onPointerDown={(e) => e.stopPropagation()}
+                        />
+                    ) : (
+                        <span>{pot.name}</span>
+                    )}
                 </div>
 
-                {!disabled && (
-                    <div className="flex gap-2 pot-actions">
+                {isEditing && !disabled ? (
+                    <div className="flex gap-1">
                         <button
-                            className="btn btn-sm btn-outline"
-                            onPointerDown={e => e.stopPropagation()}
-                            onClick={() => setShowCreate(true)}
+                            className="btn btn-xs btn-primary"
+                            onClick={async () => {
+                                const trimmed = editName.trim()
+                                if (!trimmed) return
+
+                                await onUpdatePot(pot.id, {
+                                    name: trimmed,
+                                })
+
+                                setIsEditing(false)
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
                         >
-                            +
+                            {t("common.save")}
                         </button>
 
-                        <ActionsMenu onDelete={() => onDeletePot(pot.id)} />
+                        <button
+                            className="btn btn-xs btn-ghost"
+                            onClick={() => {
+                                setEditName(pot.name)
+                                setIsEditing(false)
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                        >
+                            {t("common.cancel")}
+                        </button>
                     </div>
+                ) : (
+                    !disabled && (
+                        <ActionsMenu
+                            onDelete={() => onDeletePot(pot.id)}
+                            onEdit={() => setIsEditing(true)}
+                        />
+                    )
                 )}
             </div>
 
@@ -146,6 +206,7 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onDelet
                             sousPot={sp}
                             disabled={disabled}
                             onDelete={onDeleteSousPot}
+                            onUpdate={onUpdateSousPot}
                         />
                     ))}
                 </div>

@@ -138,7 +138,7 @@ class PotService:
         payload: PotReorderPayload,
     ) -> None:
 
-        default = PotService.get_default_for_compte(
+        default = get_default_for_compte(
             session,
             payload.compte_id,
         )

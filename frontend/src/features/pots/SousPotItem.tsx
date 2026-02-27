@@ -2,18 +2,29 @@ import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import type { UISousPot } from "./types"
 import { ActionsMenu } from "@/components/layout/ActionsMenu"
+import type { UpdateSousPotPayload } from "@/api/sous_pots.api"
+import { useState } from "react"
+import { t } from "i18next"
 
 type Props = {
     sousPot: UISousPot
     disabled?: boolean
     onDelete?: (sousPotId: string) => void
+    onUpdate?: (
+        sousPotId: string,
+        payload: UpdateSousPotPayload
+    ) => Promise<void>
 }
 
 export default function SousPotItem({
     sousPot,
     disabled,
-    onDelete
+    onDelete,
+    onUpdate
 }: Props) {
+    const [isEditing, setIsEditing] = useState(false)
+    const [editName, setEditName] = useState(sousPot.name)
+    const [editPrevision, setEditPrevision] = useState(sousPot.prevision)
 
     const {
         attributes,
@@ -28,7 +39,7 @@ export default function SousPotItem({
             type: "souspot",
             potId: sousPot.pot_id,
         },
-        disabled,
+        disabled: disabled || isEditing,
     })
 
     const current = sousPot.current ?? 0
@@ -52,15 +63,81 @@ export default function SousPotItem({
         >
             <div
                 {...attributes}
-                {...listeners}
+                {...(!isEditing ? listeners : {})}
                 className="grid grid-cols-5 items-center gap-2"
             >
-                <div className="cursor-grab">{sousPot.name}</div>
-                <div className="text-sm opacity-70">{sousPot.prevision}</div>
+                <div className="cursor-grab">
+                    {isEditing ? (
+                        <input
+                            className="input input-sm input-bordered w-full"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            onPointerDown={(e) => e.stopPropagation()}
+                        />
+                    ) : (
+                        sousPot.name
+                    )}
+                </div>
+
+                <div className="text-sm">
+                    {isEditing ? (
+                        <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            className="input input-sm input-bordered w-full"
+                            value={editPrevision}
+                            onChange={(e) =>
+                                setEditPrevision(Number(e.target.value))
+                            }
+                            onPointerDown={(e) => e.stopPropagation()}
+                        />
+                    ) : (
+                        sousPot.prevision
+                    )}
+                </div>
                 <div className="text-sm">{current}</div>
                 <div className="text-sm">{percentage.toFixed(0)} %</div>
-                <div className="ml-auto">
-                    <ActionsMenu onDelete={() => onDelete?.(sousPot.id)} />
+                <div className="ml-auto flex gap-1">
+                    {!disabled && (
+                        isEditing ? (
+                            <>
+                                <button
+                                    className="btn btn-xs btn-primary"
+                                    onClick={async () => {
+                                        if (editPrevision < 0) return
+
+                                        await onUpdate?.(sousPot.id, {
+                                            name: editName.trim(),
+                                            prevision: editPrevision,
+                                        })
+
+                                        setIsEditing(false)
+                                    }}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                >
+                                    {t("common.save")}
+                                </button>
+
+                                <button
+                                    className="btn btn-xs btn-ghost"
+                                    onClick={() => {
+                                        setEditName(sousPot.name)
+                                        setEditPrevision(sousPot.prevision)
+                                        setIsEditing(false)
+                                    }}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                >
+                                    {t("common.cancel")}
+                                </button>
+                            </>
+                        ) : (
+                            <ActionsMenu
+                                onDelete={() => onDelete?.(sousPot.id)}
+                                onEdit={() => setIsEditing(true)}
+                            />
+                        )
+                    )}
                 </div>
             </div>
 
