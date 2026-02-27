@@ -25,6 +25,7 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onDelet
     const disabled = pot.position === 0
     const [showCreate, setShowCreate] = useState(false)
     const [newName, setNewName] = useState("")
+    const [newPrevision, setNewPrevision] = useState<number>(0)
 
 
     const {
@@ -40,20 +41,10 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onDelet
         disabled,
     })
 
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        background: "#1e1e1e",
-        padding: 16,
-        borderRadius: 8,
-        opacity: isDragging ? 0 : 1,
-        cursor: disabled ? "not-allowed" : "grab",
-    }
-
     return (
         <div
             ref={setNodeRef}
-            className={`pot-item bg-gray-800 p-4 rounded-lg ${isDragging ? "opacity-0" : "opacity-100"} ${disabled ? "cursor-not-allowed" : "cursor-grab"}`}
+            className={`pot-item bg-base-200 p-4 rounded-lg ${isDragging ? "opacity-0" : "opacity-100"} ${disabled ? "cursor-not-allowed" : "cursor-grab"}`}
             style={{
                 transform: CSS.Transform.toString(transform),
                 transition,
@@ -99,6 +90,15 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onDelet
                         onChange={(e) => setNewName(e.target.value)}
                         placeholder={t("sous_pots.name")}
                     />
+                    <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        className="input input-bordered"
+                        value={newPrevision}
+                        onChange={(e) => setNewPrevision(Number(e.target.value))}
+                        placeholder={t("sous_pots.prevision")}
+                    />
 
                     <button
                         className="btn btn-sm btn-primary"
@@ -107,8 +107,15 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onDelet
                             if (!trimmed) return
                             onAddSousPot(pot.id, trimmed)
                             setNewName("")
+                            setNewPrevision(0)
                             setShowCreate(false)
-                            await onPersistSousPot(pot.id, trimmed, 0)
+                            if (newPrevision < 0) return
+
+                            await onPersistSousPot(
+                                pot.id,
+                                trimmed,
+                                newPrevision
+                            )
                         }}
                     >
                         {t("common.create")}
@@ -119,6 +126,7 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onDelet
                         onClick={() => {
                             setShowCreate(false)
                             setNewName("")
+                            setNewPrevision(0)
                         }}
                     >
                         {t("common.cancel")}

@@ -124,14 +124,13 @@ export default function ComptesPage() {
                                     <th>{t("accounts.name")}</th>
                                     <th>{t("accounts.balance")}</th>
                                     <th>{t("accounts.start_day")}</th>
-                                    <th>{t("accounts.decallage")}</th>
                                     <th>{t("common.actions")}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {comptes.length === 0 && (
                                     <tr>
-                                        <td colSpan={5} className="text-center text-gray-400 italic">—</td>
+                                        <td colSpan={4} className="text-center text-gray-400 italic">—</td>
                                     </tr>
                                 )}
 
@@ -142,7 +141,6 @@ export default function ComptesPage() {
                                         {formatAmount(balances[a.id])} €
                                     </td>
                                     <td>{a.start_day}</td>
-                                    <td>{a.decallage}</td>
                                     <td>
                                         <ActionsMenu
                                             onDelete={() => handleDelete(a.id)}

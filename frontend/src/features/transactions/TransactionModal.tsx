@@ -44,7 +44,7 @@ export default function TransactionModal({
         setAmount(transaction.amount ?? 0)
         setMotif(transaction.motif ?? "")
         setSelectedCompteId(transaction.compte_id ?? comptes[0].id)
-        setSelectedSousPotId(transaction.sous_pot_id ?? null)
+        setSelectedSousPotId(transaction.sous_pot_id ?? pots[0].sous_pots[0].id)
 
         setTransactionDate(transaction.transaction_date ?? today)
 

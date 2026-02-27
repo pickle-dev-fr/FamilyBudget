@@ -24,10 +24,10 @@ export function ActionsMenu({ onDelete, onEdit }: ActionsMenuProps) {
             </button>
 
             {open && (
-                <div className="absolute right-0 mt-1 w-40 bg-base-100 dark:bg-bg-dark rounded-md shadow-lg z-20 flex flex-col">
+                <div className="absolute right-0 mt-1 w-40 bg-base-100 rounded-md shadow-lg z-20 flex flex-col">
                     {onEdit && (
                         <button
-                            className="text-left px-3 py-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                            className="text-left px-3 py-2 hover:bg-base-200 rounded"
                             onPointerDown={(e) => e.stopPropagation()}
                             onClick={() => {
                                 onEdit()
@@ -39,7 +39,7 @@ export function ActionsMenu({ onDelete, onEdit }: ActionsMenuProps) {
                     )}
 
                     <button
-                        className="text-left px-3 py-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                        className="text-left px-3 py-2 hover:bg-base-200 rounded"
                         onPointerDown={(e) => e.stopPropagation()}
                         onClick={() => {
                             onDelete()

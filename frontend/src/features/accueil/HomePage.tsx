@@ -117,7 +117,7 @@ function TransactionsTable({ items }: { items: Transaction[] }) {
             <table className="table w-full border-collapse">
                 <tbody>
                     {items.map((tx) => (
-                        <tr key={tx.id} className="hover:bg-gray-700">
+                        <tr key={tx.id} className="hover:bg-base-300">
                             <td>{tx.transaction_type}</td>
                             <td>{tx.transaction_date}</td>
                             <td className={tx.amount >= 0 ? "text-success" : "text-error"} style={{ textAlign: "right" }}>

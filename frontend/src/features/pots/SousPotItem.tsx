@@ -40,18 +40,6 @@ export default function SousPotItem({
 
     const clamped = Math.min(percentage, 100)
 
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        background: "#1e1e1e",
-        borderRadius: 6,
-        opacity: disabled ? 0.5 : isDragging ? 0 : 1,
-        padding: "8px 12px",
-        display: "flex",
-        flexDirection: "column" as const,
-        gap: 6,
-    }
-
     return (
         <div
             ref={setNodeRef}

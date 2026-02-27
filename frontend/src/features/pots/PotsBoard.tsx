@@ -381,9 +381,19 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
                 </div>
             </SortableContext>
 
-            <DragOverlay className="pointer-events-none drag-overlay">
+            <DragOverlay className="pointer-events-none">
                 {activeId && (
-                    <div className="bg-gray-800 p-4 rounded-lg shadow-lg drag-overlay-item">
+                    <div
+                        className="
+                            bg-base-100
+                            border-2 border-primary
+                            shadow-2xl
+                            rounded-lg
+                            p-4
+                            opacity-100
+                            scale-105
+                        "
+                    >
                         {getActiveLabel(pots, activeId, activeType)}
                     </div>
                 )}
@@ -391,4 +401,3 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
         </DndContext>
     )
 }
-

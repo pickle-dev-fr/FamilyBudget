@@ -4,15 +4,15 @@
 /* ---- Actions Menu ---- */
 .actions-menu-container { position: relative; display: inline-block; }
 .actions-menu-button { cursor: pointer; background: none; border: none; }
-.actions-menu-dropdown { position: absolute; top: 100%; right: 0; background: #1e1e1e; border-radius: 0.25rem; padding: 0.25rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 20; }
+.actions-menu-dropdown { position: absolute; top: 100%; right: 0; background: hsl(var(--b1)); border-radius: 0.25rem; padding: 0.25rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 20; }
 .actions-menu-item { padding: 0.5rem 1rem; cursor: pointer; }
-.actions-menu-item:hover { background: rgba(255,255,255,0.1); }
+.actions-menu-item:hover { background: hsl(var(--b2)); }
 
 /* ---- Modal ---- */
 .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
 .modal-btn { padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; }
-.cancel-btn { background-color: #333; color: #fff; }
-.confirm-btn { background-color: #4caf50; color: #fff; }
+.cancel-btn { background-color: hsl(var(--n)); color: hsl(var(--nc)); }
+.confirm-btn { background-color: hsl(var(--a)); color: hsl(var(--ac)); }
 .modal-message { padding: 1rem 0; }
 
 /* ---- Page Layout ---- */
@@ -28,8 +28,8 @@
 
 /* ---- Transactions ---- */
 .badge { padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-weight: bold; }
-.badge-debit { background-color: #e53935; color: #fff; }
-.badge-credit { background-color: #4caf50; color: #fff; }
+.badge-debit { background-color: hsl(var(--er)); color: #fff; }
+.badge-credit { background-color: hsl(var(--su)); color: #fff; }
 
 /* ---- Pots ---- */
 .pots-container {}
@@ -42,7 +42,7 @@
 .pot-create-submit {}
 .pot-create-cancel {}
 .pots-list { display: flex; flex-direction: column; gap: 0.5rem; }
-.pot-item { background-color: #1e1e1e; border-radius: 0.5rem; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.pot-item { background-color: hsl(var(--b2)); border-radius: 0.5rem; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
 .pot-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
 .pot-handle {}
 .pot-actions {}
@@ -57,17 +57,17 @@
 .sous-pot-prevision { font-size: 0.75rem; opacity: 0.7; }
 .sous-pot-current { font-size: 0.75rem; }
 .sous-pot-percentage { font-size: 0.75rem; }
-.sous-pot-bar-wrapper { width: 100%; height: 0.5rem; background-color: #2a2a2a; border-radius: 0.25rem; overflow: hidden; }
+.sous-pot-bar-wrapper { width: 100%; height: 0.5rem; background-color: hsl(var(--b3)); border-radius: 0.25rem; overflow: hidden; }
 .sous-pot-bar.red { background-color: #dc2626; }
 .sous-pot-bar.orange { background-color: #fb8c00; }
 .sous-pot-bar.green { background-color: #16a34a; }
 
 /* ---- Drag Overlay ---- */
 .drag-overlay { pointer-events: none; }
-.drag-overlay-item { background-color: #1e1e1e; border-radius: 0.5rem; padding: 1rem; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+.drag-overlay-item { background-color: hsl(var(--b2)); border-radius: 0.5rem; padding: 1rem; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
 
 /* ---- Tables ---- */
-.transactions-table th, .transactions-table td { padding: 0.5rem; border-bottom: 1px solid #333; }
+.transactions-table th, .transactions-table td { padding: 0.5rem; border-bottom: 1px solid hsl(var(--b3)); }
 .text-right { text-align: right; }
 
 /* ---- Selectors ---- */

@@ -10,7 +10,7 @@ export default function Menu() {
                 to="/"
                 end
                 className={({ isActive }) =>
-                    `px-3 py-2 rounded hover:bg-gray-700 ${isActive ? "bg-gray-800 font-bold" : "text-text"}`
+                    `px-3 py-2 rounded hover:bg-base-300 ${isActive ? "bg-base-300 font-bold" : "text-text"}`
                 }
             >
                 {t("menu.home")}
@@ -19,7 +19,7 @@ export default function Menu() {
             <NavLink
                 to="/accounts"
                 className={({ isActive }) =>
-                    `px-3 py-2 rounded hover:bg-gray-700 ${isActive ? "bg-gray-800 font-bold" : "text-text"}`
+                    `px-3 py-2 rounded hover:bg-base-300 ${isActive ? "bg-base-300 font-bold" : "text-text"}`
                 }
             >
                 {t("menu.accounts")}
@@ -28,7 +28,7 @@ export default function Menu() {
             <NavLink
                 to="/pots"
                 className={({ isActive }) =>
-                    `px-3 py-2 rounded hover:bg-gray-700 ${isActive ? "bg-gray-800 font-bold" : "text-text"}`
+                    `px-3 py-2 rounded hover:bg-base-300 ${isActive ? "bg-base-300 font-bold" : "text-text"}`
                 }
             >
                 {t("menu.pots")}
@@ -37,7 +37,7 @@ export default function Menu() {
             <NavLink
                 to="/transactions"
                 className={({ isActive }) =>
-                    `px-3 py-2 rounded hover:bg-gray-700 ${isActive ? "bg-gray-800 font-bold" : "text-text"}`
+                    `px-3 py-2 rounded hover:bg-base-300 ${isActive ? "bg-base-300 font-bold" : "text-text"}`
                 }
             >
                 {t("menu.transactions")}
@@ -46,7 +46,7 @@ export default function Menu() {
             <NavLink
                 to="/recurrents"
                 className={({ isActive }) =>
-                    `px-3 py-2 rounded hover:bg-gray-700 ${isActive ? "bg-gray-800 font-bold" : "text-text"}`
+                    `px-3 py-2 rounded hover:bg-base-300 ${isActive ? "bg-base-300 font-bold" : "text-text"}`
                 }
             >
                 {t("menu.transactions_recurrent")}
@@ -55,7 +55,7 @@ export default function Menu() {
             <NavLink
                 to="/stats"
                 className={({ isActive }) =>
-                    `px-3 py-2 rounded hover:bg-gray-700 ${isActive ? "bg-gray-800 font-bold" : "text-text"}`
+                    `px-3 py-2 rounded hover:bg-base-300 ${isActive ? "bg-base-300 font-bold" : "text-text"}`
                 }
             >
                 {t("menu.stats")}
@@ -64,7 +64,7 @@ export default function Menu() {
             <NavLink
                 to="/options"
                 className={({ isActive }) =>
-                    `px-3 py-2 rounded hover:bg-gray-700 ${isActive ? "bg-gray-800 font-bold" : "text-text"}`
+                    `px-3 py-2 rounded hover:bg-base-300 ${isActive ? "bg-base-300 font-bold" : "text-text"}`
                 }
             >
                 {t("menu.options")}
