@@ -17,6 +17,18 @@ export type CreateTransactionPayload = {
   recurrence_end_date?: string | null
 };
 
+export type CreateTransferPayload = {
+    compte_source_id: string
+    compte_destination_id: string
+    sous_pot_id: string
+    amount: number
+    motif?: string
+    transaction_date?: string
+    recurrent: boolean
+    recurrence_type?: string | null
+    recurrence_end_date?: string | null
+}
+
 export type UpdateTransactionPayload = CreateTransactionPayload
 
 
@@ -35,6 +47,10 @@ export function getTomorrowTransactions() {
 
 export async function createTransaction(payload: CreateTransactionPayload) {
   return apiClient.post("/transactions", payload);
+}
+
+export function createTransfer(payload: CreateTransferPayload) {
+    return apiClient.post("/transfers", payload)
 }
 
 export async function updateTransaction(id: string, payload: UpdateTransactionPayload) {

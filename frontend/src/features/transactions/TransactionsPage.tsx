@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react"
-import { deleteTransaction, getTransactionsMois, createTransaction, updateTransaction, type Transaction, type CreateTransactionPayload, type UpdateTransactionPayload } from "@/api/transactions.api"
+import { deleteTransaction, getTransactionsMois, createTransaction, updateTransaction, type Transaction, type CreateTransactionPayload, type UpdateTransactionPayload, createTransfer } from "@/api/transactions.api"
 import { getComptes, type Compte } from "@/api/comptes.api"
-import { formatDate } from "@/utils"
 import { ActionsMenu } from "@/components/layout/ActionsMenu"
 import ConfirmModal from "@/components/layout/ConfirmModal"
 import { t } from "i18next"
@@ -9,6 +8,7 @@ import TransactionModal from "./TransactionModal"
 import type { UIPot, UISousPot } from "../pots/types"
 import { getPotsAndSousPotsByCompte } from "@/api/pots.api"
 import { getPeriode } from "@/api/utils.api"
+import TransferModal from "./TransfertModal"
 
 export default function TransactionsPage(): React.JSX.Element {
     const [comptes, setComptes] = useState<Compte[]>([])
@@ -17,6 +17,7 @@ export default function TransactionsPage(): React.JSX.Element {
     const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
     const [modalTarget, setModalTarget] = useState<CreateTransactionPayload | UpdateTransactionPayload | null>(null)
     const [transactionEditId, setTransactionEditId] = useState<string | undefined>(undefined)
+    const [transferModalOpen, setTransferModalOpen] = useState(false)
 
     // pots déjà chargés depuis le contexte ou parent
     const [pots, setPots] = useState<UIPot[]>([])
@@ -126,7 +127,10 @@ export default function TransactionsPage(): React.JSX.Element {
                 <select
                     className="select select-bordered w-full"
                     value={selectedCompteId}
-                    onChange={(e) => setSelectedCompteId(e.target.value)}
+                    onChange={(e) => {
+                        setSelectedCompteId(e.target.value);
+                        loadTransactions()
+                    }}
                 >
                     {comptes.map(c => (
                         <option key={c.id} value={c.id}>{c.name}</option>
@@ -156,8 +160,11 @@ export default function TransactionsPage(): React.JSX.Element {
                 <button className="btn btn-primary" onClick={() => {setModalTarget({} as CreateTransactionPayload); setTransactionEditId(undefined)}}>
                     {t("transactions.add")}
                 </button>
-                <button className="btn btn-secondary" onClick={() => setModalTarget({ transaction_type: "DEBIT", amount:0, motif:"", transaction_date: formatDate(new Date()) } as CreateTransactionPayload)}>
-                    {t("transactions.transfer")}
+                <button
+                    className="btn btn-outline"
+                    onClick={() => setTransferModalOpen(true)}
+                >
+                    {t("transactions.transfers.add")}
                 </button>
             </div>
 
@@ -213,6 +220,18 @@ export default function TransactionsPage(): React.JSX.Element {
                     onClose={() => setModalTarget(null)}
                     onCreate={handleCreate}
                     onUpdate={handleUpdate}
+                />
+            )}
+            {transferModalOpen && selectedCompteId && (
+                <TransferModal
+                    fixedCompteSourceId={selectedCompteId}
+                    comptes={comptes}
+                    pots={pots}
+                    onClose={() => setTransferModalOpen(false)}
+                    onCreate={async (payload) => {
+                        await createTransfer(payload)
+                        await loadTransactions()
+                    }}
                 />
             )}
 

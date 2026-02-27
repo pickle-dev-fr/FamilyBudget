@@ -44,3 +44,17 @@ class TransactionRead(SQLModel):
     recurrent: bool
     recurrence_type: Optional[TypeRecurrence]
     recurrence_end_date: Optional[date]
+
+class TransferCreate(SQLModel):
+    amount: float
+    transaction_date: Optional[date] = None
+    motif: Optional[str] = None
+
+    compte_source_id: str
+    compte_destination_id: str
+
+    sous_pot_id: Optional[str]
+
+    recurrent: bool = False
+    recurrence_type: Optional[TypeRecurrence] = None
+    recurrence_end_date: Optional[date] = None

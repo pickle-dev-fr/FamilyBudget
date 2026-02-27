@@ -10,9 +10,10 @@ from app.models import (
     Pot,
     Sous_Pot,
     TypeTransaction,
-    TypeRecurrence
+    TypeRecurrence,
+    User
 )
-from app.schemas.transaction_schema import TransactionUpdate
+from app.schemas.transaction_schema import (TransactionUpdate, TransferCreate)
 from app.utils.budget_cycle import get_budget_cycle_for_month
 from app.i18n.messages import msg
 from typing import Optional
@@ -95,6 +96,56 @@ class TransactionService:
         session.commit()
         session.refresh(transaction)
         return transaction
+
+    @staticmethod
+    def create_transfer(
+        session: Session,
+        payload: TransferCreate,
+        user: User
+    ):
+
+        if payload.compte_source_id == payload.compte_destination_id:
+            raise ValueError(msg("transaction.transfer.same_account"))
+
+        if payload.amount <= 0:
+            raise ValueError(msg("transaction.amount.positive"))
+
+        if payload.recurrent and not payload.recurrence_type:
+            raise ValueError(msg("transaction.recurrence_type.required"))
+
+        debit_payload = {
+            "amount": payload.amount,
+            "transaction_type": TypeTransaction.DEBIT,
+            "transaction_date": payload.transaction_date,
+            "motif": payload.motif,
+            "sous_pot_id": payload.sous_pot_id,
+            "recurrent": payload.recurrent,
+            "recurrence_type": payload.recurrence_type,
+            "recurrence_end_date": payload.recurrence_end_date,
+        }
+
+        credit_payload = {
+            "amount": payload.amount,
+            "transaction_type": TypeTransaction.CREDIT,
+            "transaction_date": payload.transaction_date,
+            "motif": payload.motif,
+            "compte_id": payload.compte_destination_id,
+            "recurrent": payload.recurrent,
+            "recurrence_type": payload.recurrence_type,
+            "recurrence_end_date": payload.recurrence_end_date,
+        }
+
+        debit = TransactionService.create_transaction(
+            session=session,
+            **debit_payload
+        )
+
+        credit = TransactionService.create_transaction(
+            session=session,
+            **credit_payload
+        )
+
+        return [debit, credit]
 
     @staticmethod
     def list_by_id (session: Session, id :str) -> Transaction:

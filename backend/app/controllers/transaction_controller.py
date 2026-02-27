@@ -8,6 +8,7 @@ from app.schemas.transaction_schema import (
     TransactionCreate,
     TransactionRead,
     TransactionUpdate,
+    TransferCreate
 )
 from app.security.dependencies import get_current_user
 from app.services.transaction_service import TransactionService
@@ -107,6 +108,21 @@ def list_recurrentes_by_compte(
         compte_id=compte_id,
         )
 
+@router.post("/transfers", response_model=list[TransactionRead])
+def create_transfer(
+    payload: TransferCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    _check_compte_owner(session, payload.compte_source_id, current_user)
+    _check_compte_owner(session, payload.compte_destination_id, current_user)        
+
+    return TransactionService.create_transfer(
+        session=session,
+        payload=payload,
+        user=current_user
+    )
+
 def __control_droit_suppression(session, id, current_user):
     transaction = TransactionService.list_by_id(session, id)
     if transaction.compte_id:
@@ -132,8 +148,6 @@ def __control_droit_suppression(session, id, current_user):
             detail=msg("transaction.error.not_found"),
         )
     return transaction
-    
-
 
 @router.delete(
     "/transactions/{id}",

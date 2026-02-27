@@ -7,6 +7,7 @@ import {
     updateTransaction,
     type Transaction,
     deleteTransactionRecurrence,
+    createTransfer,
 } from "@/api/transactions.api"
 import { getPotsAndSousPotsByCompte } from "@/api/pots.api"
 import type { UIPot, UISousPot } from "../pots/types"
@@ -14,6 +15,7 @@ import TransactionModal from "../transactions/TransactionModal"
 import { ActionsMenu } from "@/components/layout/ActionsMenu"
 import { t } from "i18next"
 import DeleteRecurringModal from "./DeleteRecurringModal"
+import TransferModal from "../transactions/TransfertModal"
 
 export default function RecurringPage() {
     const [comptes, setComptes] = useState<Compte[]>([])
@@ -27,6 +29,7 @@ export default function RecurringPage() {
     const [selectedTx, setSelectedTx] = useState<Transaction | undefined>()
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
     const [txToDelete, setTxToDelete] = useState<Transaction | null>(null)
+    const [transferModalOpen, setTransferModalOpen] = useState(false)
 
     /* ============================= */
     /* LOAD COMPTES */
@@ -152,6 +155,12 @@ export default function RecurringPage() {
                     >
                         {t("recurring.add")}
                     </button>
+                    <button
+                        className="btn btn-outline"
+                        onClick={() => setTransferModalOpen(true)}
+                    >
+                        {t("transactions.transfers.add")}
+                    </button>
                 </div>
             </div>
 
@@ -270,6 +279,24 @@ export default function RecurringPage() {
                     }}
                     onUpdate={async (id, payload) => {
                         await updateTransaction(id, payload)
+                        await reloadRecurring()
+                    }}
+                />
+            )}
+            {transferModalOpen && selectedCompteId && (
+                <TransferModal
+                    fixedCompteSourceId={selectedCompteId}
+                    comptes={comptes}
+                    pots={pots.filter(p => p.compte_id === selectedCompteId)}
+                    isForcedRecurrent={true}
+                    onClose={() => setTransferModalOpen(false)}
+                    onCreate={async (payload) => {
+                        await createTransfer({
+                            ...payload,
+                            recurrent: true,
+                            recurrence_type: payload.recurrence_type ?? "MONTH"
+                        })
+
                         await reloadRecurring()
                     }}
                 />

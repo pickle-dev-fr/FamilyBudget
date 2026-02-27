@@ -68,6 +68,11 @@
       "title": "Suppression d'une transaction",
       "confirm": "Confirmer la suppression de la transaction"
     },
+    "transfers": {
+      "add": "Ajouter un virement",
+      "source_account": "Compte à prélever",
+      "destination_account": "Compte à créditer"
+    },
     "date": "Date",
     "compte": "Compte",
     "debit": "Débit",
