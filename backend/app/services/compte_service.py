@@ -1,4 +1,5 @@
 from sqlmodel import Session, select
+from datetime import date
 
 from app.models import Compte, User, Sous_Pot, Pot, Transaction, TypeTransaction
 from app.i18n.messages import msg
@@ -114,7 +115,8 @@ class CompteService:
                 or_(
                     Transaction.compte_id == compte.id,
                     Pot.compte_id == compte.id,
-                )
+                ),
+                (Transaction.transaction_date < date.today())
             )
         )
 

@@ -1,4 +1,5 @@
 from datetime import date
+from calendar import monthrange
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -31,7 +32,8 @@ def process_recurrences(session: Session) -> None:
                 recurrence_type=tx.recurrence_type,
                 recurrence_end_date=tx.recurrence_end_date,
                 recurrence_day=tx.recurrence_day,
-                is_processed=False
+                is_processed=False,
+                recurrent=True
             )
 
             tx.is_processed=True
@@ -42,6 +44,7 @@ def get_due_recurrent_transactions(session: Session, today: date):
 
     return session.execute(
         select(Transaction).where(
+            Transaction.recurrent.is_(True),
             Transaction.recurrence_type.is_not(None),
             Transaction.transaction_date <= today,
             Transaction.is_processed.is_(False)

@@ -166,6 +166,7 @@ class TransactionService:
                     (Pot.compte_id == compte_id)
                 )
                 & (Transaction.recurrent.is_(True))
+                & (Transaction.is_processed.is_(False))
             )
         )
 

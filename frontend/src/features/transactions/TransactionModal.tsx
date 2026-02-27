@@ -43,7 +43,7 @@ export default function TransactionModal({
         setTransactionType(transaction.transaction_type ?? "DEBIT")
         setAmount(transaction.amount ?? 0)
         setMotif(transaction.motif ?? "")
-        setSelectedCompteId(transaction.compte_id ?? null)
+        setSelectedCompteId(transaction.compte_id ?? comptes[0].id)
         setSelectedSousPotId(transaction.sous_pot_id ?? null)
 
         setTransactionDate(transaction.transaction_date ?? today)
@@ -61,6 +61,7 @@ export default function TransactionModal({
     }
 
     function handleSubmit() {
+        console.log(selectedCompteId)
         if (transactionType === "DEBIT" && !selectedSousPotId) return
         if (transactionType === "CREDIT" && !selectedCompteId) return
 
@@ -80,7 +81,7 @@ export default function TransactionModal({
                 transactionType === "DEBIT"
                     ? selectedSousPotId
                     : null,
-
+            
             recurrence_type: recurrence ? "MONTH" : null,
             recurrent: recurrence ?? false,
             recurrence_end_date: recurrence

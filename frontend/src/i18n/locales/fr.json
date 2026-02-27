@@ -63,6 +63,7 @@
   },
   "transactions": {
     "add": "Ajouter une transaction",
+    "edit": "Modifier une transaction",
     "date": "Date",
     "compte": "Compte",
     "debit": "Débit",

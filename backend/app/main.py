@@ -1,7 +1,6 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.scheduler import start_scheduler
 
 from app.controllers.auth_controller import router as auth_controller
 from app.controllers.transaction_controller import router as transaction_router
@@ -11,7 +10,19 @@ from app.controllers.pot_controller import router as pot_router
 from app.controllers.sous_pot_controller import router as sous_pot_router
 from app.controllers.stats_controller import router as stats_router
 
-app = FastAPI(title="FamilyBudget API")
+from contextlib import asynccontextmanager
+
+from app.core.scheduler import start_scheduler
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("APP START")
+    start_scheduler()
+    yield
+    print("APP STOP")
+
+app = FastAPI(title="FamilyBudget API", lifespan=lifespan)
 
 app.include_router(auth_controller)
 app.include_router(transaction_router)
@@ -32,9 +43,4 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.on_event("startup")
-async def startup_event():
-    start_scheduler()
-
 

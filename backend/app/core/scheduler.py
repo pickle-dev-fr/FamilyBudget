@@ -1,3 +1,4 @@
+import os
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy.orm import Session
 from datetime import date
@@ -11,8 +12,8 @@ def start_scheduler():
     scheduler.add_job(
         process_recurrences_job,
         "cron",
-        hour=0,
-        minute=5
+        hour="0",
+        minute="5"
     )
     scheduler.start()
 
