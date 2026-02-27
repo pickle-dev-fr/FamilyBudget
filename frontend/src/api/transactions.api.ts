@@ -42,7 +42,7 @@ export async function updateTransaction(id: string, payload: UpdateTransactionPa
 }
 
 export function getTransactionsMois(compte_id: string, payload: {date_month: number, date_year: number}) {
-  return apiClient.get(`/compte/${compte_id}/transactions/`, payload);
+  return apiClient.get(`/compte/${compte_id}/transactions`, payload);
 }
 
 export function getTransactionsRecurrente(compte_id: string) {
