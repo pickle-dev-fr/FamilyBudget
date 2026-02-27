@@ -1,17 +1,32 @@
 import { useEffect, useState } from "react"
 import { getComptes, type Compte } from "@/api/comptes.api"
-import { getTransactionsRecurrente, type Transaction } from "@/api/transactions.api"
-import { t } from "i18next"
+import {
+    getTransactionsRecurrente,
+    deleteTransaction,
+    createTransaction,
+    updateTransaction,
+    type Transaction,
+} from "@/api/transactions.api"
 import { getPotsAndSousPotsByCompte } from "@/api/pots.api"
 import type { UIPot, UISousPot } from "../pots/types"
+import TransactionModal from "../transactions/TransactionModal"
+import { ActionsMenu } from "@/components/layout/ActionsMenu"
+import { t } from "i18next"
 
 export default function RecurringPage() {
     const [comptes, setComptes] = useState<Compte[]>([])
     const [pots, setPots] = useState<UIPot[]>([])
-    const [sous_pots, setSousPots] = useState<UISousPot[]>([])
+    const [sousPots, setSousPots] = useState<UISousPot[]>([])
     const [selectedCompteId, setSelectedCompteId] = useState<string | null>(null)
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [loading, setLoading] = useState<boolean>(false)
+
+    const [isModalOpen, setIsModalOpen] = useState(false)
+    const [selectedTx, setSelectedTx] = useState<Transaction | undefined>()
+
+    /* ============================= */
+    /* LOAD COMPTES */
+    /* ============================= */
 
     useEffect(() => {
         async function loadComptes() {
@@ -26,27 +41,41 @@ export default function RecurringPage() {
         loadComptes()
     }, [])
 
-        useEffect(() => {
+    /* ============================= */
+    /* LOAD POTS + SOUS POTS */
+    /* ============================= */
+
+    useEffect(() => {
         if (!selectedCompteId) return
 
-        async function loadPotsEtSousPots() {
-            const data: UIPot[] = await getPotsAndSousPotsByCompte(selectedCompteId!)
+        async function loadPots() {
+            const data: UIPot[] =
+                await getPotsAndSousPotsByCompte(selectedCompteId!)
+
             setPots(data)
-            const sous_pots: UISousPot[] = [];
-            data.forEach((pot: UIPot)=> {
-                pot.sous_pots.forEach((sous_pot: UISousPot) => sous_pots.push(sous_pot))
-            })
-            setSousPots(sous_pots)
+
+            const flat: UISousPot[] = []
+            data.forEach(p =>
+                p.sous_pots.forEach(sp => flat.push(sp))
+            )
+
+            setSousPots(flat)
         }
-        loadPotsEtSousPots()
+
+        loadPots()
     }, [selectedCompteId])
+
+    /* ============================= */
+    /* LOAD RECURRING */
+    /* ============================= */
 
     useEffect(() => {
         if (!selectedCompteId) return
 
         async function loadRecurring() {
             setLoading(true)
-            const data = await getTransactionsRecurrente(selectedCompteId!)
+            const data =
+                await getTransactionsRecurrente(selectedCompteId!)
             setTransactions(data)
             setLoading(false)
         }
@@ -54,28 +83,70 @@ export default function RecurringPage() {
         loadRecurring()
     }, [selectedCompteId])
 
+    async function reloadRecurring() {
+        if (!selectedCompteId) return
+        const data =
+            await getTransactionsRecurrente(selectedCompteId)
+        setTransactions(data)
+    }
+
+    /* ============================= */
+    /* DELETE (traitement spécial possible ici) */
+    /* ============================= */
+
+    async function handleDelete(tx: Transaction) {
+        if (!selectedCompteId) return
+
+        // Ici tu peux mettre une confirmation spécifique
+        await deleteTransaction(tx.id)
+
+        await reloadRecurring()
+    }
+
+    /* ============================= */
+    /* RENDER */
+    /* ============================= */
+
     return (
         <div className="p-6 space-y-6">
+
+            {/* HEADER */}
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold">
                     {t("recurring.title")}
                 </h1>
 
-                <select
-                    className="select select-bordered"
-                    value={selectedCompteId ?? ""}
-                    onChange={(e) => setSelectedCompteId(e.target.value)}
-                >
-                    {comptes.map((c) => (
-                        <option key={c.id} value={c.id}>
-                            {c.name}
-                        </option>
-                    ))}
-                </select>
+                <div className="flex gap-2">
+                    <select
+                        className="select select-bordered"
+                        value={selectedCompteId ?? ""}
+                        onChange={(e) =>
+                            setSelectedCompteId(e.target.value)
+                        }
+                    >
+                        {comptes.map(c => (
+                            <option key={c.id} value={c.id}>
+                                {c.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => {
+                            setSelectedTx(undefined)
+                            setIsModalOpen(true)
+                        }}
+                    >
+                        {t("recurring.add")}
+                    </button>
+                </div>
             </div>
 
+            {/* CARD */}
             <div className="card bg-base-100 shadow">
                 <div className="card-body p-0">
+
                     {loading ? (
                         <div className="p-6">
                             {t("common.loading")}
@@ -92,19 +163,25 @@ export default function RecurringPage() {
                                         <th>{t("recurring.recurrence_type.label")}</th>
                                         <th>{t("recurring.next_date")}</th>
                                         <th>{t("recurring.end_date")}</th>
+                                        <th>{t("common.actions")}</th>
                                     </tr>
                                 </thead>
+
                                 <tbody>
                                     {transactions.length === 0 && (
                                         <tr>
-                                            <td colSpan={7} className="text-center py-6">
+                                            <td
+                                                colSpan={8}
+                                                className="text-center py-6"
+                                            >
                                                 {t("recurring.empty")}
                                             </td>
                                         </tr>
                                     )}
 
-                                    {transactions.map((tx) => (
+                                    {transactions.map(tx => (
                                         <tr key={tx.id}>
+
                                             <td>
                                                 <span
                                                     className={
@@ -122,12 +199,12 @@ export default function RecurringPage() {
                                             </td>
 
                                             <td>
-                                                {sous_pots.find(sp => sp.id === tx.sous_pot_id)?.name ?? "-"}
+                                                {sousPots.find(
+                                                    sp => sp.id === tx.sous_pot_id
+                                                )?.name ?? "-"}
                                             </td>
 
-                                            <td>
-                                                {tx.motif}
-                                            </td>
+                                            <td>{tx.motif}</td>
 
                                             <td>
                                                 {tx.recurrence_type ?? "-"}
@@ -140,6 +217,19 @@ export default function RecurringPage() {
                                             <td>
                                                 {tx.recurrence_end_date ?? "-"}
                                             </td>
+
+                                            <td>
+                                                <ActionsMenu
+                                                    onEdit={() => {
+                                                        setSelectedTx(tx)
+                                                        setIsModalOpen(true)
+                                                    }}
+                                                    onDelete={() =>
+                                                        handleDelete(tx)
+                                                    }
+                                                />
+                                            </td>
+
                                         </tr>
                                     ))}
                                 </tbody>
@@ -148,6 +238,29 @@ export default function RecurringPage() {
                     )}
                 </div>
             </div>
+
+            {/* MODAL */}
+            {isModalOpen && (
+                <TransactionModal
+                    id={selectedTx?.id}
+                    transaction={selectedTx}
+                    comptes={comptes}
+                    pots={pots}
+                    onClose={() => {
+                        setIsModalOpen(false)
+                        setSelectedTx(undefined)
+                    }}
+                    onCreate={async (payload) => {
+                        await createTransaction(payload)
+                        await reloadRecurring()
+                    }}
+                    onUpdate={async (id, payload) => {
+                        await updateTransaction(id, payload)
+                        await reloadRecurring()
+                    }}
+                />
+            )}
+
         </div>
     )
 }

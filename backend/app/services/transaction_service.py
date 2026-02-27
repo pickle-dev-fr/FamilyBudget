@@ -1,6 +1,6 @@
 from datetime import date
 from sqlmodel import Session, select
-from sqlalchemy import or_
+from sqlalchemy import or_, asc
 from typing import List
 
 
@@ -168,6 +168,7 @@ class TransactionService:
                 & (Transaction.recurrent.is_(True))
                 & (Transaction.is_processed.is_(False))
             )
+            .order_by(asc(Transaction.transaction_date))
         )
 
         return session.exec(query).all()

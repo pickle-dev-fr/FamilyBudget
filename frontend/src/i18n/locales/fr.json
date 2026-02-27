@@ -78,6 +78,7 @@
   },
   "recurring":  {
     "title": "Gestion des transactions récurrentes",
+    "add": "Ajouter une transaction récurrente",
     "next_date": "Prochaine transaction",
     "recurrence_type": {
       "label": "Récurrence",

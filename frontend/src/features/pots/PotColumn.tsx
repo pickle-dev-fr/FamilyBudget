@@ -144,10 +144,22 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onUpdat
                     </div>
                 ) : (
                     !disabled && (
-                        <ActionsMenu
-                            onDelete={() => onDeletePot(pot.id)}
-                            onEdit={() => setIsEditing(true)}
-                        />
+                        <div className="flex items-center gap-2">
+
+                            {/* ➕ Bouton création SousPot */}
+                            <button
+                                className="btn btn-xs btn-outline"
+                                onClick={() => setShowCreate(true)}
+                                onPointerDown={(e) => e.stopPropagation()}
+                            >
+                                +
+                            </button>
+
+                            <ActionsMenu
+                                onDelete={() => onDeletePot(pot.id)}
+                                onEdit={() => setIsEditing(true)}
+                            />
+                        </div>
                     )
                 )}
             </div>

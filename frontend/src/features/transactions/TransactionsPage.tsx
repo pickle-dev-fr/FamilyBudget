@@ -172,6 +172,7 @@ export default function TransactionsPage(): React.JSX.Element {
                 <TransactionModal
                     transaction={modalTarget}
                     id={transactionEditId}
+                    fixedCompteId={selectedCompteId}
                     comptes={comptes}
                     pots={pots}
                     onClose={() => setModalTarget(null)}

@@ -8,6 +8,7 @@ import { t } from "i18next"
 type Props = {
     transaction?: UpdateTransactionPayload
     id?: string
+    fixedCompteId?: string
     onClose: () => void
     comptes: Compte[]
     pots: UIPot[]
@@ -18,6 +19,7 @@ type Props = {
 export default function TransactionModal({
     transaction,
     id,
+    fixedCompteId,
     onClose,
     comptes,
     pots,
@@ -43,7 +45,11 @@ export default function TransactionModal({
         setTransactionType(transaction.transaction_type ?? "DEBIT")
         setAmount(transaction.amount ?? 0)
         setMotif(transaction.motif ?? "")
-        setSelectedCompteId(transaction.compte_id ?? comptes[0].id)
+        setSelectedCompteId(
+            fixedCompteId ??
+            transaction?.compte_id ??
+            comptes[0]?.id
+        )
         setSelectedSousPotId(transaction.sous_pot_id ?? pots[0].sous_pots[0].id)
 
         setTransactionDate(transaction.transaction_date ?? today)
@@ -61,7 +67,6 @@ export default function TransactionModal({
     }
 
     function handleSubmit() {
-        console.log(selectedCompteId)
         if (transactionType === "DEBIT" && !selectedSousPotId) return
         if (transactionType === "CREDIT" && !selectedCompteId) return
 
@@ -74,7 +79,7 @@ export default function TransactionModal({
 
             compte_id:
                 transactionType === "CREDIT"
-                    ? selectedCompteId
+                    ? (fixedCompteId ?? selectedCompteId)
                     : null,
 
             sous_pot_id:
@@ -178,6 +183,7 @@ export default function TransactionModal({
                         <select
                             className="select select-bordered w-full"
                             value={selectedCompteId || ""}
+                            disabled={fixedCompteId ? true : false}
                             onChange={e =>
                                 setSelectedCompteId(e.target.value)
                             }
