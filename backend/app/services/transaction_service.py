@@ -97,7 +97,7 @@ class TransactionService:
         return transaction
 
     @staticmethod
-    def list_by_id (session: Session, id :str) -> list[Transaction]:
+    def list_by_id (session: Session, id :str) -> Transaction:
         query = select(Transaction).where(Transaction.id == id)
         return session.exec(query).one()
 
@@ -150,6 +150,38 @@ class TransactionService:
     ) -> list[Transaction]:
         query = select(Transaction).where(Transaction.sous_pot_id == sous_pot_id)
         return session.exec(query).all()
+
+    @staticmethod
+    def list_by_user_and(
+        session: Session,
+        user,
+        filters: dict | None = None,
+    ) -> list[Transaction]:
+        user_compte_ids = (
+            select(Compte.id)
+            .where(Compte.user_id == user.id)
+        )
+
+        stmt = (
+            select(Transaction)
+            .outerjoin(Sous_Pot, Transaction.sous_pot_id == Sous_Pot.id)
+            .outerjoin(Pot, Sous_Pot.pot_id == Pot.id)
+            .where(
+                or_(
+                    Transaction.compte_id.in_(user_compte_ids),
+                    Pot.compte_id.in_(user_compte_ids),
+                )
+            )
+        )
+
+        if filters:
+            if filters.get("transaction_date") is not None:
+                stmt = stmt.where(
+                    Transaction.transaction_date == filters["transaction_date"]
+                )
+
+        stmt = stmt.order_by(asc(Transaction.transaction_date))
+        return session.exec(stmt).all()
 
     @staticmethod
     def list_recurrentes_by_compte(
@@ -248,7 +280,15 @@ class TransactionService:
         return transaction
 
     @staticmethod
-    def delete(session: Session, transaction_id: str) -> None:
-        transaction_id = TransactionService.get_by_id(session, transaction_id)
-        session.delete(sous_pot)
+    def delete(session: Session, transaction: Transaction) -> None:
+        session.delete(transaction)
+        session.commit()
+
+    @staticmethod
+    def delete_recurrence(session: Session, transaction: Transaction) -> Transaction:
+        transaction.recurrent = False
+        transaction.recurrence_type = None
+        transaction.recurrence_end_date = None
+        transaction.recurrence_day = None
+        session.add(transaction)
         session.commit()

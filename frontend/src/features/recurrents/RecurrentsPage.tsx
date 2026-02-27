@@ -6,12 +6,14 @@ import {
     createTransaction,
     updateTransaction,
     type Transaction,
+    deleteTransactionRecurrence,
 } from "@/api/transactions.api"
 import { getPotsAndSousPotsByCompte } from "@/api/pots.api"
 import type { UIPot, UISousPot } from "../pots/types"
 import TransactionModal from "../transactions/TransactionModal"
 import { ActionsMenu } from "@/components/layout/ActionsMenu"
 import { t } from "i18next"
+import DeleteRecurringModal from "./DeleteRecurringModal"
 
 export default function RecurringPage() {
     const [comptes, setComptes] = useState<Compte[]>([])
@@ -23,6 +25,8 @@ export default function RecurringPage() {
 
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [selectedTx, setSelectedTx] = useState<Transaction | undefined>()
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+    const [txToDelete, setTxToDelete] = useState<Transaction | null>(null)
 
     /* ============================= */
     /* LOAD COMPTES */
@@ -91,14 +95,22 @@ export default function RecurringPage() {
     }
 
     /* ============================= */
-    /* DELETE (traitement spécial possible ici) */
+    /* DELETE */
     /* ============================= */
 
-    async function handleDelete(tx: Transaction) {
-        if (!selectedCompteId) return
+    async function handleConfirmDelete(
+        deleteFuture: boolean
+    ) {
+        if (!txToDelete) return
 
-        // Ici tu peux mettre une confirmation spécifique
-        await deleteTransaction(tx.id)
+        if (deleteFuture) {
+            await deleteTransaction(txToDelete.id)
+        } else {
+            await deleteTransactionRecurrence(txToDelete.id)
+        }
+
+        setDeleteModalOpen(false)
+        setTxToDelete(null)
 
         await reloadRecurring()
     }
@@ -224,9 +236,10 @@ export default function RecurringPage() {
                                                         setSelectedTx(tx)
                                                         setIsModalOpen(true)
                                                     }}
-                                                    onDelete={() =>
-                                                        handleDelete(tx)
-                                                    }
+                                                    onDelete={() => {
+                                                        setTxToDelete(tx)
+                                                        setDeleteModalOpen(true)
+                                                    }}
                                                 />
                                             </td>
 
@@ -244,6 +257,7 @@ export default function RecurringPage() {
                 <TransactionModal
                     id={selectedTx?.id}
                     transaction={selectedTx}
+                    isForcedRecurrent={true}
                     comptes={comptes}
                     pots={pots}
                     onClose={() => {
@@ -258,6 +272,16 @@ export default function RecurringPage() {
                         await updateTransaction(id, payload)
                         await reloadRecurring()
                     }}
+                />
+            )}
+            {deleteModalOpen && txToDelete && (
+                <DeleteRecurringModal
+                    transaction={txToDelete}
+                    onClose={() => {
+                        setDeleteModalOpen(false)
+                        setTxToDelete(null)
+                    }}
+                    onConfirm={handleConfirmDelete}
                 />
             )}
 

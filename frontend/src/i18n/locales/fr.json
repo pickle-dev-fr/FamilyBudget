@@ -64,6 +64,10 @@
   "transactions": {
     "add": "Ajouter une transaction",
     "edit": "Modifier une transaction",
+    "delete": {
+      "title": "Suppression d'une transaction",
+      "confirm": "Confirmer la suppression de la transaction"
+    },
     "date": "Date",
     "compte": "Compte",
     "debit": "Débit",
@@ -87,7 +91,12 @@
       "month": "Mois"
     },
     "end_date": "Fin de la récurrence",
-    "empty": "Aucune transaction récurrente"
+    "empty": "Aucune transaction récurrente",
+    "delete": {
+      "title": "Suppression de la récurrence d'une transaction",
+      "confirm": "Confirmer le retrait de la récurrence",
+      "also_future": "Supprimer aussi la transaction prévue"
+    }
   },
   "pots": {
     "name": "Nom du pot",

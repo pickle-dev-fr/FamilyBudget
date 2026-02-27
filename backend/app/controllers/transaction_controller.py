@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
-from sqlmodel import Session
+from sqlmodel import Session, select
 from datetime import date
-from app.models import User, Compte
+from app.models import User, Compte, Pot, Sous_Pot
 
 from app.database import get_session
 from app.schemas.transaction_schema import (
@@ -64,6 +64,21 @@ def get_transaction_by_id(
     except Exception:
         raise HTTPException(status_code=404, detail=msg("transaction.error.not_found"))
 
+@router.get("/transactions", response_model=list[TransactionRead])
+def get_transactions_by(
+    date: date | None = Query(default=None),
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    try:
+        return TransactionService.list_by_user_and(
+            session,
+            user,
+            filters={"transaction_date": date},
+        )
+    except Exception:
+        raise HTTPException(status_code=404, detail=msg("transaction.error.not_found"))
+
 @router.get("/compte/{compte_id}/transactions", response_model=list[TransactionRead])
 def list_by_compte_and_period(
     compte_id: str,
@@ -92,6 +107,34 @@ def list_recurrentes_by_compte(
         compte_id=compte_id,
         )
 
+def __control_droit_suppression(session, id, current_user):
+    transaction = TransactionService.list_by_id(session, id)
+    if transaction.compte_id:
+        _check_compte_owner(session, transaction.compte_id, current_user)
+    elif transaction.sous_pot_id:
+        stmt = (
+            select(Compte.id)
+            .join(Pot, Pot.compte_id == Compte.id)
+            .join(Sous_Pot, Sous_Pot.pot_id == Pot.id)
+            .where(
+                Sous_Pot.id == transaction.sous_pot_id,
+                Compte.user_id == current_user.id,
+            )
+        )
+        if not session.exec(stmt).first():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=msg("transaction.error.not_found"),
+            )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=msg("transaction.error.not_found"),
+        )
+    return transaction
+    
+
+
 @router.delete(
     "/transactions/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -101,6 +144,14 @@ def delete(
     session: Session = Depends(get_session),
     current_user: User = Security(get_current_user),
 ):
-    transaction = TransactionService.get_by_id(session, id)
-    ## TODO rajouter contrôle droit suppression
-    TransactionService.delete(session, id)
+    transaction = __control_droit_suppression(session, id, current_user)
+    TransactionService.delete(session, transaction)
+
+@router.delete("/transactions/{transaction_id}/recurrence")
+def delete_recurrence(
+    transaction_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Security(get_current_user),
+):
+    transaction = __control_droit_suppression(session, transaction_id, current_user)
+    TransactionService.delete_recurrence(transaction=transaction, session=session)

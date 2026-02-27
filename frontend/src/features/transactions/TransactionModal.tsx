@@ -8,6 +8,7 @@ import { t } from "i18next"
 type Props = {
     transaction?: UpdateTransactionPayload
     id?: string
+    isForcedRecurrent?: boolean
     fixedCompteId?: string
     onClose: () => void
     comptes: Compte[]
@@ -19,6 +20,7 @@ type Props = {
 export default function TransactionModal({
     transaction,
     id,
+    isForcedRecurrent,
     fixedCompteId,
     onClose,
     comptes,
@@ -234,6 +236,7 @@ export default function TransactionModal({
                         className="checkbox"
                         checked={recurrence}
                         onChange={e => setRecurrence(e.target.checked)}
+                        disabled={isForcedRecurrent ?? false}
                     />
                     <span>{t("transactions.recurrent")}</span>
                 </div>

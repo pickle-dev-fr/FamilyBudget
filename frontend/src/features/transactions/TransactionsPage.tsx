@@ -8,6 +8,7 @@ import { t } from "i18next"
 import TransactionModal from "./TransactionModal"
 import type { UIPot, UISousPot } from "../pots/types"
 import { getPotsAndSousPotsByCompte } from "@/api/pots.api"
+import { getPeriode } from "@/api/utils.api"
 
 export default function TransactionsPage(): React.JSX.Element {
     const [comptes, setComptes] = useState<Compte[]>([])
@@ -21,11 +22,10 @@ export default function TransactionsPage(): React.JSX.Element {
     const [pots, setPots] = useState<UIPot[]>([])
     const [sous_pots, setSousPots] = useState<UISousPot[]>([])
 
-    const now = new Date()
-    const [currentRefMonth, setCurrentRefMonth] = useState<{ year: number; month: number }>({
-        year: now.getFullYear(),
-        month: now.getMonth()//get Month Range : 0-11
-    })
+    const [currentRefMonth, setCurrentRefMonth] = useState<{
+        year: number
+        month: number
+    } | null>(null)
 
     useEffect(() => {
         async function loadComptes() {
@@ -37,6 +37,21 @@ export default function TransactionsPage(): React.JSX.Element {
         }
         loadComptes()
     }, [])
+
+    useEffect(() => {
+        async function loadPeriode() {
+            if (!selectedCompteId) return
+
+            const periode = await getPeriode(selectedCompteId)
+
+            setCurrentRefMonth({
+                year: periode.year,
+                month: periode.month
+            })
+        }
+
+        loadPeriode()
+    }, [selectedCompteId])
 
     useEffect(() => {
         if (!selectedCompteId) return
@@ -54,23 +69,34 @@ export default function TransactionsPage(): React.JSX.Element {
     }, [selectedCompteId])
 
     useEffect(() => {
-        async function loadTransactions() {
-            if (!selectedCompteId) return
-            const compte = comptes.find(c => c.id === selectedCompteId)
-            if (!compte) return
-
-            const data = await getTransactionsMois(selectedCompteId, {date_month: currentRefMonth.month +1, date_year: currentRefMonth.year})
-            setTransactions(data.sort((a: Transaction, b: Transaction) => a.transaction_date.localeCompare(b.transaction_date)))
-        }
+        if (!selectedCompteId || !currentRefMonth) return
         loadTransactions()
-    }, [selectedCompteId, comptes, currentRefMonth])
+    }, [selectedCompteId, currentRefMonth])
 
     const changeMonthIndex = (delta: number) => {
-        let { year, month } = currentRefMonth
+        let { year, month } = currentRefMonth!
         month += delta
         if (month < 0) { month = 11; year -= 1 }
         else if (month > 11) { month = 0; year += 1 }
         setCurrentRefMonth({ year, month })
+    }
+
+    const loadTransactions = async () => {
+        if (!selectedCompteId || !currentRefMonth) return
+
+        const data = await getTransactionsMois(
+            selectedCompteId,
+            {
+                date_month: currentRefMonth.month,
+                date_year: currentRefMonth.year
+            }
+        )
+
+        setTransactions(
+            data.sort((a: Transaction, b: Transaction) =>
+                a.transaction_date.localeCompare(b.transaction_date)
+            )
+        )
     }
 
     const prevMonth = () => changeMonthIndex(-1)
@@ -78,18 +104,19 @@ export default function TransactionsPage(): React.JSX.Element {
 
     async function handleDelete(id: string) {
         await deleteTransaction(id)
-        setTransactions(prev => prev.filter(t => t.id !== id))
+        await loadTransactions()
     }
 
-    // callback pour modal unique
-    const handleCreate = async (payload: CreateTransactionPayload) => {
-        const tx = await createTransaction(payload)
-        setTransactions(prev => [...prev, tx].sort((a,b) => a.transaction_date.localeCompare(b.transaction_date)))
+    const handleCreate = async (
+        payload: CreateTransactionPayload
+    ) => {
+        await createTransaction(payload)
+        await loadTransactions()
     }
 
     const handleUpdate = async (id: string, payload: UpdateTransactionPayload) => {
-        const tx = await updateTransaction(id, payload)
-        setTransactions(prev => prev.map(t => t.id === tx.id ? tx : t))
+        await updateTransaction(id, payload)
+        await loadTransactions()
     }
 
     return (
@@ -111,7 +138,15 @@ export default function TransactionsPage(): React.JSX.Element {
             <div className="flex items-center gap-2">
                 <button className="btn btn-sm" onClick={prevMonth}>{"<"}</button>
                 <span className="font-medium">
-                    {new Date(currentRefMonth.year, currentRefMonth.month).toLocaleString("default", { month: "long", year: "numeric" })}
+                    {currentRefMonth && (
+                        new Date(
+                            currentRefMonth.year,
+                            currentRefMonth.month - 1
+                        ).toLocaleString("default", {
+                            month: "long",
+                            year: "numeric"
+                        })
+                    )}
                 </span>
                 <button className="btn btn-sm" onClick={nextMonth}>{">"}</button>
             </div>
@@ -183,8 +218,8 @@ export default function TransactionsPage(): React.JSX.Element {
 
             <ConfirmModal
                 open={deleteTarget !== null}
-                title={t("transactions.delete_title")}
-                message={t("transactions.delete_confirm")}
+                title={t("transactions.delete.title")}
+                message={t("transactions.delete.confirm")}
                 confirmLabel={t("common.delete")}
                 cancelLabel={t("common.cancel")}
                 onCancel={() => setDeleteTarget(null)}

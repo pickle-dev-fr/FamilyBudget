@@ -171,11 +171,89 @@ def get_budget_cycle_for_date(
     start_day: int,
 ) -> dict:
     """
-    Retourne le cycle budgétaire correspondant
-    à la date donnée.
+    Retourne le cycle budgétaire contenant une date donnée.
+
+    Logique :
+        - Si le jour de la date >= start_day :
+            le cycle démarre dans le mois courant.
+        - Sinon :
+            le cycle démarre dans le mois précédent.
+
+    La fin du cycle est calculée comme :
+        prochain cycle_start - 1 jour
+
+    Remarque :
+        Cette fonction détermine uniquement le cycle actif.
+        Elle ne décide pas du mois de rattachement majoritaire.
     """
-    return get_budget_cycle_for_month(
-        target_date.year,
-        target_date.month,
-        start_day,
+
+    year = target_date.year
+    month = target_date.month
+
+    # Détermination du mois de départ du cycle
+    if target_date.day >= start_day:
+        # Le cycle commence ce mois-ci
+        start = cycle_start(year, month, start_day)
+    else:
+        # Le cycle commence le mois précédent
+        prev_year, prev_month = previous_month(year, month)
+        start = cycle_start(prev_year, prev_month, start_day)
+
+    # Calcul systématique de la fin : prochain start - 1 jour
+    end = cycle_end(start, start_day)
+
+    return {
+        "start": start,
+        "end": end,
+    }
+
+def get_majority_year_month_for_date(
+    target_date: date,
+    start_day: int,
+) -> tuple[int, int]:
+    """
+    Retourne (year, month) correspondant au mois
+    majoritaire du cycle contenant la date donnée.
+
+    Algorithme :
+        1. Construire le cycle actif via get_budget_cycle_for_date.
+        2. Calculer le nombre de jours du cycle dans :
+            - le mois du start
+            - le mois du end
+        3. Retourner le mois possédant le plus de jours.
+
+    Hypothèse structurelle :
+        Un cycle couvre au maximum deux mois calendaires,
+        donc seule cette comparaison est nécessaire.
+
+    Cette méthode implémente strictement la règle métier :
+        "Un cycle est rattaché au mois dans lequel il possède
+        le plus de jours."
+    """
+
+    cycle = get_budget_cycle_for_date(target_date, start_day)
+
+    start = cycle["start"]
+    end = cycle["end"]
+
+    # Nombre de jours du cycle dans le mois du start
+    days_start_month = days_of_cycle_in_month(
+        start,
+        end,
+        start.year,
+        start.month,
     )
+
+    # Nombre de jours du cycle dans le mois du end
+    days_end_month = days_of_cycle_in_month(
+        start,
+        end,
+        end.year,
+        end.month,
+    )
+
+    # Comparaison majoritaire
+    if days_end_month > days_start_month:
+        return end.year, end.month
+
+    return start.year, start.month

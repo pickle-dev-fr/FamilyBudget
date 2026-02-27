@@ -9,6 +9,7 @@ from app.controllers.compte_controller import router as compte_router
 from app.controllers.pot_controller import router as pot_router
 from app.controllers.sous_pot_controller import router as sous_pot_router
 from app.controllers.stats_controller import router as stats_router
+from app.controllers.utils_controller import router as utils_router
 
 from contextlib import asynccontextmanager
 
@@ -25,12 +26,13 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="FamilyBudget API", lifespan=lifespan)
 
 app.include_router(auth_controller)
-app.include_router(transaction_router)
 app.include_router(user_router)
 app.include_router(compte_router)
 app.include_router(pot_router)
 app.include_router(sous_pot_router)
+app.include_router(transaction_router)
 app.include_router(stats_router)
+app.include_router(utils_router)
 
 origins = os.getenv("CORS_ORIGINS", "")
 

@@ -52,3 +52,7 @@ export function getTransactionsRecurrente(compte_id: string) {
 export function deleteTransaction(id: string) {
   return apiClient.delete(`/transactions/${id}`);
 }
+
+export function deleteTransactionRecurrence(id: string) {
+  return apiClient.delete(`/transactions/${id}/recurrence`);
+}
