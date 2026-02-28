@@ -28,7 +28,7 @@ def _get_lang() -> str:
 
 def msg(key: str) -> str:
     """
-    key example: 'transaction.debit.requires_sous_pot'
+    key example: 'transaction.debit.requires_sub_pot'
     """
     lang = _get_lang()
     data = _MESSAGES.get(lang, _MESSAGES[DEFAULT_LANG])

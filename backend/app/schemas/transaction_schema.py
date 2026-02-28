@@ -12,8 +12,8 @@ class TransactionCreate(SQLModel):
     transaction_date: Optional[date] = None
     motif: Optional[str] = None
 
-    compte_id: Optional[str] = None
-    sous_pot_id: Optional[str] = None
+    account_id: Optional[str] = None
+    sub_pot_id: Optional[str] = None
 
     recurrent: bool = False
     recurrence_type: Optional[TypeRecurrence] = None
@@ -25,8 +25,8 @@ class TransactionUpdate(SQLModel):
     transaction_date: Optional[date]
     motif: Optional[str]
 
-    compte_id: Optional[str]
-    sous_pot_id: Optional[str]
+    account_id: Optional[str]
+    sub_pot_id: Optional[str]
 
     recurrent: Optional[bool]
     recurrence_type: Optional[TypeRecurrence]
@@ -39,8 +39,8 @@ class TransactionRead(SQLModel):
     transaction_type: TypeTransaction
     transaction_date: date
     motif: Optional[str]
-    compte_id: Optional[str]
-    sous_pot_id: Optional[str]
+    account_id: Optional[str]
+    sub_pot_id: Optional[str]
     recurrent: bool
     recurrence_type: Optional[TypeRecurrence]
     recurrence_end_date: Optional[date]
@@ -50,10 +50,10 @@ class TransferCreate(SQLModel):
     transaction_date: Optional[date] = None
     motif: Optional[str] = None
 
-    compte_source_id: str
-    compte_destination_id: str
+    account_source_id: str
+    account_destination_id: str
 
-    sous_pot_id: Optional[str]
+    sub_pot_id: Optional[str]
 
     recurrent: bool = False
     recurrence_type: Optional[TypeRecurrence] = None

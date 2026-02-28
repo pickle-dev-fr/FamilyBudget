@@ -4,10 +4,10 @@ from fastapi import HTTPException, status
 from datetime import date
 
 
-from app.models import Sous_Pot, Transaction, TypeTransaction, Pot, Compte
-from app.utils.utils import get_default_for_compte
+from app.models import Sub_Pot, Transaction, TypeTransaction, Pot, Account
+from app.utils.utils import get_default_for_account
 from app.utils.budget_cycle import get_budget_cycle_for_date
-from app.schemas.sous_pot_schema import SousPotRead
+from app.schemas.sub_pot_schema import SousPotRead
 from app.schemas.reorder_schema import SousPotReorderPayload
 from app.i18n.messages import msg
 
@@ -15,7 +15,7 @@ from app.i18n.messages import msg
 class SousPotService:
 
     @staticmethod
-    def create(session: Session, pot_id: str, name: str, prevision: float) -> Sous_Pot:
+    def create(session: Session, pot_id: str, name: str, prevision: float) -> Sub_Pot:
         pot = session.get(Pot, pot_id)
         if not pot:
             raise HTTPException(
@@ -26,35 +26,35 @@ class SousPotService:
         if pot.position == 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=msg("sous_pot.create.forbidden_on_default_pot"),
+                detail=msg("sub_pot.create.forbidden_on_default_pot"),
             )
 
         SousPotService._check_prevision(prevision)
 
         position = SousPotService._get_next_position(session, pot_id)
 
-        sous_pot = Sous_Pot(
+        sub_pot = Sub_Pot(
             name=name,
             prevision=prevision,
             pot_id=pot_id,
             position=position,  # toujours >= 1
         )
 
-        session.add(sous_pot)
+        session.add(sub_pot)
         session.commit()
-        session.refresh(sous_pot)
-        return sous_pot
+        session.refresh(sub_pot)
+        return sub_pot
 
 
     @staticmethod
     def list_by_pot(session: Session, pot_id: str) -> list[SousPotRead]:
-        sous_pots = session.exec(
-            select(Sous_Pot).where(Sous_Pot.pot_id == pot_id).order_by(Sous_Pot.position)
+        sub_pots = session.exec(
+            select(Sub_Pot).where(Sub_Pot.pot_id == pot_id).order_by(Sub_Pot.position)
         ).all()
 
         result: list[SousPotRead] = []
 
-        for sp in sous_pots:
+        for sp in sub_pots:
             current = SousPotService.calculer_current_mois(session, sp)
 
             result.append(
@@ -71,21 +71,21 @@ class SousPotService:
         return result
 
     @staticmethod
-    def get_by_id(session: Session, sous_pot_id: str) -> Sous_Pot:
-        sous_pot = session.get(Sous_Pot, sous_pot_id)
-        if not sous_pot:
+    def get_by_id(session: Session, sub_pot_id: str) -> Sub_Pot:
+        sub_pot = session.get(Sub_Pot, sub_pot_id)
+        if not sub_pot:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=msg("sous_pot.not_found"),
+                detail=msg("sub_pot.not_found"),
             )
-        return sous_pot
+        return sub_pot
 
     @staticmethod
-    def get_by_compte(session: Session, compte_id: str) -> Sous_Pot:
+    def get_by_account(session: Session, account_id: str) -> Sub_Pot:
         query = (
-            select(Sous_Pot)
-            .join(Pot, Sous_Pot.pot_id == Pot.id)
-            .where(Pot.compte_id == compte_id)
+            select(Sub_Pot)
+            .join(Pot, Sub_Pot.pot_id == Pot.id)
+            .where(Pot.account_id == account_id)
         )
 
         return session.exec(query).all()
@@ -93,42 +93,42 @@ class SousPotService:
     @staticmethod
     def update(
         session: Session,
-        sous_pot_id: str,
+        sub_pot_id: str,
         name: str,
         prevision: float,
-    ) -> Sous_Pot:
+    ) -> Sub_Pot:
         SousPotService._check_prevision(prevision)
-        sous_pot = SousPotService.get_by_id(session, sous_pot_id)
-        sous_pot.name = name
-        sous_pot.prevision = prevision
-        session.add(sous_pot)
+        sub_pot = SousPotService.get_by_id(session, sub_pot_id)
+        sub_pot.name = name
+        sub_pot.prevision = prevision
+        session.add(sub_pot)
         session.commit()
-        session.refresh(sous_pot)
-        return sous_pot
+        session.refresh(sub_pot)
+        return sub_pot
 
     @staticmethod
-    def delete(session: Session, sous_pot_id: str):
-        sous_pot = session.get(Sous_Pot, sous_pot_id)
+    def delete(session: Session, sub_pot_id: str):
+        sub_pot = session.get(Sub_Pot, sub_pot_id)
 
-        if not sous_pot:
-            raise ValueError(msg("sous_pot.not_found"))
+        if not sub_pot:
+            raise ValueError(msg("sub_pot.not_found"))
 
-        if sous_pot.position == 0:
-            raise ValueError(msg("sous_pot.default.delete_forbidden"))
+        if sub_pot.position == 0:
+            raise ValueError(msg("sub_pot.default.delete_forbidden"))
 
-        # Re-rattacher les transactions au sous-pot défaut du compte
-        default_sp = get_default_for_compte(
+        # Re-rattacher les transactions au sub-pot défaut du account
+        default_sp = get_default_for_account(
             session,
-            sous_pot.pot.compte_id,
+            sub_pot.pot.account_id,
         )
 
         session.exec(
             update(Transaction)
-            .where(Transaction.sous_pot_id == sous_pot.id)
-            .values(sous_pot_id=default_sp["sous_pot_id"])
+            .where(Transaction.sub_pot_id == sub_pot.id)
+            .values(sub_pot_id=default_sp["sub_pot_id"])
         )
 
-        session.delete(sous_pot)
+        session.delete(sub_pot)
         session.commit()
 
     @staticmethod
@@ -136,35 +136,35 @@ class SousPotService:
         if prevision < 0:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=msg("sous_pot.invalid_prevision"),
+                detail=msg("sub_pot.invalid_prevision"),
             )
 
     @staticmethod
     def calculer_current_mois(
         session: Session,
-        sous_pot: Sous_Pot,
+        sub_pot: Sub_Pot,
     ) -> float:
         """
-        Calcule le solde courant du sous-pot sur la période définie par le compte.
+        Calcule le solde courant du sub-pot sur la période définie par le account.
         """
 
         # 1️⃣ Récupération du pot
-        pot = session.get(Pot, sous_pot.pot_id)
+        pot = session.get(Pot, sub_pot.pot_id)
 
-        # 2️⃣ Récupération du compte
-        compte = session.get(Compte, pot.compte_id)
+        # 2️⃣ Récupération du account
+        account = session.get(Account, pot.account_id)
 
         # 3️⃣ Calcul de la période
-        period = get_budget_cycle_for_date(date.today(), compte.start_day)
+        period = get_budget_cycle_for_date(date.today(), account.start_day)
         start_date = period["start"]
         end_date = period["end"]
 
-        # 4️⃣ Récupération des transactions du sous-pot sur la période
+        # 4️⃣ Récupération des transactions du sub-pot sur la période
         query = (
             select(Transaction)
             .where(
                 and_(
-                    Transaction.sous_pot_id == sous_pot.id,
+                    Transaction.sub_pot_id == sub_pot.id,
                     Transaction.transaction_date >= start_date,
                     Transaction.transaction_date <= end_date,
                 )
@@ -186,15 +186,15 @@ class SousPotService:
     @staticmethod
     def _get_next_position(session: Session, pot_id: str) -> int:
         stmt = (
-            select(func.coalesce(func.max(Sous_Pot.position), 0) + 1)
-            .where(Sous_Pot.pot_id == pot_id)
+            select(func.coalesce(func.max(Sub_Pot.position), 0) + 1)
+            .where(Sub_Pot.pot_id == pot_id)
         )
         return session.exec(stmt).one()
 
     @staticmethod
     def reorder(
         session: Session,
-        compte_id: str,
+        account_id: str,
         payload: SousPotReorderPayload,
     ) -> None:
 
@@ -202,22 +202,22 @@ class SousPotService:
         nouveau_id = payload.nouveau_pot.pot_id
 
         # --------------------------------------------------
-        # Vérification des pots et sous_pots
+        # Vérification des pots et sub_pots
         # --------------------------------------------------
 
         ancien_id = payload.ancien_pot.pot_id
         nouveau_id = payload.nouveau_pot.pot_id
 
-        all_sous_pot_ids = (
-            payload.ancien_pot.sous_pot_ids
-            + payload.nouveau_pot.sous_pot_ids
+        all_sub_pot_ids = (
+            payload.ancien_pot.sub_pot_ids
+            + payload.nouveau_pot.sub_pot_ids
         )
 
         pot_count = session.exec(
             select(func.count())
             .select_from(Pot)
             .where(
-                Pot.compte_id == compte_id,
+                Pot.account_id == account_id,
                 Pot.id.in_([ancien_id, nouveau_id]),
             )
         ).one()
@@ -228,22 +228,22 @@ class SousPotService:
                 detail=msg("pot.missing_or_invalid"),
             )
 
-        unique_ids = set(all_sous_pot_ids)
+        unique_ids = set(all_sub_pot_ids)
 
         sp_count = session.exec(
             select(func.count())
-            .select_from(Sous_Pot)
+            .select_from(Sub_Pot)
             .join(Pot)
             .where(
-                Sous_Pot.id.in_(unique_ids),
-                Pot.compte_id == compte_id,
+                Sub_Pot.id.in_(unique_ids),
+                Pot.account_id == account_id,
             )
         ).one()
 
         if sp_count != len(unique_ids):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=msg("sous_pot.missing_or_invalid"),
+                detail=msg("sub_pot.missing_or_invalid"),
             )
 
 
@@ -251,25 +251,25 @@ class SousPotService:
         # Récupération des défauts (position == 0)
         # --------------------------------------------------
 
-        default_sous_pot = session.exec(
-            select(Sous_Pot)
+        default_sub_pot = session.exec(
+            select(Sub_Pot)
             .join(Pot)
             .where(
-                Pot.compte_id == compte_id,
+                Pot.account_id == account_id,
                 Pot.position == 0,
-                Sous_Pot.position == 0,
+                Sub_Pot.position == 0,
             )
         ).one()
 
 
-        if not default_sous_pot:
+        if not default_sub_pot:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=msg("pot.default.not_found"),
             )
 
-        default_pot_id = default_sous_pot.pot_id
-        default_sous_pot_id = default_sous_pot.id
+        default_pot_id = default_sub_pot.pot_id
+        default_sub_pot_id = default_sub_pot.id
 
         # --------------------------------------------------
         # Refus immédiat si défaut dans payload
@@ -278,12 +278,12 @@ class SousPotService:
         if (
             ancien_id == default_pot_id
             or nouveau_id == default_pot_id
-            or default_sous_pot_id in payload.ancien_pot.sous_pot_ids
-            or default_sous_pot_id in payload.nouveau_pot.sous_pot_ids
+            or default_sub_pot_id in payload.ancien_pot.sub_pot_ids
+            or default_sub_pot_id in payload.nouveau_pot.sub_pot_ids
         ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=msg("sous_pot.default.forbidden_move"),
+                detail=msg("sub_pot.default.forbidden_move"),
             )
 
         # --------------------------------------------------
@@ -292,7 +292,7 @@ class SousPotService:
 
         if (nouveau_id != ancien_id):
             query = text("""
-                UPDATE sous_pot sp
+                UPDATE sub_pot sp
                 SET position = new_order.pos,
                     pot_id = :pot_id
                 FROM (
@@ -301,15 +301,15 @@ class SousPotService:
                 ) AS new_order
                 JOIN pot p ON p.id = :pot_id
                 WHERE sp.id = new_order.id
-                AND p.compte_id = :compte_id
+                AND p.account_id = :account_id
             """)
 
             session.execute(
                 query,
                 {
-                    "ordered_ids": payload.ancien_pot.sous_pot_ids,
+                    "ordered_ids": payload.ancien_pot.sub_pot_ids,
                     "pot_id":ancien_id,
-                    "compte_id": compte_id,
+                    "account_id": account_id,
                 },
             )
             
@@ -318,7 +318,7 @@ class SousPotService:
         # --------------------------------------------------
 
         query = text("""
-            UPDATE sous_pot sp
+            UPDATE sub_pot sp
             SET position = new_order.pos,
                 pot_id = :pot_id
             FROM (
@@ -327,15 +327,15 @@ class SousPotService:
             ) AS new_order
             JOIN pot p ON p.id = :pot_id
             WHERE sp.id = new_order.id
-            AND p.compte_id = :compte_id
+            AND p.account_id = :account_id
         """)
 
         session.execute(
             query,
             {
-                "ordered_ids": payload.nouveau_pot.sous_pot_ids,
+                "ordered_ids": payload.nouveau_pot.sub_pot_ids,
                 "pot_id":nouveau_id,
-                "compte_id": compte_id,
+                "account_id": account_id,
             },
         )
         

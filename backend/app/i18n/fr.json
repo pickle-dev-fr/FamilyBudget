@@ -4,11 +4,11 @@
     "invalid_token": "Token d’authentification invalide ou expiré",
     "user_not_found": "Utilisateur introuvable"
   },
-  "compte": {
-    "not_found": "Compte introuvable.",
+  "account": {
+    "not_found": "account introuvable.",
     "invalid_start_day": "Le jour de début doit être compris entre 1 et 31.",
-    "name_required": "Le nom du compte est obligatoire.",
-    "forbidden": "Accès interdit à ce compte."
+    "name_required": "Le nom du account est obligatoire.",
+    "forbidden": "Accès interdit à ce account."
   },
   "transaction": {
     "error": {
@@ -18,12 +18,12 @@
       "positive": "Le montant doit être strictement positif."
     },
     "debit": {
-      "requires_sous_pot": "Une transaction DEBIT nécessite un sous-pot.",
-      "forbidden_compte": "Une transaction DEBIT ne doit pas avoir de compte."
+      "requires_sub_pot": "Une transaction DEBIT nécessite un sub-pot.",
+      "forbidden_account": "Une transaction DEBIT ne doit pas avoir de account."
     },
     "credit": {
-      "requires_compte": "Une transaction CREDIT nécessite un compte.",
-      "forbidden_sous_pot": "Une transaction CREDIT ne doit pas avoir de sous-pot."
+      "requires_account": "Une transaction CREDIT nécessite un account.",
+      "forbidden_sub_pot": "Une transaction CREDIT ne doit pas avoir de sub-pot."
     }
   },
   "pot": {
@@ -33,12 +33,12 @@
     "updated": "Pot mis à jour.",
     "deleted": "Pot supprimé."
   },
-  "sous_pot": {
+  "sub_pot": {
     "default": "Défaut",
-    "not_found": "Sous-pot introuvable.",
-    "created": "Sous-pot créé.",
-    "updated": "Sous-pot mis à jour.",
-    "deleted": "Sous-pot supprimé.",
+    "not_found": "Sub-pot introuvable.",
+    "created": "Sub-pot créé.",
+    "updated": "Sub-pot mis à jour.",
+    "deleted": "Sub-pot supprimé.",
     "invalid_prevision": "La prévision ne peut pas être négative."
   },
   "user": {

@@ -3,10 +3,10 @@ from sqlmodel import Session
 
 from app.database import get_session
 from app.security.dependencies import get_current_user
-from app.models import User, Compte, Pot
-from app.services.sous_pot_service import SousPotService
-from app.services.compte_service import CompteService
-from app.schemas.sous_pot_schema import (
+from app.models import User, Account, Pot
+from app.services.sub_pot_service import SousPotService
+from app.services.account_service import AccountService
+from app.schemas.sub_pot_schema import (
     SousPotCreate,
     SousPotRead,
     SousPotUpdate,
@@ -18,7 +18,7 @@ from app.i18n.messages import msg
 
 router = APIRouter(
     prefix="",
-    tags=["Sous-pots"],
+    tags=["Sub-pots"],
 )
 
 
@@ -30,38 +30,38 @@ def _check_pot_owner(session: Session, pot_id: str, user: User) -> Pot:
             detail=msg("pot.not_found"),
         )
 
-    _check_compte_owner(session, pot.compte_id, user)
+    _check_account_owner(session, pot.account_id, user)
 
     return pot
 
-def _check_compte_owner(session: Session, compte_id: str, user: User):
-    compte = session.get(Compte, compte_id)
-    if not compte or compte.user_id != user.id:
+def _check_account_owner(session: Session, account_id: str, user: User):
+    account = session.get(Account, account_id)
+    if not account or account.user_id != user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=msg("pot.not_found"),
         )
 
-@router.put("/comptes/{compte_id}/sous-pots/reorder", status_code=204)
-def reorder_sous_pots(
-    compte_id: str,
+@router.put("/accounts/{account_id}/sub-pots/reorder", status_code=204)
+def reorder_sub_pots(
+    account_id: str,
     payload: SousPotReorderPayload,
     session: Session = Depends(get_session),
     current_user = Depends(get_current_user),
 ):
-    _check_compte_owner(session, compte_id, current_user)
+    _check_account_owner(session, account_id, current_user)
     SousPotService.reorder(
-        compte_id=compte_id,
+        account_id=account_id,
         session=session,
         payload=payload,
     )
 
 @router.post(
-    "/pots/{pot_id}/sous-pots",
+    "/pots/{pot_id}/sub-pots",
     response_model=SousPotReadCreate,
     status_code=status.HTTP_201_CREATED,
 )
-def create_sous_pot(
+def create_sub_pot(
     pot_id: str,
     data: SousPotCreate,
     session: Session = Depends(get_session),
@@ -77,10 +77,10 @@ def create_sous_pot(
 
 
 @router.get(
-    "/pots/{pot_id}/sous-pots",
+    "/pots/{pot_id}/sub-pots",
     response_model=list[SousPotRead],
 )
-def list_sous_pots(
+def list_sub_pots(
     pot_id: str,
     session: Session = Depends(get_session),
     current_user: User = Security(get_current_user),
@@ -90,61 +90,61 @@ def list_sous_pots(
 
 
 @router.get(
-    "/sous-pots/{sous_pot_id}",
+    "/sub-pots/{sub_pot_id}",
     response_model=SousPotRead,
 )
-def get_sous_pot(
-    sous_pot_id: str,
+def get_sub_pot(
+    sub_pot_id: str,
     session: Session = Depends(get_session),
     current_user: User = Security(get_current_user),
 ):
-    sous_pot = SousPotService.get_by_id(session, sous_pot_id)
-    _check_pot_owner(session, sous_pot.pot_id, current_user)
-    return sous_pot
+    sub_pot = SousPotService.get_by_id(session, sub_pot_id)
+    _check_pot_owner(session, sub_pot.pot_id, current_user)
+    return sub_pot
 
 @router.get(
-    "/comptes/{id}/sous-pots/",
+    "/accounts/{id}/sub-pots/",
     response_model=list[SousPotReadCreate],
 )
-def get_sous_pots_by_compte(
+def get_sub_pots_by_account(
     id: str,
     session: Session = Depends(get_session),
     current_user: User = Security(get_current_user),
 ):
-    _check_compte_owner(session=session, compte_id=id, user=current_user)
-    sous_pot = SousPotService.get_by_compte(session, id)
-    return sous_pot
+    _check_account_owner(session=session, account_id=id, user=current_user)
+    sub_pot = SousPotService.get_by_account(session, id)
+    return sub_pot
 
 
 @router.put(
-    "/sous-pots/{sous_pot_id}"
+    "/sub-pots/{sub_pot_id}"
 )
-def update_sous_pot(
-    sous_pot_id: str,
+def update_sub_pot(
+    sub_pot_id: str,
     data: SousPotUpdate,
     session: Session = Depends(get_session),
     current_user: User = Security(get_current_user),
 ):
-    sous_pot = SousPotService.get_by_id(session, sous_pot_id)
-    _check_pot_owner(session, sous_pot.pot_id, current_user)
-    sous_pot = SousPotService.update(
+    sub_pot = SousPotService.get_by_id(session, sub_pot_id)
+    _check_pot_owner(session, sub_pot.pot_id, current_user)
+    sub_pot = SousPotService.update(
         session,
-        sous_pot_id,
+        sub_pot_id,
         data.name,
         data.prevision,
     )
 
 
 @router.delete(
-    "/sous-pots/{sous_pot_id}",
+    "/sub-pots/{sub_pot_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_sous_pot(
-    sous_pot_id: str,
+def delete_sub_pot(
+    sub_pot_id: str,
     session: Session = Depends(get_session),
     current_user: User = Security(get_current_user),
 ):
-    sous_pot = SousPotService.get_by_id(session, sous_pot_id)
-    _check_pot_owner(session, sous_pot.pot_id, current_user)
-    SousPotService.delete(session, sous_pot_id)
+    sub_pot = SousPotService.get_by_id(session, sub_pot_id)
+    _check_pot_owner(session, sub_pot.pot_id, current_user)
+    SousPotService.delete(session, sub_pot_id)
 

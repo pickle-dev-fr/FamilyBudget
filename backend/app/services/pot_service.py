@@ -1,8 +1,8 @@
 from sqlmodel import Session, select, update
 
-from app.models import Pot, Compte, User, Sous_Pot, Transaction
-from app.utils.utils import get_default_for_compte
-from app.services.sous_pot_service import SousPotService
+from app.models import Pot, Account, User, Sub_Pot, Transaction
+from app.utils.utils import get_default_for_account
+from app.services.sub_pot_service import SousPotService
 from app.schemas.reorder_schema import PotReorderPayload
 from app.schemas.pot_schema import PotRead
 from app.i18n.messages import msg
@@ -13,30 +13,30 @@ from sqlalchemy import func
 class PotService:
 
     @staticmethod
-    def create(session: Session, compte_id: str, name: str) -> Pot:
-        compte = session.get(Compte, compte_id)
-        if not compte:
+    def create(session: Session, account_id: str, name: str) -> Pot:
+        account = session.get(Account, account_id)
+        if not account:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=msg("compte.not_found"),
+                detail=msg("account.not_found"),
             )
 
-        pot = Pot(name=name, compte_id=compte_id, position=PotService._get_next_position(session, compte.id))
+        pot = Pot(name=name, account_id=account_id, position=PotService._get_next_position(session, account.id))
         session.add(pot)
         session.commit()
         session.refresh(pot)
         return pot
 
     @staticmethod
-    def list_by_compte(
+    def list_by_account(
         session: Session,
-        compte_id: str,
+        account_id: str,
         include: bool = False,
     ) -> list[PotRead]:
 
         pots = session.exec(
             select(Pot)
-            .where(Pot.compte_id == compte_id)
+            .where(Pot.account_id == account_id)
             .order_by(Pot.position)
         ).all()
 
@@ -44,10 +44,10 @@ class PotService:
 
         for pot in pots:
 
-            sous_pots = None
+            sub_pots = None
 
             if include:
-                sous_pots = SousPotService.list_by_pot(
+                sub_pots = SousPotService.list_by_pot(
                     session,
                     pot.id,
                 )
@@ -56,9 +56,9 @@ class PotService:
                 PotRead(
                     id=pot.id,
                     name=pot.name,
-                    compte_id=pot.compte_id,
+                    account_id=pot.account_id,
                     position=pot.position,
-                    sous_pots=sous_pots,
+                    sub_pots=sub_pots,
                 )
             )
 
@@ -99,35 +99,35 @@ class PotService:
                 detail=msg("pot.default.delete_forbidden"),
             )
 
-        # Sous-pot par défaut du compte
-        default_sous_pot = get_default_for_compte(
+        # Sub-pot par défaut du account
+        default_sub_pot = get_default_for_account(
             session,
-            pot.compte_id,
+            pot.account_id,
         )
         # Re-rattachement des transactions
         session.exec(
             update(Transaction)
             .where(
-                Transaction.sous_pot_id.in_(
-                    select(Sous_Pot.id).where(Sous_Pot.pot_id == pot.id)
+                Transaction.sub_pot_id.in_(
+                    select(Sub_Pot.id).where(Sub_Pot.pot_id == pot.id)
                 )
             )
-            .values(sous_pot_id=default_sous_pot["sous_pot_id"])
+            .values(sub_pot_id=default_sub_pot["sub_pot_id"])
         )
 
-        # Suppression explicite des sous-pots
-        for sous_pot in pot.sous_pots:
-            session.delete(sous_pot)
+        # Suppression explicite des sub-pots
+        for sub_pot in pot.sub_pots:
+            session.delete(sub_pot)
 
         session.delete(pot)
         session.commit()
 
 
     @staticmethod
-    def _get_next_position(session: Session, compte_id: str) -> int:
+    def _get_next_position(session: Session, account_id: str) -> int:
         stmt = (
             select(func.coalesce(func.max(Pot.position), 0) + 1)
-            .where(Pot.compte_id == compte_id)
+            .where(Pot.account_id == account_id)
         )
         return session.exec(stmt).one()
 
@@ -138,9 +138,9 @@ class PotService:
         payload: PotReorderPayload,
     ) -> None:
 
-        default = get_default_for_compte(
+        default = get_default_for_account(
             session,
-            payload.compte_id,
+            payload.account_id,
         )
 
         if not default["pot_id"]:

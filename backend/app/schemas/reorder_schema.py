@@ -4,7 +4,7 @@ from sqlmodel import SQLModel
 
 class SousPotReorderBlock(BaseModel):
     pot_id: str
-    sous_pot_ids: list[str]
+    sub_pot_ids: list[str]
 
 
 class SousPotReorderPayload(BaseModel):
@@ -12,7 +12,7 @@ class SousPotReorderPayload(BaseModel):
     nouveau_pot: SousPotReorderBlock
 
 class PotReorderPayload(BaseModel):
-    compte_id: str
+    account_id: str
     ordered_ids: List[str]
 
 class ReorderIds(SQLModel):

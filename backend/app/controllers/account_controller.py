@@ -2,40 +2,40 @@ from fastapi import APIRouter, Depends, HTTPException, Security, status
 from sqlmodel import Session
 
 from app.database import get_session
-from app.schemas.compte_schema import (
-    CompteCreate,
-    CompteUpdate,
-    CompteRead,
+from app.schemas.account_schema import (
+    AccountCreate,
+    AccountUpdate,
+    AccountRead,
 )
 from app.schemas.reorder_schema import ReorderIds
 from app.security.dependencies import get_current_user
-from app.services.compte_service import CompteService
+from app.services.account_service import AccountService
 from app.i18n.messages import msg
-from app.models import User, Compte
+from app.models import User, Account
 
 router = APIRouter(
-    prefix="/comptes",
-    tags=["Comptes"],
+    prefix="/accounts",
+    tags=["Accounts"],
     dependencies=[Depends(get_current_user)],
 )
 
-def _check_compte_owner(session: Session, compte_id: str, user: User) -> Compte:
-    compte = session.get(Compte, compte_id)
-    if not compte or compte.user_id != user.id:
+def _check_account_owner(session: Session, account_id: str, user: User) -> Account:
+    account = session.get(Account, account_id)
+    if not account or account.user_id != user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=msg("compte.not_found"),
+            detail=msg("account.not_found"),
         )
-    return compte
+    return account
 
-@router.post("", response_model=CompteRead, status_code=201)
-def create_compte(
-    payload: CompteCreate,
+@router.post("", response_model=AccountRead, status_code=201)
+def create_account(
+    payload: AccountCreate,
     session: Session = Depends(get_session),
     user=Depends(get_current_user),
 ):
     try:
-        return CompteService.create(
+        return AccountService.create(
             session=session,
             user=user,
             data=payload
@@ -44,74 +44,74 @@ def create_compte(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("", response_model=list[CompteRead])
-def list_comptes(
+@router.get("", response_model=list[AccountRead])
+def list_accounts(
     session: Session = Depends(get_session),
     user=Depends(get_current_user),
 ):
-    return CompteService.list_by_user(session, user)
+    return AccountService.list_by_user(session, user)
 
-# Avant get_compte
+# Before get_acocunt
 @router.put("/reorder", status_code=204)
-def reorder_comptes(
+def reorder_accounts(
     payload: ReorderIds,
     session: Session = Depends(get_session),
     user=Depends(get_current_user),
 ):
-    CompteService.reorder(
+    AccountService.reorder(
         session=session,
         user=user,
         ordered_ids=payload.ordered_ids,
     )
 
-@router.get("/{compte_id}", response_model=CompteRead)
-def get_compte(
-    compte_id: str,
+@router.get("/{account_id}", response_model=AccountRead)
+def get_account(
+    account_id: str,
     session: Session = Depends(get_session),
     user=Depends(get_current_user),
 ):
     try:
-        _check_compte_owner(session=session, compte_id=compte_id, user=user)
-        return CompteService.get_by_id(
+        _check_account_owner(session=session, account_id=account_id, user=user)
+        return AccountService.get_by_id(
             session=session,
-            compte_id=compte_id,
+            account_id=account_id,
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.put("/{compte_id}", response_model=CompteRead)
-def update_compte(
-    compte_id: str,
-    payload: CompteUpdate,
+@router.put("/{account_id}", response_model=AccountRead)
+def update_account(
+    account_id: str,
+    payload: AccountUpdate,
     session: Session = Depends(get_session),
     user=Depends(get_current_user),
 ):
     try:
-        _check_compte_owner(session=session, compte_id=compte_id, user=current_user)
-        return CompteService.update(
+        _check_account_owner(session=session, account_id=account_id, user=current_user)
+        return AccountService.update(
             session=session,
-            compte_id=compte_id,
+            account_id=account_id,
             data=payload,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/{compte_id}/solde", response_model=float)
-def get_solde_by_compte(
-    compte_id: str,
+@router.get("/{account_id}/solde", response_model=float)
+def get_solde_by_account(
+    account_id: str,
     session: Session = Depends(get_session),
     current_user = Depends(get_current_user),
 ):
-    _check_compte_owner(session=session, compte_id=compte_id, user=current_user)
-    compte = CompteService.get_by_id(
+    _check_account_owner(session=session, account_id=account_id, user=current_user)
+    account = AccountService.get_by_id(
         session=session,
-        compte_id=compte_id,
+        account_id=account_id,
     )
 
-    return CompteService.calculer_solde_compte(
+    return AccountService.calculer_solde_account(
         session=session,
-        compte=compte,
+        account=account,
     )
 
 @router.delete(
@@ -123,7 +123,7 @@ def delete(
     session: Session = Depends(get_session),
     current_user: User = Security(get_current_user),
 ):
-    compte = CompteService.get_by_id(session, id)
-    _check_compte_owner(session, compte.id, current_user)
-    CompteService.delete(session, id)
+    account = AccountService.get_by_id(session, id)
+    _check_account_owner(session, account.id, current_user)
+    AccountService.delete(session, id)
 

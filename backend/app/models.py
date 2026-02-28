@@ -29,13 +29,13 @@ class User(SQLModel, table=True):
     username: str = Field(index=True, unique=True)
     hashed_password: str
 
-    comptes: List["Compte"] = Relationship(back_populates="user",
+    accounts: List["Account"] = Relationship(back_populates="user",
         sa_relationship_kwargs={            
-            "order_by": "Compte.position",
+            "order_by": lambda: Account.position,
         })
 
 
-class Compte(SQLModel, table=True):
+class Account(SQLModel, table=True):
     id: str = Field(default_factory=generate_ulid, primary_key=True)
     name: str
     initial_value: float = 0.0
@@ -45,16 +45,16 @@ class Compte(SQLModel, table=True):
     position: int = Field(index=True)
 
     user_id: str = Field(foreign_key="user.id")
-    user: Optional[User] = Relationship(back_populates="comptes")
+    user: Optional[User] = Relationship(back_populates="accounts")
 
     pots: List["Pot"] = Relationship(
-        back_populates="compte",
+        back_populates="account",
         sa_relationship_kwargs={
             "cascade": "all, delete-orphan",
-            "order_by": "Pot.position",
+            "order_by": lambda: Pot.position,
         })
     transactions: List["Transaction"] = Relationship(
-        back_populates="compte",
+        back_populates="account",
         sa_relationship_kwargs={
             "cascade": "all, delete-orphan"
         })
@@ -63,14 +63,14 @@ class Compte(SQLModel, table=True):
 class Pot(SQLModel, table=True):
     __table_args__ = (
         UniqueConstraint(
-            "compte_id",
+            "account_id",
             "name",
-            name="uq_pot_compte_name",
+            name="uq_pot_account_name",
         ),
         UniqueConstraint(
-            "compte_id",
+            "account_id",
             "position",
-            name="uq_pot_compte_position",
+            name="uq_pot_account_position",
             deferrable=True,
             initially="DEFERRED",
         ),
@@ -81,28 +81,28 @@ class Pot(SQLModel, table=True):
 
     position: int = Field(index=True)
 
-    compte_id: str = Field(foreign_key="compte.id")
-    compte: Optional[Compte] = Relationship(back_populates="pots")
+    account_id: str = Field(foreign_key="account.id")
+    account: Optional[Account] = Relationship(back_populates="pots")
 
-    sous_pots: List["Sous_Pot"] = Relationship(
+    sub_pots: List["Sub_Pot"] = Relationship(
         back_populates="pot",
         sa_relationship_kwargs={
             "cascade": "all, delete-orphan",
-            "order_by": "Sous_Pot.position",
+            "order_by": lambda: Sub_Pot.position,
         })
 
 
-class Sous_Pot(SQLModel, table=True):
+class Sub_Pot(SQLModel, table=True):
     __table_args__ = (
         UniqueConstraint(
             "pot_id",
             "name",
-            name="uq_sous_pot_pot_name",
+            name="uq_sub_pot_pot_name",
         ),
         UniqueConstraint(
             "pot_id",
             "position",
-            name="uq_sous_pot_pot_position",
+            name="uq_sub_pot_pot_position",
             deferrable=True,
             initially="DEFERRED",
         ),
@@ -115,9 +115,9 @@ class Sous_Pot(SQLModel, table=True):
     position: int = Field(index=True)
 
     pot_id: str = Field(foreign_key="pot.id")
-    pot: Optional[Pot] = Relationship(back_populates="sous_pots")
+    pot: Optional[Pot] = Relationship(back_populates="sub_pots")
 
-    transactions: List["Transaction"] = Relationship(back_populates="sous_pot")
+    transactions: List["Transaction"] = Relationship(back_populates="sub_pot")
 
 
 class Transaction(SQLModel, table=True):
@@ -142,8 +142,8 @@ class Transaction(SQLModel, table=True):
     recurrence_day: Optional[int] = Field(default=None)
 
     # Relations
-    compte_id: Optional[str] = Field(default=None, foreign_key="compte.id")
-    compte: Optional[Compte] = Relationship(back_populates="transactions")
+    account_id: Optional[str] = Field(default=None, foreign_key="account.id")
+    account: Optional[Account] = Relationship(back_populates="transactions")
 
-    sous_pot_id: Optional[str] = Field(default=None, foreign_key="sous_pot.id")
-    sous_pot: Optional[Sous_Pot] = Relationship(back_populates="transactions")
+    sub_pot_id: Optional[str] = Field(default=None, foreign_key="sub_pot.id")
+    sub_pot: Optional[Sub_Pot] = Relationship(back_populates="transactions")

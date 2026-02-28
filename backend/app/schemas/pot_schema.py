@@ -1,6 +1,6 @@
 from typing import List, Optional
 from sqlmodel import SQLModel
-from app.schemas.sous_pot_schema import SousPotRead
+from app.schemas.sub_pot_schema import SousPotRead
 
 
 class PotCreate(SQLModel):
@@ -13,10 +13,10 @@ class PotUpdate(SQLModel):
 class PotRead(SQLModel):
     id: str
     name: str
-    compte_id: str
+    account_id: str
     position: int
-    sous_pots: Optional[List[SousPotRead]] = None
+    sub_pots: Optional[List[SousPotRead]] = None
 
 class ControlPotRead(SQLModel):
     pot_id: str
-    sous_pot_id: str
+    sub_pot_id: str

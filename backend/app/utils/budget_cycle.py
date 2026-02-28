@@ -131,7 +131,7 @@ def get_budget_cycle_for_month(
     Algorithme :
         1. construire cycle courant
         2. construire cycle précédent
-        3. compter les jours de chacun dans le mois cible
+        3. accountr les jours de chacun dans le mois cible
         4. retourner celui majoritaire
     """
 

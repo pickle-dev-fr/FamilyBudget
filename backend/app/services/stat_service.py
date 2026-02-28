@@ -1,7 +1,7 @@
 from sqlmodel import Session, select
 
-from app.models import Compte, User
-from app.services.compte_service import CompteService
+from app.models import Account, User
+from app.services.account_service import AccountService
 
 
 class StatService:
@@ -13,8 +13,8 @@ class StatService:
     ) -> float:
         total = 0.0
 
-        comptes = CompteService.list_by_user(session, user)
-        for compte in comptes:
-            total += CompteService.calculer_solde_compte(session, compte)
+        accounts = AccountService.list_by_user(session, user)
+        for account in accounts:
+            total += AccountService.calculer_solde_account(session, account)
 
         return total
