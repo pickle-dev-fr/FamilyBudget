@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import i18n from "i18next";
 
-// Supposons que tes fichiers fr.json et en.json contiennent un objet "languageName"
 interface LangOption {
     code: string;
     name: string;
 }
 
-// Charger dynamiquement les noms depuis i18n
 const getLangOptions = (): LangOption[] => [
     { code: "fr", name: i18n.t("languageName", { lng: "fr" }) },
     { code: "en", name: i18n.t("languageName", { lng: "en" }) },

@@ -1,5 +1,5 @@
-import { t } from "i18next";
 import Modal from "@/components/ui/Modal";
+import { useTranslation } from "react-i18next";
 
 type ConfirmModalProps = {
     open: boolean;
@@ -20,6 +20,7 @@ export default function ConfirmModal({
     onConfirm,
     onCancel
 }: ConfirmModalProps) {
+    const { t } = useTranslation();
 
     return (
         <Modal

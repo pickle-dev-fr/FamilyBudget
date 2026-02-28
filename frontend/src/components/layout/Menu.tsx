@@ -44,7 +44,7 @@ export default function Menu() {
             </NavLink>
 
             <NavLink
-                to="/recurrents"
+                to="/recurring"
                 className={({ isActive }) =>
                     `px-3 py-2 rounded hover:bg-base-300 ${isActive ? "bg-base-300 font-bold" : "text-text"}`
                 }

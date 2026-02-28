@@ -4,7 +4,7 @@ export type Pot = {
   id: string;
   name: string;
   icon?: string;
-  compte_id: string;
+  account_id: string;
   position: number;
 };
 
@@ -18,30 +18,30 @@ export type UpdatePotPayload = {
   icon?: string;
 };
 
-export type ReorderSousPotPayload = {
+export type ReorderSubPotPayload = {
     id: string;
 };
 
 export type ReorderPotPayload = {
     id: string;
-    sous_pots: ReorderSousPotPayload[];
+    sub_pots: ReorderSubPotPayload[];
 };
 
 export type ReorderPotsPayload = {
-    compte_id: string
+    account_id: string
     ordered_ids: string[]
 }
 
-export function getPotsByCompte(compteId: string) {
-  return apiClient.get(`/comptes/${compteId}/pots`);
+export function getPotsByAccount(accountId: string) {
+  return apiClient.get(`/accounts/${accountId}/pots`);
 }
 
-export function getPotsAndSousPotsByCompte(compteId: string) {
-  return apiClient.get(`/comptes/${compteId}/pots?include=true`);
+export function getPotsAndSubPotsByAccount(accountId: string) {
+  return apiClient.get(`/accounts/${accountId}/pots?include=true`);
 }
 
-export function createPot(compteId: string, payload: CreatePotPayload) {
-  return apiClient.post(`/comptes/${compteId}/pots`, payload);
+export function createPot(accountId: string, payload: CreatePotPayload) {
+  return apiClient.post(`/accounts/${accountId}/pots`, payload);
 }
 
 export function updatePot(potId: string, payload: UpdatePotPayload) {
@@ -52,9 +52,9 @@ export function deletePot(potId: string) {
   return apiClient.delete(`/pots/${potId}`);
 }
 
-export function getDefaultPot(compteId: string) {
+export function getDefaultPot(accountId: string) {
     return apiClient.get("/pot/defaut", {
-        compte_id: compteId,
+        account_id: accountId,
     });
 }
 

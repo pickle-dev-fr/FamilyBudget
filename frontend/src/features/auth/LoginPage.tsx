@@ -1,19 +1,18 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { t } from "i18next";
 import PublicHeader from "@/components/layout/PublicHeader";
 import { login } from "@/api/auth.api";
 import { setToken } from "@/api/token";
 import { useAuth } from "@/auth/AuthContext";
+import { useTranslation } from "react-i18next";
 
 
 
 export default function LoginPage() {
+    const { t } = useTranslation();
     const { refreshAuth } = useAuth();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
 
     const isDisabled = !username || !password;
 
@@ -21,8 +20,6 @@ export default function LoginPage() {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        setError(null);
-        setLoading(true);
 
         try {
         const result = await login({ username, password });
@@ -31,9 +28,7 @@ export default function LoginPage() {
         // redirection
         navigate("/", { replace: true })
         } catch (err: any) {
-        setError(err?.data?.message ?? "Erreur");
         } finally {
-        setLoading(false);
         }
     }
 

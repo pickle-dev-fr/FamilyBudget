@@ -1,37 +1,38 @@
 import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import type { UIPot } from "./types"
-import SousPotItem from "./SousPotItem"
+import SubPotItem from "./SubPotItem"
 import { useState } from "react"
 import { ActionsMenu } from "@/components/layout/ActionsMenu"
-import { t } from "i18next"
-import { type UpdateSousPotPayload } from "@/api/sous_pots.api"
+import { type UpdateSubPotPayload } from "@/api/sub_pots.api"
 import type { UpdatePotPayload } from "@/api/pots.api"
+import { useTranslation } from "react-i18next"
 
 type Props = {
     pot: UIPot
-    onAddSousPot: (potId: string, name: string) => void
-    onPersistSousPot: (
+    onAddSubPot: (potId: string, name: string) => void
+    onPersistSubPot: (
         potId: string,
         name: string,
         prevision: number
     ) => Promise<void>
-    onUpdateSousPot: (
-        sousPotId: string,
-        payload: UpdateSousPotPayload
+    onUpdateSubPot: (
+        subPotId: string,
+        payload: UpdateSubPotPayload
     ) => Promise<void>
     onUpdatePot: (
         potId: string,
         payload: UpdatePotPayload
     ) => Promise<void>
-    onDeleteSousPot: (
-        sousPotId: string
+    onDeleteSubPot: (
+        subPotId: string
     ) => Promise<void>
     onDeletePot: (potId: string) => Promise<void>
 }
 
 
-export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onUpdateSousPot, onUpdatePot, onDeletePot, onDeleteSousPot }: Props) {
+export default function PotColumn({ pot, onAddSubPot, onPersistSubPot, onUpdateSubPot, onUpdatePot, onDeletePot, onDeleteSubPot }: Props) {
+    const { t } = useTranslation();
     const disabled = pot.position === 0
     const [showCreate, setShowCreate] = useState(false)
     const [newName, setNewName] = useState("")
@@ -52,12 +53,12 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onUpdat
         data: { type: "pot" },
         disabled,
     })
-    const totalPrevision = pot.sous_pots.reduce(
+    const totalPrevision = pot.sub_pots.reduce(
         (acc, sp) => acc + (sp.prevision ?? 0),
         0
     )
 
-    const totalCurrent = pot.sous_pots.reduce(
+    const totalCurrent = pot.sub_pots.reduce(
         (acc, sp) => acc + (sp.current ?? 0),
         0
     )
@@ -146,7 +147,7 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onUpdat
                     !disabled && (
                         <div className="flex items-center gap-2">
 
-                            {/* ➕ Bouton création SousPot */}
+                            {/* ➕ Bouton création SubPot */}
                             <button
                                 className="btn btn-xs btn-outline"
                                 onClick={() => setShowCreate(true)}
@@ -211,10 +212,10 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onUpdat
             <div className="mt-3 pt-3 border-t border-base-300 flex flex-col gap-3">
 
                 <div className="grid grid-cols-5 gap-2 text-xs font-medium opacity-70">
-                    <div>{t("sous_pots.name")}</div>
-                    <div>{t("sous_pots.prevision")}</div>
-                    <div>{t("sous_pots.current")}</div>
-                    <div>{t("sous_pots.pourcentage")}</div>
+                    <div>{t("sub_pots.name")}</div>
+                    <div>{t("sub_pots.prevision")}</div>
+                    <div>{t("sub_pots.current")}</div>
+                    <div>{t("sub_pots.pourcentage")}</div>
                     <div>{t("common.actions")}</div>
                 </div>
 
@@ -224,7 +225,7 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onUpdat
                             className="input input-sm input-bordered flex-1"
                             value={newName}
                             onChange={(e) => setNewName(e.target.value)}
-                            placeholder={t("sous_pots.name")}
+                            placeholder={t("sub_pots.name")}
                         />
 
                         <input
@@ -234,7 +235,7 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onUpdat
                             className="input input-sm input-bordered w-28"
                             value={newPrevision}
                             onChange={(e) => setNewPrevision(Number(e.target.value))}
-                            placeholder={t("sous_pots.prevision")}
+                            placeholder={t("sub_pots.prevision")}
                         />
 
                         <button
@@ -243,14 +244,14 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onUpdat
                                 const trimmed = newName.trim()
                                 if (!trimmed) return
 
-                                onAddSousPot(pot.id, trimmed)
+                                onAddSubPot(pot.id, trimmed)
                                 setNewName("")
                                 setNewPrevision(0)
                                 setShowCreate(false)
 
                                 if (newPrevision < 0) return
 
-                                await onPersistSousPot(
+                                await onPersistSubPot(
                                     pot.id,
                                     trimmed,
                                     newPrevision
@@ -263,17 +264,17 @@ export default function PotColumn({ pot, onAddSousPot, onPersistSousPot, onUpdat
                 )}
 
                 <SortableContext
-                    items={pot.sous_pots.map(sp => sp.id)}
+                    items={pot.sub_pots.map(sp => sp.id)}
                     strategy={verticalListSortingStrategy}
                 >
                     <div className="flex flex-col gap-2">
-                        {pot.sous_pots.map(sp => (
-                            <SousPotItem
+                        {pot.sub_pots.map(sp => (
+                            <SubPotItem
                                 key={sp.id}
-                                sousPot={sp}
+                                subPot={sp}
                                 disabled={disabled}
-                                onDelete={onDeleteSousPot}
-                                onUpdate={onUpdateSousPot}
+                                onDelete={onDeleteSubPot}
+                                onUpdate={onUpdateSubPot}
                             />
                         ))}
                     </div>

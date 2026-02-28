@@ -1,30 +1,31 @@
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import type { UISousPot } from "./types"
+import type { UISubPot } from "./types"
 import { ActionsMenu } from "@/components/layout/ActionsMenu"
-import type { UpdateSousPotPayload } from "@/api/sous_pots.api"
+import type { UpdateSubPotPayload } from "@/api/sub_pots.api"
 import { useState } from "react"
-import { t } from "i18next"
+import { useTranslation } from "react-i18next"
 
 type Props = {
-    sousPot: UISousPot
+    subPot: UISubPot
     disabled?: boolean
-    onDelete?: (sousPotId: string) => void
+    onDelete?: (subPotId: string) => void
     onUpdate?: (
-        sousPotId: string,
-        payload: UpdateSousPotPayload
+        subPotId: string,
+        payload: UpdateSubPotPayload
     ) => Promise<void>
 }
 
-export default function SousPotItem({
-    sousPot,
+export default function SubPotItem({
+    subPot,
     disabled,
     onDelete,
     onUpdate
 }: Props) {
+    const { t } = useTranslation();
     const [isEditing, setIsEditing] = useState(false)
-    const [editName, setEditName] = useState(sousPot.name)
-    const [editPrevision, setEditPrevision] = useState(sousPot.prevision)
+    const [editName, setEditName] = useState(subPot.name)
+    const [editPrevision, setEditPrevision] = useState(subPot.prevision)
 
     const {
         attributes,
@@ -34,19 +35,19 @@ export default function SousPotItem({
         transition,
         isDragging,
     } = useSortable({
-        id: sousPot.id,
+        id: subPot.id,
         data: {
-            type: "souspot",
-            potId: sousPot.pot_id,
+            type: "subpot",
+            potId: subPot.pot_id,
         },
         disabled: disabled || isEditing,
     })
 
-    const current = sousPot.current ?? 0
+    const current = subPot.current ?? 0
 
     const percentage =
-        sousPot.prevision > 0
-            ? (current / sousPot.prevision) * 100
+        subPot.prevision > 0
+            ? (current / subPot.prevision) * 100
             : current ? 100 : 0
 
     const clamped = Math.min(percentage, 100)
@@ -75,7 +76,7 @@ export default function SousPotItem({
                             onPointerDown={(e) => e.stopPropagation()}
                         />
                     ) : (
-                        sousPot.name
+                        subPot.name
                     )}
                 </div>
 
@@ -93,7 +94,7 @@ export default function SousPotItem({
                             onPointerDown={(e) => e.stopPropagation()}
                         />
                     ) : (
-                        sousPot.prevision
+                        subPot.prevision
                     )}
                 </div>
                 <div className="text-sm">{current}</div>
@@ -107,7 +108,7 @@ export default function SousPotItem({
                                     onClick={async () => {
                                         if (editPrevision < 0) return
 
-                                        await onUpdate?.(sousPot.id, {
+                                        await onUpdate?.(subPot.id, {
                                             name: editName.trim(),
                                             prevision: editPrevision,
                                         })
@@ -122,8 +123,8 @@ export default function SousPotItem({
                                 <button
                                     className="btn btn-xs btn-ghost"
                                     onClick={() => {
-                                        setEditName(sousPot.name)
-                                        setEditPrevision(sousPot.prevision)
+                                        setEditName(subPot.name)
+                                        setEditPrevision(subPot.prevision)
                                         setIsEditing(false)
                                     }}
                                     onPointerDown={(e) => e.stopPropagation()}
@@ -133,7 +134,7 @@ export default function SousPotItem({
                             </>
                         ) : (
                             <ActionsMenu
-                                onDelete={() => onDelete?.(sousPot.id)}
+                                onDelete={() => onDelete?.(subPot.id)}
                                 onEdit={() => setIsEditing(true)}
                             />
                         )

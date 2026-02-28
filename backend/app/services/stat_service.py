@@ -15,6 +15,6 @@ class StatService:
 
         accounts = AccountService.list_by_user(session, user)
         for account in accounts:
-            total += AccountService.calculer_solde_account(session, account)
+            total += AccountService.calculer_balance_account(session, account)
 
         return total

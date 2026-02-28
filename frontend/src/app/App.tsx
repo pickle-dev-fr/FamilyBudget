@@ -6,8 +6,8 @@ import LoginPage from "@/features/auth/LoginPage";
 import RegisterPage from "@/features/auth/RegisterPage";
 
 import AppLayout from "@/components/layout/AppLayout";
-import HomePage from "@/features/accueil/HomePage";
-import ComptesPage from "@/features/comptes/ComptesPage";
+import HomePage from "@/features/home/HomePage";
+import AccountsPage from "@/features/accounts/AccountsPage";
 import PotsPage from "@/features/pots/PotsPage";
 import TransactionsPage from "@/features/transactions/TransactionsPage";
 import RecurringPage from "@/features/recurrents/RecurrentsPage";
@@ -30,10 +30,10 @@ export default function App() {
           }
         >
           <Route path="/" element={<HomePage />} />
-          <Route path="/accounts" element={<ComptesPage />} />
+          <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/pots" element={<PotsPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
-          <Route path="/recurrents" element={<RecurringPage />} />
+          <Route path="/recurring" element={<RecurringPage />} />
         </Route>
       </Routes>
     </AuthProvider>

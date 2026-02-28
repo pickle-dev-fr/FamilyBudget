@@ -1,25 +1,26 @@
 import { useEffect, useState } from "react"
-import { t } from "i18next"
 
 import { formatAmount } from "@/utils"
-import { getComptes, getComptesBalance, type Compte } from "@/api/comptes.api"
+import { getAccounts, getAccountsBalance, type Account } from "@/api/accounts.api"
 import { getTotalBalance } from "@/api/stats.api"
 import {
     getTodayTransactions,
     getTomorrowTransactions,
     type Transaction
 } from "@/api/transactions.api"
-import { getPotsAndSousPotsByCompte } from "@/api/pots.api"
+import { getPotsAndSubPotsByAccount } from "@/api/pots.api"
 import type { UIPot } from "../pots/types"
+import { useTranslation } from "react-i18next"
 
 export default function HomePage() {
+    const { t } = useTranslation();
 
     const [loading, setLoading] = useState(true)
 
     const [now, setNow] = useState(new Date())
 
     const [total, setTotal] = useState<number | null>(null)
-    const [comptes, setComptes] = useState<Compte[]>([])
+    const [accounts, setAccounts] = useState<Account[]>([])
     const [balances, setBalances] = useState<Record<string, number>>({})
     const [todayTx, setTodayTx] = useState<Transaction[]>([])
     const [tomorrowTx, setTomorrowTx] = useState<Transaction[]>([])
@@ -46,33 +47,33 @@ export default function HomePage() {
             try {
                 const [
                     totalRes,
-                    comptesRes,
+                    accountsRes,
                     todayRes,
                     tomorrowRes
                 ] = await Promise.all([
                     getTotalBalance(),
-                    getComptes(),
+                    getAccounts(),
                     getTodayTransactions(),
                     getTomorrowTransactions()
                 ])
 
                 setTotal(totalRes)
-                setComptes(comptesRes)
+                setAccounts(accountsRes)
                 setTodayTx(todayRes)
                 setTomorrowTx(tomorrowRes)
 
                 const balancesEntries = await Promise.all(
-                    comptesRes.map(async (a: any) => {
-                        const solde = await getComptesBalance(a.id)
-                        return [a.id, solde] as const
+                    accountsRes.map(async (a: any) => {
+                        const balance = await getAccountsBalance(a.id)
+                        return [a.id, balance] as const
                     })
                 )
 
                 setBalances(Object.fromEntries(balancesEntries))
 
                 // charger pots pour affichage nom pot
-                if (comptesRes.length > 0) {
-                    const allPots = await getPotsAndSousPotsByCompte(comptesRes[0].id)
+                if (accountsRes.length > 0) {
+                    const allPots = await getPotsAndSubPotsByAccount(accountsRes[0].id)
                     setPots(allPots)
                 }
 
@@ -84,14 +85,14 @@ export default function HomePage() {
         load()
     }, [])
 
-    function showTxCompte(tx: Transaction) {
-        if (tx.compte_id) {
+    function showTxAccount(tx: Transaction) {
+        if (tx.account_id) {
             // CREDIT → direct
-            return comptes.find(c => c.id === tx.compte_id)?.name ?? "-"
+            return accounts.find(c => c.id === tx.account_id)?.name ?? "-"
         } else {
-            // DEBIT → remonter via sous_pot
-            return comptes.find(
-                c => c.id === pots.find(p => p.sous_pots.find(sp => sp.id === tx.sous_pot_id))?.compte_id
+            // DEBIT → remonter via sub_pot
+            return accounts.find(
+                c => c.id === pots.find(p => p.sub_pots.find(sp => sp.id === tx.sub_pot_id))?.account_id
             )?.name ?? "-"
         }
     }
@@ -117,7 +118,7 @@ export default function HomePage() {
                 </div>
             </div>
 
-            {/* SOLDE TOTAL */}
+            {/* BALANCE TOTAL */}
             <div className="card bg-base-200 border border-base-300 p-4 rounded-lg flex justify-between items-center">
                 <div className="font-medium">
                     {t("home.total_balance")}
@@ -127,14 +128,14 @@ export default function HomePage() {
                 </div>
             </div>
 
-            {/* COMPTES */}
+            {/* ACCOUNTS */}
             <section className="flex flex-col gap-4">
                 <h2 className="text-lg font-semibold">
                     {t("home.accounts_list")}
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {comptes.map((a) => {
+                    {accounts.map((a) => {
                         const balance = balances[a.id]
 
                         return (
@@ -167,7 +168,7 @@ export default function HomePage() {
                 <h2 className="text-lg font-semibold">
                     {t("home.today_transactions")}
                 </h2>
-                <TransactionsTable items={todayTx} pots={pots} methodFindCompte={showTxCompte} />
+                <TransactionsTable items={todayTx} pots={pots} methodFindAccount={showTxAccount} />
             </section>
 
             {/* TOMORROW */}
@@ -175,7 +176,7 @@ export default function HomePage() {
                 <h2 className="text-lg font-semibold">
                     {t("home.tomorrow_transactions")}
                 </h2>
-                <TransactionsTable items={tomorrowTx} pots={pots} methodFindCompte={showTxCompte} />
+                <TransactionsTable items={tomorrowTx} pots={pots} methodFindAccount={showTxAccount} />
             </section>
 
         </div>
@@ -189,12 +190,13 @@ export default function HomePage() {
 function TransactionsTable({
     items,
     pots,
-    methodFindCompte,
+    methodFindAccount,
 }: {
     items: Transaction[]
     pots: UIPot[]
-    methodFindCompte: Function
+    methodFindAccount: Function
 }) {
+    const { t } = useTranslation();
 
     if (!items.length) {
         return (
@@ -212,16 +214,16 @@ function TransactionsTable({
                         <th>{t("transactions.type")}</th>
                         <th>{t("transactions.amount")}</th>
                         <th>{t("transactions.motif")}</th>
-                        <th>{t("transactions.compte")}</th>
-                        <th>{t("transactions.sous_pot")}</th>
+                        <th>{t("transactions.account")}</th>
+                        <th>{t("transactions.sub_pot")}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {items.map((tx) => {
                         const potName =
                             pots
-                                .flatMap(p => p.sous_pots)
-                                .find(sp => sp.id === tx.sous_pot_id)?.name ?? "-"
+                                .flatMap(p => p.sub_pots)
+                                .find(sp => sp.id === tx.sub_pot_id)?.name ?? "-"
 
                         return (
                             <tr key={tx.id}>
@@ -249,7 +251,7 @@ function TransactionsTable({
 
                                 <td>{tx.motif}</td>
 
-                                <td>{methodFindCompte(tx)}</td>
+                                <td>{methodFindAccount(tx)}</td>
 
                                 <td>{potName}</td>
                             </tr>

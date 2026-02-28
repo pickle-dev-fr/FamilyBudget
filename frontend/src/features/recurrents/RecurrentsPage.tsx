@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { getComptes, type Compte } from "@/api/comptes.api"
+import { getAccounts, type Account } from "@/api/accounts.api"
 import {
     getTransactionsRecurrente,
     deleteTransaction,
@@ -9,19 +9,20 @@ import {
     deleteTransactionRecurrence,
     createTransfer,
 } from "@/api/transactions.api"
-import { getPotsAndSousPotsByCompte } from "@/api/pots.api"
-import type { UIPot, UISousPot } from "../pots/types"
+import { getPotsAndSubPotsByAccount } from "@/api/pots.api"
+import type { UIPot, UISubPot } from "../pots/types"
 import TransactionModal from "../transactions/TransactionModal"
 import { ActionsMenu } from "@/components/layout/ActionsMenu"
-import { t } from "i18next"
-import DeleteRecurringModal from "./DeleteRecurringModal"
+import DeleteRecurringModal from "./DeleteRecurrentModal"
 import TransferModal from "../transactions/TransfertModal"
+import { useTranslation } from "react-i18next"
 
 export default function RecurringPage() {
-    const [comptes, setComptes] = useState<Compte[]>([])
+    const { t } = useTranslation();
+    const [accounts, setAccounts] = useState<Account[]>([])
     const [pots, setPots] = useState<UIPot[]>([])
-    const [sousPots, setSousPots] = useState<UISousPot[]>([])
-    const [selectedCompteId, setSelectedCompteId] = useState<string | null>(null)
+    const [subPots, setSubPots] = useState<UISubPot[]>([])
+    const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [loading, setLoading] = useState<boolean>(false)
 
@@ -32,20 +33,20 @@ export default function RecurringPage() {
     const [transferModalOpen, setTransferModalOpen] = useState(false)
 
     /* ============================= */
-    /* LOAD COMPTES */
+    /* LOAD ACCOUNTS */
     /* ============================= */
 
     useEffect(() => {
-        async function loadComptes() {
-            const data = await getComptes()
-            setComptes(data)
+        async function loadAccounts() {
+            const data = await getAccounts()
+            setAccounts(data)
 
             if (data.length > 0) {
-                setSelectedCompteId(data[0].id)
+                setSelectedAccountId(data[0].id)
             }
         }
 
-        loadComptes()
+        loadAccounts()
     }, [])
 
     /* ============================= */
@@ -53,47 +54,47 @@ export default function RecurringPage() {
     /* ============================= */
 
     useEffect(() => {
-        if (!selectedCompteId) return
+        if (!selectedAccountId) return
 
         async function loadPots() {
             const data: UIPot[] =
-                await getPotsAndSousPotsByCompte(selectedCompteId!)
+                await getPotsAndSubPotsByAccount(selectedAccountId!)
 
             setPots(data)
 
-            const flat: UISousPot[] = []
+            const flat: UISubPot[] = []
             data.forEach(p =>
-                p.sous_pots.forEach(sp => flat.push(sp))
+                p.sub_pots.forEach(sp => flat.push(sp))
             )
 
-            setSousPots(flat)
+            setSubPots(flat)
         }
 
         loadPots()
-    }, [selectedCompteId])
+    }, [selectedAccountId])
 
     /* ============================= */
     /* LOAD RECURRING */
     /* ============================= */
 
     useEffect(() => {
-        if (!selectedCompteId) return
+        if (!selectedAccountId) return
 
         async function loadRecurring() {
             setLoading(true)
             const data =
-                await getTransactionsRecurrente(selectedCompteId!)
+                await getTransactionsRecurrente(selectedAccountId!)
             setTransactions(data)
             setLoading(false)
         }
 
         loadRecurring()
-    }, [selectedCompteId])
+    }, [selectedAccountId])
 
     async function reloadRecurring() {
-        if (!selectedCompteId) return
+        if (!selectedAccountId) return
         const data =
-            await getTransactionsRecurrente(selectedCompteId)
+            await getTransactionsRecurrente(selectedAccountId)
         setTransactions(data)
     }
 
@@ -134,12 +135,12 @@ export default function RecurringPage() {
                 <div className="flex gap-2">
                     <select
                         className="select select-bordered"
-                        value={selectedCompteId ?? ""}
+                        value={selectedAccountId ?? ""}
                         onChange={(e) =>
-                            setSelectedCompteId(e.target.value)
+                            setSelectedAccountId(e.target.value)
                         }
                     >
-                        {comptes.map(c => (
+                        {accounts.map(c => (
                             <option key={c.id} value={c.id}>
                                 {c.name}
                             </option>
@@ -179,7 +180,7 @@ export default function RecurringPage() {
                                     <tr>
                                         <th>{t("transactions.type")}</th>
                                         <th>{t("transactions.amount")}</th>
-                                        <th>{t("transactions.sous_pot")}</th>
+                                        <th>{t("transactions.sub_pot")}</th>
                                         <th>{t("transactions.motif")}</th>
                                         <th>{t("recurring.recurrence_type.label")}</th>
                                         <th>{t("recurring.next_date")}</th>
@@ -220,8 +221,8 @@ export default function RecurringPage() {
                                             </td>
 
                                             <td>
-                                                {sousPots.find(
-                                                    sp => sp.id === tx.sous_pot_id
+                                                {subPots.find(
+                                                    sp => sp.id === tx.sub_pot_id
                                                 )?.name ?? "-"}
                                             </td>
 
@@ -267,7 +268,7 @@ export default function RecurringPage() {
                     id={selectedTx?.id}
                     transaction={selectedTx}
                     isForcedRecurrent={true}
-                    comptes={comptes}
+                    accounts={accounts}
                     pots={pots}
                     onClose={() => {
                         setIsModalOpen(false)
@@ -283,11 +284,11 @@ export default function RecurringPage() {
                     }}
                 />
             )}
-            {transferModalOpen && selectedCompteId && (
+            {transferModalOpen && selectedAccountId && (
                 <TransferModal
-                    fixedCompteSourceId={selectedCompteId}
-                    comptes={comptes}
-                    pots={pots.filter(p => p.compte_id === selectedCompteId)}
+                    fixedAccountSourceId={selectedAccountId}
+                    accounts={accounts}
+                    pots={pots.filter(p => p.account_id === selectedAccountId)}
                     isForcedRecurrent={true}
                     onClose={() => setTransferModalOpen(false)}
                     onCreate={async (payload) => {

@@ -1,6 +1,6 @@
-import type { SousPot } from "@/api/sous_pots.api"
+import type { SubPot } from "@/api/sub_pots.api"
 
-export type UISousPot = Omit<SousPot, "current"> & {
+export type UISubPot = Omit<SubPot, "current"> & {
     current?: number
     __isNew?: boolean
 }
@@ -8,7 +8,7 @@ export type UISousPot = Omit<SousPot, "current"> & {
 export type UIPot = {
     id: string
     name: string
-    compte_id: string
+    account_id: string
     position: number
-    sous_pots: UISousPot[]
+    sub_pots: UISubPot[]
 }

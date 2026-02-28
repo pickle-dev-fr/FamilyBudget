@@ -10,17 +10,17 @@ export type CreateTransactionPayload = {
   transaction_type: "DEBIT" | "CREDIT";
   motif: string;
   amount: number;
-  compte_id?: string | null,
-  sous_pot_id?: string | null,
+  account_id?: string | null,
+  sub_pot_id?: string | null,
   recurrent?: boolean,
   recurrence_type?: string | null,
   recurrence_end_date?: string | null
 };
 
 export type CreateTransferPayload = {
-    compte_source_id: string
-    compte_destination_id: string
-    sous_pot_id: string
+    account_source_id: string
+    account_destination_id: string
+    sub_pot_id: string
     amount: number
     motif?: string
     transaction_date?: string
@@ -57,12 +57,12 @@ export async function updateTransaction(id: string, payload: UpdateTransactionPa
   return apiClient.put(`/transactions/${id}`, payload);
 }
 
-export function getTransactionsMois(compte_id: string, payload: {date_month: number, date_year: number}) {
-  return apiClient.get(`/compte/${compte_id}/transactions`, payload);
+export function getTransactionsMois(account_id: string, payload: {date_month: number, date_year: number}) {
+  return apiClient.get(`/account/${account_id}/transactions`, payload);
 }
 
-export function getTransactionsRecurrente(compte_id: string) {
-  return apiClient.get(`/compte/${compte_id}/transactions/recurrente`);
+export function getTransactionsRecurrente(account_id: string) {
+  return apiClient.get(`/account/${account_id}/transactions/recurrente`);
 }
 
 export function deleteTransaction(id: string) {

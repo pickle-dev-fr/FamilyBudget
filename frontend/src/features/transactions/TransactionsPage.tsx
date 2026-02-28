@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react"
 import { deleteTransaction, getTransactionsMois, createTransaction, updateTransaction, type Transaction, type CreateTransactionPayload, type UpdateTransactionPayload, createTransfer } from "@/api/transactions.api"
-import { getComptes, type Compte } from "@/api/comptes.api"
+import { getAccounts, type Account } from "@/api/accounts.api"
 import { ActionsMenu } from "@/components/layout/ActionsMenu"
 import ConfirmModal from "@/components/layout/ConfirmModal"
-import { t } from "i18next"
 import TransactionModal from "./TransactionModal"
-import type { UIPot, UISousPot } from "../pots/types"
-import { getPotsAndSousPotsByCompte } from "@/api/pots.api"
+import type { UIPot, UISubPot } from "../pots/types"
+import { getPotsAndSubPotsByAccount } from "@/api/pots.api"
 import { getPeriode } from "@/api/utils.api"
 import TransferModal from "./TransfertModal"
+import { useTranslation } from "react-i18next"
 
 export default function TransactionsPage(): React.JSX.Element {
-    const [comptes, setComptes] = useState<Compte[]>([])
-    const [selectedCompteId, setSelectedCompteId] = useState<string>("")
+    const { t } = useTranslation();
+    const [accounts, setAccounts] = useState<Account[]>([])
+    const [selectedAccountId, setSelectedAccountId] = useState<string>("")
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
     const [modalTarget, setModalTarget] = useState<CreateTransactionPayload | UpdateTransactionPayload | null>(null)
@@ -21,7 +22,7 @@ export default function TransactionsPage(): React.JSX.Element {
 
     // pots déjà chargés depuis le contexte ou parent
     const [pots, setPots] = useState<UIPot[]>([])
-    const [sous_pots, setSousPots] = useState<UISousPot[]>([])
+    const [sub_pots, setSubPots] = useState<UISubPot[]>([])
 
     const [currentRefMonth, setCurrentRefMonth] = useState<{
         year: number
@@ -29,50 +30,50 @@ export default function TransactionsPage(): React.JSX.Element {
     } | null>(null)
 
     useEffect(() => {
-        async function loadComptes() {
-            const data = await getComptes()
-            setComptes(data)
+        async function loadAccounts() {
+            const data = await getAccounts()
+            setAccounts(data)
             if (data.length > 0) {
-                setSelectedCompteId(data[0].id)
+                setSelectedAccountId(data[0].id)
             }
         }
-        loadComptes()
+        loadAccounts()
     }, [])
 
     useEffect(() => {
         async function loadPeriode() {
-            if (!selectedCompteId) return
+            if (!selectedAccountId) return
 
-            const periode = await getPeriode(selectedCompteId)
+            const period = await getPeriode(selectedAccountId)
 
             setCurrentRefMonth({
-                year: periode.year,
-                month: periode.month
+                year: period.year,
+                month: period.month
             })
         }
 
         loadPeriode()
-    }, [selectedCompteId])
+    }, [selectedAccountId])
 
     useEffect(() => {
-        if (!selectedCompteId) return
+        if (!selectedAccountId) return
 
-        async function loadPotsEtSousPots() {
-            const data: UIPot[] = await getPotsAndSousPotsByCompte(selectedCompteId)
+        async function loadPotsEtSubPots() {
+            const data: UIPot[] = await getPotsAndSubPotsByAccount(selectedAccountId)
             setPots(data)
-            const sous_pots: UISousPot[] = [];
+            const sub_pots: UISubPot[] = [];
             data.forEach((pot: UIPot)=> {
-                pot.sous_pots.forEach((sous_pot: UISousPot) => sous_pots.push(sous_pot))
+                pot.sub_pots.forEach((sub_pot: UISubPot) => sub_pots.push(sub_pot))
             })
-            setSousPots(sous_pots)
+            setSubPots(sub_pots)
         }
-        loadPotsEtSousPots()
-    }, [selectedCompteId])
+        loadPotsEtSubPots()
+    }, [selectedAccountId])
 
     useEffect(() => {
-        if (!selectedCompteId || !currentRefMonth) return
+        if (!selectedAccountId || !currentRefMonth) return
         loadTransactions()
-    }, [selectedCompteId, currentRefMonth])
+    }, [selectedAccountId, currentRefMonth])
 
     const changeMonthIndex = (delta: number) => {
         let { year, month } = currentRefMonth!
@@ -83,10 +84,10 @@ export default function TransactionsPage(): React.JSX.Element {
     }
 
     const loadTransactions = async () => {
-        if (!selectedCompteId || !currentRefMonth) return
+        if (!selectedAccountId || !currentRefMonth) return
 
         const data = await getTransactionsMois(
-            selectedCompteId,
+            selectedAccountId,
             {
                 date_month: currentRefMonth.month,
                 date_year: currentRefMonth.year
@@ -122,17 +123,17 @@ export default function TransactionsPage(): React.JSX.Element {
 
     return (
         <div className="flex flex-col gap-6 p-4 transactions-page">
-            {/* Sélecteur de compte */}
+            {/* Sélecteur de account */}
             <div className="w-full">
                 <select
                     className="select select-bordered w-full"
-                    value={selectedCompteId}
+                    value={selectedAccountId}
                     onChange={(e) => {
-                        setSelectedCompteId(e.target.value);
+                        setSelectedAccountId(e.target.value);
                         loadTransactions()
                     }}
                 >
-                    {comptes.map(c => (
+                    {accounts.map(c => (
                         <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                 </select>
@@ -176,7 +177,7 @@ export default function TransactionsPage(): React.JSX.Element {
                             <th>{t("transactions.date")}</th>
                             <th>{t("transactions.motif")}</th>
                             <th>{t("transactions.type")}</th>
-                            <th>{t("transactions.sous_pot")}</th>
+                            <th>{t("transactions.sub_pot")}</th>
                             <th className="text-right">{t("transactions.amount")}</th>
                             <th>{t("transactions.recurrent")}</th>
                             <th>{t("common.actions")}</th>
@@ -192,7 +193,7 @@ export default function TransactionsPage(): React.JSX.Element {
                                         {tx.transaction_type}
                                     </span>
                                 </td>
-                                <td>{sous_pots.find(sp => sp.id === tx.sous_pot_id)?.name || "-"}</td>
+                                <td>{sub_pots.find(sp => sp.id === tx.sub_pot_id)?.name || "-"}</td>
                                 <td className="text-right">{tx.amount.toFixed(2)}</td>
                                 <td>
                                     <input type="checkbox" className="checkbox" checked={Boolean(tx.recurrence_type)} readOnly />
@@ -214,18 +215,18 @@ export default function TransactionsPage(): React.JSX.Element {
                 <TransactionModal
                     transaction={modalTarget}
                     id={transactionEditId}
-                    fixedCompteId={selectedCompteId}
-                    comptes={comptes}
+                    fixedAccountId={selectedAccountId}
+                    accounts={accounts}
                     pots={pots}
                     onClose={() => setModalTarget(null)}
                     onCreate={handleCreate}
                     onUpdate={handleUpdate}
                 />
             )}
-            {transferModalOpen && selectedCompteId && (
+            {transferModalOpen && selectedAccountId && (
                 <TransferModal
-                    fixedCompteSourceId={selectedCompteId}
-                    comptes={comptes}
+                    fixedAccountSourceId={selectedAccountId}
+                    accounts={accounts}
                     pots={pots}
                     onClose={() => setTransferModalOpen(false)}
                     onCreate={async (payload) => {

@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react"
 import PotsBoard from "./PotsBoard"
-import { getComptes } from "@/api/comptes.api"
+import { getAccounts } from "@/api/accounts.api"
 import { createPot } from "@/api/pots.api"
-import { t } from "i18next";
+import { useTranslation } from "react-i18next"
 
-type Compte = {
+type Account = {
     id: string
     name: string
 }
 
 export default function PotsPage(): React.JSX.Element {
-    const [comptes, setComptes] = useState<Compte[]>([])
-    const [selectedCompteId, setSelectedCompteId] = useState<string>("")
+    const { t } = useTranslation();
+    const [accounts, setAccounts] = useState<Account[]>([])
+    const [selectedAccountId, setSelectedAccountId] = useState<string>("")
     const [newPotName, setNewPotName] = useState<string>("")
     const [refreshKey, setRefreshKey] = useState<number>(0)
 	const [showCreate, setShowCreate] = useState<boolean>(false)
@@ -19,11 +20,11 @@ export default function PotsPage(): React.JSX.Element {
 
     useEffect(() => {
         async function load() {
-            const data = await getComptes()
-            setComptes(data)
+            const data = await getAccounts()
+            setAccounts(data)
 
             if (data.length > 0) {
-                setSelectedCompteId(data[0].id)
+                setSelectedAccountId(data[0].id)
             }
         }
 
@@ -32,9 +33,9 @@ export default function PotsPage(): React.JSX.Element {
 
     async function handleCreatePot() {
         if (!newPotName.trim()) return
-        if (!selectedCompteId) return
+        if (!selectedAccountId) return
 
-        await createPot(selectedCompteId, {
+        await createPot(selectedAccountId, {
             name: newPotName.trim(),
         })
 
@@ -45,16 +46,16 @@ export default function PotsPage(): React.JSX.Element {
 
     return (
         <div className="flex flex-col gap-6 pots-container">
-            {/* Sélecteur de compte */}
-            <div className="w-full compte-selector">
+            {/* Sélecteur de account */}
+            <div className="w-full account-selector">
                 <select
-                    value={selectedCompteId}
-                    onChange={(e) => setSelectedCompteId(e.target.value)}
-                    className="select select-bordered w-full compte-select"
+                    value={selectedAccountId}
+                    onChange={(e) => setSelectedAccountId(e.target.value)}
+                    className="select select-bordered w-full account-select"
                 >
-                    {comptes.map((compte) => (
-                        <option key={compte.id} value={compte.id}>
-                            {compte.name}
+                    {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>
+                            {account.name}
                         </option>
                     ))}
                 </select>
@@ -101,9 +102,9 @@ export default function PotsPage(): React.JSX.Element {
             </div>
 
             {/* Board */}
-            {selectedCompteId && (
+            {selectedAccountId && (
                 <PotsBoard
-                    compteId={selectedCompteId}
+                    accountId={selectedAccountId}
                     refreshKey={refreshKey}
                 />
             )}

@@ -97,8 +97,8 @@ def update_account(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/{account_id}/solde", response_model=float)
-def get_solde_by_account(
+@router.get("/{account_id}/balance", response_model=float)
+def get_balance_by_account(
     account_id: str,
     session: Session = Depends(get_session),
     current_user = Depends(get_current_user),
@@ -109,7 +109,7 @@ def get_solde_by_account(
         account_id=account_id,
     )
 
-    return AccountService.calculer_solde_account(
+    return AccountService.calculer_balance_account(
         session=session,
         account=account,
     )

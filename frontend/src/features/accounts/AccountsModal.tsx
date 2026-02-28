@@ -1,29 +1,30 @@
 import { useState, useEffect } from "react";
-import { t } from "i18next";
 import Modal from "@/components/ui/Modal";
+import { useTranslation } from "react-i18next";
 
-export type CompteFormData = {
+export type AccountFormData = {
     name: string;
     startDay: number;
     initialValue: number;
     decallage: number;
 };
 
-type ComptesModalProps = {
+type AccountsModalProps = {
     open: boolean;
     mode: "create" | "edit";
     onClose: () => void;
-    onSubmit: (data: CompteFormData) => void;
-    defaultValues?: CompteFormData;
+    onSubmit: (data: AccountFormData) => void;
+    defaultValues?: AccountFormData;
 };
 
-export default function ComptesModal({
+export default function AccountsModal({
   open,
   mode,
   onClose,
   onSubmit,
   defaultValues,
-}: ComptesModalProps) {
+}: AccountsModalProps) {
+    const { t } = useTranslation();
 
     const [startDay, setStartDay] = useState(1);
     const [initialValue, setInitialValue] = useState(0);

@@ -1,17 +1,17 @@
-import type { Compte } from "@/api/comptes.api"
+import type { Account } from "@/api/accounts.api"
 import type { CreateTransactionPayload, UpdateTransactionPayload } from "@/api/transactions.api"
 import Modal from "@/components/ui/Modal"
 import { useState, useEffect } from "react"
 import type { UIPot } from "../pots/types"
-import { t } from "i18next"
+import { useTranslation } from "react-i18next"
 
 type Props = {
     transaction?: UpdateTransactionPayload
     id?: string
     isForcedRecurrent?: boolean
-    fixedCompteId?: string
+    fixedAccountId?: string
     onClose: () => void
-    comptes: Compte[]
+    accounts: Account[]
     pots: UIPot[]
     onCreate: (payload: CreateTransactionPayload) => void
     onUpdate: (id: string, payload: UpdateTransactionPayload) => void
@@ -21,21 +21,22 @@ export default function TransactionModal({
     transaction,
     id,
     isForcedRecurrent,
-    fixedCompteId,
+    fixedAccountId,
     onClose,
-    comptes,
+    accounts,
     pots,
     onCreate,
     onUpdate
 }: Props) {
+    const { t } = useTranslation();
 
     const today = new Date().toISOString().split("T")[0]
 
     const [transactionType, setTransactionType] = useState<"DEBIT" | "CREDIT">("DEBIT")
     const [amount, setAmount] = useState(0)
     const [motif, setMotif] = useState("")
-    const [selectedCompteId, setSelectedCompteId] = useState<string | null>(null)
-    const [selectedSousPotId, setSelectedSousPotId] = useState<string | null>(null)
+    const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
+    const [selectedSubPotId, setSelectedSubPotId] = useState<string | null>(null)
 
     const [transactionDate, setTransactionDate] = useState(today)
     const [recurrence, setRecurrence] = useState(false)
@@ -47,12 +48,12 @@ export default function TransactionModal({
         setTransactionType(transaction.transaction_type ?? "DEBIT")
         setAmount(transaction.amount ?? 0)
         setMotif(transaction.motif ?? "")
-        setSelectedCompteId(
-            fixedCompteId ??
-            transaction?.compte_id ??
-            comptes[0]?.id
+        setSelectedAccountId(
+            fixedAccountId ??
+            transaction?.account_id ??
+            accounts[0]?.id
         )
-        setSelectedSousPotId(transaction.sous_pot_id ?? pots[0].sous_pots[0].id)
+        setSelectedSubPotId(transaction.sub_pot_id ?? pots[0].sub_pots[0].id)
 
         setTransactionDate(transaction.transaction_date ?? today)
 
@@ -69,8 +70,8 @@ export default function TransactionModal({
     }
 
     function handleSubmit() {
-        if (transactionType === "DEBIT" && !selectedSousPotId) return
-        if (transactionType === "CREDIT" && !selectedCompteId) return
+        if (transactionType === "DEBIT" && !selectedSubPotId) return
+        if (transactionType === "CREDIT" && !selectedAccountId) return
 
         const payload = {
             ...transaction,
@@ -79,14 +80,14 @@ export default function TransactionModal({
             motif,
             transaction_date: transactionDate,
 
-            compte_id:
+            account_id:
                 transactionType === "CREDIT"
-                    ? (fixedCompteId ?? selectedCompteId)
+                    ? (fixedAccountId ?? selectedAccountId)
                     : null,
 
-            sous_pot_id:
+            sub_pot_id:
                 transactionType === "DEBIT"
-                    ? selectedSousPotId
+                    ? selectedSubPotId
                     : null,
             
             recurrence_type: recurrence ? "MONTH" : null,
@@ -181,16 +182,16 @@ export default function TransactionModal({
                 {/* CREDIT */}
                 {transactionType === "CREDIT" && (
                     <div>
-                        <label className="label">{t("transactions.compte")}</label>
+                        <label className="label">{t("transactions.account")}</label>
                         <select
                             className="select select-bordered w-full"
-                            value={selectedCompteId || ""}
-                            disabled={fixedCompteId ? true : false}
+                            value={selectedAccountId || ""}
+                            disabled={fixedAccountId ? true : false}
                             onChange={e =>
-                                setSelectedCompteId(e.target.value)
+                                setSelectedAccountId(e.target.value)
                             }
                         >
-                            {comptes.map(c => (
+                            {accounts.map(c => (
                                 <option key={c.id} value={c.id}>
                                     {c.name}
                                 </option>
@@ -202,20 +203,20 @@ export default function TransactionModal({
                 {/* DEBIT */}
                 {transactionType === "DEBIT" && (
                     <div>
-                        <label className="label">{t("transactions.sous_pot")}</label>
+                        <label className="label">{t("transactions.sub_pot")}</label>
                         <div className="border rounded p-2 max-h-60 overflow-auto">
                             {pots.map(pot => (
                                 <div key={pot.id} className="mb-2">
                                     <div className="font-semibold">{pot.name}</div>
                                     <div className="ml-4 flex flex-col gap-1">
-                                        {pot.sous_pots.map(sp => (
+                                        {pot.sub_pots.map(sp => (
                                             <label key={sp.id} className="flex items-center gap-2">
                                                 <input
                                                     type="radio"
-                                                    name="sousPot"
-                                                    checked={selectedSousPotId === sp.id}
+                                                    name="subPot"
+                                                    checked={selectedSubPotId === sp.id}
                                                     onChange={() =>
-                                                        setSelectedSousPotId(sp.id)
+                                                        setSelectedSubPotId(sp.id)
                                                     }
                                                     className="radio"
                                                 />

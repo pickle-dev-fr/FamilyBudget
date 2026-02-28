@@ -1,7 +1,7 @@
 import type { Transaction } from "@/api/transactions.api"
 import Modal from "@/components/ui/Modal"
-import { t } from "i18next"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 export default function DeleteRecurringModal({
     onClose,
@@ -11,7 +11,7 @@ export default function DeleteRecurringModal({
     onClose: () => void
     onConfirm: (deleteFuture: boolean) => void
 }) {
-
+    const { t } = useTranslation();
     const [deleteFuture, setDeleteFuture] = useState(false)
 
     return (

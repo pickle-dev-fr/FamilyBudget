@@ -90,7 +90,7 @@ class AccountService:
         session.refresh(account)
         return account
 
-    def calculer_solde_account(
+    def calculer_balance_account(
         session: Session,
         account: Account,
     ) -> float:

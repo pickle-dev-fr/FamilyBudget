@@ -1,11 +1,12 @@
 import { clearToken } from "@/api/token";
 import { useAuth } from "@/auth/AuthContext";
-import { t } from "i18next";
 import { useNavigate } from "react-router-dom";
 import LanguageSelector from "../ui/LanguageSelector";
 import ThemeSelector from "../ui/ThemeSelector";
+import { useTranslation } from "react-i18next";
 
 export default function PrivateHeader() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { refreshAuth } = useAuth();
 

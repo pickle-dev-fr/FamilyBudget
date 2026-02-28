@@ -25,7 +25,6 @@
     "edit": "Modifier",
     "delete": "Supprimer",
     "actions": "Actions",
-    "loading": "Chargement…",
     "confirm": "Confirmation",
     "confirm_delete": "Confirmer la suppression ?"
   },
@@ -57,9 +56,7 @@
     "name": "Nom",
     "balance": "Solde",
     "start_day": "Début mois",
-    "initial_value": "Valeur initiale",
-    "decallage": "Décallage",
-    "decallage_help": "Sert uniquement dans des cas précis"
+    "initial_value": "Valeur initiale"
   },
   "transactions": {
     "add": "Ajouter une transaction",
@@ -74,7 +71,7 @@
       "destination_account": "Compte à créditer"
     },
     "date": "Date",
-    "compte": "Compte",
+    "account": "Compte",
     "debit": "Débit",
     "credit": "Crédit",
     "type": "Type",
@@ -82,7 +79,7 @@
     "amount": "Valeur",
     "recurrent": "Récurrent",
     "recurrence_end": "Date de fin",
-    "sous_pot": "Sous-Pot",
+    "sub_pot": "Sous-Pot",
     "transfer": "Effectuer un virement"
   },
   "recurring":  {
@@ -100,12 +97,12 @@
     "delete": {
       "title": "Suppression de la récurrence d'une transaction",
       "confirm": "Confirmer le retrait de la récurrence",
-      "also_future": "Supprimer aussi la transaction prévue"
+      "also_future": "Supprimer aussi la transaction prévue ?"
     }
   },
   "pots": {
     "name": "Nom du pot",
-    "select_compte": "Selectionner un compte",
+    "select_account": "Selectionner un compte",
     "title": "Pots",
     "add": "+ Ajouter un pot",
     "empty": "Aucun pot",
@@ -113,9 +110,9 @@
     "current": "Actuel",
     "reste": "Reste"
   },
-  "sous_pots": {
-    "aucun": "Aucun sous Pot",
-    "name": "Nom du Sous Pot",
+  "sub_pots": {
+    "aucun": "Aucun Sous-Pot",
+    "name": "Nom du Sous-Pot",
     "pourcentage": "Pourcentage",
     "prevision": "Prévu",
     "current": "Actuel",

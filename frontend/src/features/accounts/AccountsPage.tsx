@@ -1,18 +1,17 @@
 import { useEffect, useState } from "react";
-import { t } from "i18next";
 
 import {
-    createCompte,
-    getComptes,
-    getComptesBalance,
-    updateCompte,
-    reorderComptes,
-    type Compte,
-    deleteCompte
-} from "@/api/comptes.api";
+    createAccount,
+    getAccounts,
+    getAccountsBalance,
+    updateAccount,
+    reorderAccounts,
+    type Account,
+    deleteAccount
+} from "@/api/accounts.api";
 
 import { formatAmount } from "@/utils";
-import ComptesModal, { type CompteFormData } from "./ComptesModal";
+import AccountsModal, { type AccountFormData } from "./AccountsModal";
 
 import {
     DndContext,
@@ -26,32 +25,34 @@ import {
 
 import SortableTableRow from "@/components/table/SortableTableRow";
 import { ActionsMenu } from "@/components/layout/ActionsMenu";
+import { useTranslation } from "react-i18next";
 
-type CompteWithMeta = Compte & {
+type AccountWithMeta = Account & {
     start_day: number;
     decallage: number;
 };
 
-export default function ComptesPage() {
+export default function AccountsPage() {
+    const { t } = useTranslation();
 
-    const [comptes, setComptes] = useState<CompteWithMeta[]>([]);
+    const [accounts, setAccounts] = useState<AccountWithMeta[]>([]);
     const [balances, setBalances] = useState<Record<string, number>>({});
     const [loading, setLoading] = useState(true);
 
-    const [editingAccount, setEditingAccount] = useState<Compte | null>(null);
+    const [editingAccount, setEditingAccount] = useState<Account | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
 
-    async function loadComptes() {
+    async function loadAccounts() {
         setLoading(true);
 
         try {
-            const comptesRes = await getComptes();
-            setComptes(comptesRes);
+            const accountsRes = await getAccounts();
+            setAccounts(accountsRes);
 
             const balancesEntries = await Promise.all(
-                comptesRes.map(async (a: CompteWithMeta) => {
-                    const solde = await getComptesBalance(a.id);
-                    return [a.id, solde] as const;
+                accountsRes.map(async (a: AccountWithMeta) => {
+                    const balance = await getAccountsBalance(a.id);
+                    return [a.id, balance] as const;
                 })
             );
 
@@ -62,11 +63,11 @@ export default function ComptesPage() {
     }
 
     useEffect(() => {
-        loadComptes();
+        loadAccounts();
     }, []);
 
-    async function handleCreate(data: CompteFormData) {
-        await createCompte({
+    async function handleCreate(data: AccountFormData) {
+        await createAccount({
             name: data.name,
             start_day: data.startDay,
             initial_value: data.initialValue,
@@ -74,12 +75,12 @@ export default function ComptesPage() {
         });
 
         setCreateOpen(false);
-        await loadComptes();
+        await loadAccounts();
     }
     
     async function handleDelete(id: string) {
-        await deleteCompte(id)
-        setComptes(prev => prev.filter(t => t.id !== id))
+        await deleteAccount(id)
+        setAccounts(prev => prev.filter(t => t.id !== id))
     }
 
     if (loading) {
@@ -105,17 +106,17 @@ export default function ComptesPage() {
                         const { active, over } = event;
                         if (!over || active.id === over.id) return;
 
-                        setComptes(prev => {
+                        setAccounts(prev => {
                             const oldIndex = prev.findIndex(c => c.id === active.id);
                             const newIndex = prev.findIndex(c => c.id === over.id);
                             const reordered = arrayMove(prev, oldIndex, newIndex);
-                            reorderComptes(reordered.map(c => c.id));
+                            reorderAccounts(reordered.map(c => c.id));
                             return reordered;
                         });
                     }}
                 >
                     <SortableContext
-                        items={comptes.map(c => c.id)}
+                        items={accounts.map(c => c.id)}
                         strategy={verticalListSortingStrategy}
                     >
                         <table className="table w-full">
@@ -128,13 +129,13 @@ export default function ComptesPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {comptes.length === 0 && (
+                                {accounts.length === 0 && (
                                     <tr>
                                         <td colSpan={4} className="text-center text-gray-400 italic">—</td>
                                     </tr>
                                 )}
 
-                            {comptes.map(a => (
+                            {accounts.map(a => (
                                 <SortableTableRow key={a.id} id={a.id}>
                                     <td>{a.name}</td>
                                     <td className={`${balances[a.id] >= 0 ? "text-green-500" : "text-red-500"}`}>
@@ -156,7 +157,7 @@ export default function ComptesPage() {
             </div>
         
 
-            <ComptesModal
+            <AccountsModal
                 open={!!editingAccount}
                 mode="edit"
                 onClose={() => setEditingAccount(null)}
@@ -172,18 +173,18 @@ export default function ComptesPage() {
                 }
                 onSubmit={async data => {
                     if (!editingAccount) return;
-                    await updateCompte(editingAccount.id, {
+                    await updateAccount(editingAccount.id, {
                         name: data.name,
                         start_day: data.startDay,
                         initial_value: data.initialValue,
                         decallage: data.decallage,
                     });
                     setEditingAccount(null);
-                    await loadComptes();
+                    await loadAccounts();
                 }}
             />
 
-            <ComptesModal
+            <AccountsModal
                 open={createOpen}
                 mode="create"
                 onClose={() => setCreateOpen(false)}

@@ -1,19 +1,19 @@
-import type { Compte } from "@/api/comptes.api"
+import type { Account } from "@/api/accounts.api"
 import Modal from "@/components/ui/Modal"
 import { useState } from "react"
-import { t } from "i18next"
 import type { UIPot } from "../pots/types"
+import { useTranslation } from "react-i18next"
 
 type Props = {
-    fixedCompteSourceId: string
-    comptes: Compte[]
+    fixedAccountSourceId: string
+    accounts: Account[]
     pots: UIPot[]
-    isForcedRecurrent: boolean
+    isForcedRecurrent?: boolean
     onClose: () => void
     onCreate: (payload: {
-        compte_source_id: string
-        compte_destination_id: string
-        sous_pot_id: string
+        account_source_id: string
+        account_destination_id: string
+        sub_pot_id: string
         amount: number
         motif?: string
         transaction_date?: string
@@ -24,35 +24,36 @@ type Props = {
 }
 
 export default function TransferModal({
-    fixedCompteSourceId,
-    comptes,
+    fixedAccountSourceId: fixedAccountsourceId,
+    accounts,
     isForcedRecurrent,
     pots,
     onClose,
     onCreate
 }: Props) {
+    const { t } = useTranslation();
 
     const today = new Date().toISOString().split("T")[0]
 
     const [amount, setAmount] = useState(0)
     const [motif, setMotif] = useState("")
     const [transactionDate, setTransactionDate] = useState(today)
-    const otherAccounts = comptes.filter(
-        c => c.id !== fixedCompteSourceId
+    const otherAccounts = accounts.filter(
+        c => c.id !== fixedAccountsourceId
     )
 
     const [destinationId, setDestinationId] = useState<string>(
         otherAccounts[0]?.id ?? ""
     )
 
-    const [selectedSousPotId, setSelectedSousPotId] = useState<string>(
-        pots[0].sous_pots[0]?.id ?? ""
+    const [selectedSubPotId, setSelectedSubPotId] = useState<string>(
+        pots[0].sub_pots[0]?.id ?? ""
     )
 
     const [recurrence, setRecurrence] = useState(isForcedRecurrent ?? false)
     const [recurrenceEndDate, setRecurrenceEndDate] = useState<string | null>(null)
 
-    const sourceAccount = comptes.find(c => c.id === fixedCompteSourceId)
+    const sourceAccount = accounts.find(c => c.id === fixedAccountsourceId)
 
     function handleSubmit() {
         console.log(destinationId)
@@ -60,12 +61,12 @@ export default function TransferModal({
         if (amount <= 0) return
 
         onCreate({
-            compte_source_id: fixedCompteSourceId,
-            compte_destination_id: destinationId,
+            account_source_id: fixedAccountsourceId,
+            account_destination_id: destinationId,
             amount,
             motif,
             transaction_date: transactionDate,
-            sous_pot_id: selectedSousPotId,
+            sub_pot_id: selectedSubPotId,
             recurrent: recurrence,
             recurrence_type: recurrence ? "MONTH" : null,
             recurrence_end_date: recurrence ? recurrenceEndDate : null
@@ -143,20 +144,20 @@ export default function TransferModal({
 
                 {/* SOUS POT */}
                 <div>
-                    <label className="label">{t("transactions.sous_pot")}</label>
+                    <label className="label">{t("transactions.sub_pot")}</label>
                     <div className="border rounded p-2 max-h-60 overflow-auto">
                         {pots.map(pot => (
                             <div key={pot.id} className="mb-2">
                                 <div className="font-semibold">{pot.name}</div>
                                 <div className="ml-4 flex flex-col gap-1">
-                                    {pot.sous_pots.map(sp => (
+                                    {pot.sub_pots.map(sp => (
                                         <label key={sp.id} className="flex items-center gap-2">
                                             <input
                                                 type="radio"
-                                                name="sousPot"
-                                                checked={selectedSousPotId === sp.id}
+                                                name="subPot"
+                                                checked={selectedSubPotId === sp.id}
                                                 onChange={() =>
-                                                    setSelectedSousPotId(sp.id)
+                                                    setSelectedSubPotId(sp.id)
                                                 }
                                                 className="radio"
                                             />
@@ -179,8 +180,8 @@ export default function TransferModal({
                         value={destinationId}
                         onChange={e => setDestinationId(e.target.value)}
                     >
-                        {comptes
-                            .filter(c => c.id !== fixedCompteSourceId)
+                        {accounts
+                            .filter(c => c.id !== fixedAccountsourceId)
                             .map(c => (
                                 <option key={c.id} value={c.id}>
                                     {c.name}

@@ -145,7 +145,7 @@ class SousPotService:
         sub_pot: Sub_Pot,
     ) -> float:
         """
-        Calcule le solde courant du sub-pot sur la période définie par le account.
+        Calcule le balance courant du sub-pot sur la période définie par le account.
         """
 
         # 1️⃣ Récupération du pot

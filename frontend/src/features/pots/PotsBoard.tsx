@@ -13,33 +13,33 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 
-import { deletePot, getPotsAndSousPotsByCompte, reorderPots, updatePot, type UpdatePotPayload } from "@/api/pots.api"
-import { createSousPot, deleteSousPot, reorderSousPots, updateSousPot, type UpdateSousPotPayload } from "@/api/sous_pots.api"
+import { deletePot, getPotsAndSubPotsByAccount, reorderPots, updatePot, type UpdatePotPayload } from "@/api/pots.api"
+import { createSubPot, deleteSubPot, reorderSubPots, updateSubPot, type UpdateSubPotPayload } from "@/api/sub_pots.api"
 
 import PotColumn from "./PotColumn"
-import type { UIPot, UISousPot } from "./types"
+import type { UIPot, UISubPot } from "./types"
 import { generateTempId, getActiveLabel, } from "./utils"
 
 
 type Props = {
-    compteId: string
+    accountId: string
     refreshKey?: number
 }
 
-export default function PotsBoard({ compteId, refreshKey }: Props) {
+export default function PotsBoard({ accountId, refreshKey }: Props) {
 
     const [pots, setPots] = useState<UIPot[]>([])
     const [activeId, setActiveId] = useState<string | null>(null)
-    const [activeType, setActiveType] = useState<"pot" | "souspot" | null>(null)
+    const [activeType, setActiveType] = useState<"pot" | "subpot" | null>(null)
     const initialStateRef = useRef<UIPot[]>([])
     const defaultPot = pots.find(p => p.position === 0)
     const movablePots = pots.filter(p => p.position !== 0)
 
     useEffect(() => {
-        if (!compteId) return
+        if (!accountId) return
 
         async function load() {
-            const data = await getPotsAndSousPotsByCompte(compteId)
+            const data = await getPotsAndSubPotsByAccount(accountId)
 
             const sorted = [...data].sort(
                 (a, b) => a.position - b.position
@@ -49,7 +49,7 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
         }
 
         load()
-    }, [compteId, refreshKey])
+    }, [accountId, refreshKey])
 
 
 
@@ -91,7 +91,7 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
         setPots(prev => {
             const activePotId = active.data.current!.potId
             const overPotId =
-                over.data.current?.type === "souspot"
+                over.data.current?.type === "subpot"
                     ? over.data.current.potId
                     : over.id
 
@@ -101,12 +101,12 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
             if (activePotId === overPotId) {
                 return prev.map(p => {
                     if (p.id !== activePotId) return p
-                    const oldIndex = p.sous_pots.findIndex(sp => sp.id === active.id)
-                    const newIndex = p.sous_pots.findIndex(sp => sp.id === over.id)
+                    const oldIndex = p.sub_pots.findIndex(sp => sp.id === active.id)
+                    const newIndex = p.sub_pots.findIndex(sp => sp.id === over.id)
                     if (oldIndex === newIndex) return p
                     return {
                         ...p,
-                        sous_pots: arrayMove(p.sous_pots, oldIndex, newIndex),
+                        sub_pots: arrayMove(p.sub_pots, oldIndex, newIndex),
                     }
                 })
             }
@@ -114,26 +114,26 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
             const source = prev.find(p => p.id === activePotId)
             if (!source) return prev
 
-            const moving = source.sous_pots.find(sp => sp.id === active.id)
+            const moving = source.sub_pots.find(sp => sp.id === active.id)
             if (!moving) return prev
 
             return prev.map(p => {
                 if (p.id === activePotId) {
                     return {
                         ...p,
-                        sous_pots: p.sous_pots.filter(sp => sp.id !== active.id),
+                        sub_pots: p.sub_pots.filter(sp => sp.id !== active.id),
                     }
                 }
 
                 if (p.id === overPotId) {
-                    const index = p.sous_pots.findIndex(sp => sp.id === over.id)
-                    const insertIndex = index < 0 ? p.sous_pots.length : index
+                    const index = p.sub_pots.findIndex(sp => sp.id === over.id)
+                    const insertIndex = index < 0 ? p.sub_pots.length : index
                     return {
                         ...p,
-                        sous_pots: [
-                            ...p.sous_pots.slice(0, insertIndex),
+                        sub_pots: [
+                            ...p.sub_pots.slice(0, insertIndex),
                             { ...moving, pot_id: overPotId },
-                            ...p.sous_pots.slice(insertIndex),
+                            ...p.sub_pots.slice(insertIndex),
                         ],
                     }
                 }
@@ -144,9 +144,9 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
     }
 
     async function reloadPots() {
-        if (!compteId) return
+        if (!accountId) return
 
-        const data = await getPotsAndSousPotsByCompte(compteId)
+        const data = await getPotsAndSubPotsByAccount(accountId)
 
         const sorted = [...data].sort(
             (a, b) => a.position - b.position
@@ -164,7 +164,7 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
             return
         }
 
-        const selectedCompteId = compteId
+        const selectedAccountId = accountId
 
         try {
             if (active.data.current?.type === "pot") {
@@ -176,36 +176,36 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
                 }
 
                 await reorderPots({
-                    compte_id: selectedCompteId,
+                    account_id: selectedAccountId,
                     ordered_ids: pots.map(p => p.id),
                 })
             }
 
-            if (active.data.current?.type === "souspot") {
+            if (active.data.current?.type === "subpot") {
                 const before = initialStateRef.current
                 const after = pots
 
                 const activePotBefore = before.find(p =>
-                    p.sous_pots.some(sp => sp.id === active.id)
+                    p.sub_pots.some(sp => sp.id === active.id)
                 )
 
                 const activePotAfter = after.find(p =>
-                    p.sous_pots.some(sp => sp.id === active.id)
+                    p.sub_pots.some(sp => sp.id === active.id)
                 )
 
                 if (!activePotBefore || !activePotAfter) return
 
-                await reorderSousPots(selectedCompteId, {
+                await reorderSubPots(selectedAccountId, {
                     ancien_pot: {
                         pot_id: activePotBefore.id,
-                        sous_pot_ids:
+                        sub_pot_ids:
                             activePotBefore.id !== activePotAfter.id
-                                ? activePotBefore.sous_pots.map(sp => sp.id)
+                                ? activePotBefore.sub_pots.map(sp => sp.id)
                                 : [],
                     },
                     nouveau_pot: {
                         pot_id: activePotAfter.id,
-                        sous_pot_ids: activePotAfter.sous_pots.map(sp => sp.id),
+                        sub_pot_ids: activePotAfter.sub_pots.map(sp => sp.id),
                     },
                 })
             }
@@ -221,43 +221,43 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
         setActiveType(null)
     }
 
-    function handleAddSousPot(potId: string, name: string) {
+    function handleAddSubPot(potId: string, name: string) {
         setPots(prev =>
             prev.map(p => {
                 if (p.id !== potId) return p
 
-                const newSousPot: UISousPot = {
+                const newSubPot: UISubPot = {
                     id: generateTempId(),
                     name,
                     pot_id: potId,
                     prevision: 0,
                     current: 0,
-                    position: p.sous_pots.length,
+                    position: p.sub_pots.length,
                     __isNew: true,
                 }
 
                 return {
                     ...p,
-                    sous_pots: [...p.sous_pots, newSousPot],
+                    sub_pots: [...p.sub_pots, newSubPot],
                 }
             })
         )
     }
     
-    async function handleDeleteSousPot(
-        sousPotId: string
+    async function handleDeleteSubPot(
+        subPotId: string
     ) {
-        if (!compteId) return
+        if (!accountId) return
 
         try {
-            await deleteSousPot(sousPotId)
+            await deleteSubPot(subPotId)
 
             await reloadPots()
 
         } catch {
             // fallback reload
             const fallback =
-                await getPotsAndSousPotsByCompte(compteId)
+                await getPotsAndSubPotsByAccount(accountId)
 
             const sorted = [...fallback].sort(
                 (a, b) => a.position - b.position
@@ -268,7 +268,7 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
     }
 
     async function handleDeletePot(potId: string) {
-        if (!compteId) return
+        if (!accountId) return
 
         const pot = pots.find(p => p.id === potId)
         if (!pot) return
@@ -283,7 +283,7 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
 
         } catch {
             const fallback =
-                await getPotsAndSousPotsByCompte(compteId)
+                await getPotsAndSubPotsByAccount(accountId)
 
             const sorted = [...fallback].sort(
                 (a, b) => a.position - b.position
@@ -293,23 +293,23 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
         }
     }
 
-    async function handlePersistNewSousPot(
+    async function handlePersistNewSubPot(
         potId: string,
         name: string,
         prevision: number
     ) {
-        if (!compteId) return
+        if (!accountId) return
 
         try {
             // CREATE (backend → ajouté en dernière position)
-            await createSousPot(potId, {
+            await createSubPot(potId, {
                 name,
                 prevision,
             })
 
             // Reload après création
             const dataAfterCreate =
-                await getPotsAndSousPotsByCompte(compteId)
+                await getPotsAndSubPotsByAccount(accountId)
 
             const sortedAfterCreate = [...dataAfterCreate].sort(
                 (a, b) => a.position - b.position
@@ -321,21 +321,21 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
 
             if (!updatedPot) return
 
-            const sousPots = [...updatedPot.sous_pots]
+            const subPots = [...updatedPot.sub_pots]
 
-            if (sousPots.length > 1) {
+            if (subPots.length > 1) {
                 // déplacer dernier en première position
-                const last = sousPots.pop()!
-                sousPots.unshift(last)
+                const last = subPots.pop()!
+                subPots.unshift(last)
 
-                await reorderSousPots(compteId, {
+                await reorderSubPots(accountId, {
                     ancien_pot: {
                         pot_id: potId,
-                        sous_pot_ids: [],
+                        sub_pot_ids: [],
                     },
                     nouveau_pot: {
                         pot_id: potId,
-                        sous_pot_ids: sousPots.map(sp => sp.id),
+                        sub_pot_ids: subPots.map(sp => sp.id),
                     },
                 })
             }
@@ -348,14 +348,14 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
         }
     }
     
-    async function handleUpdateSousPot(
-        sousPotId: string,
-        payload: UpdateSousPotPayload
+    async function handleUpdateSubPot(
+        subPotId: string,
+        payload: UpdateSubPotPayload
     ) {
-        if (!compteId) return
+        if (!accountId) return
 
         try {
-            await updateSousPot(sousPotId, payload)
+            await updateSubPot(subPotId, payload)
             await reloadPots()
         } catch {
             await reloadPots()
@@ -366,7 +366,7 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
         potId: string,
         payload: UpdatePotPayload
     ) {
-        if (!compteId) return
+        if (!accountId) return
 
         try {
             await updatePot(potId, payload)
@@ -390,11 +390,11 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
                     <PotColumn
                         key={defaultPot.id}
                         pot={defaultPot}
-                        onAddSousPot={handleAddSousPot}
-                        onPersistSousPot={handlePersistNewSousPot}
-                        onUpdateSousPot={handleUpdateSousPot}
+                        onAddSubPot={handleAddSubPot}
+                        onPersistSubPot={handlePersistNewSubPot}
+                        onUpdateSubPot={handleUpdateSubPot}
                         onUpdatePot={handleUpdatePot}
-                        onDeleteSousPot={handleDeleteSousPot}
+                        onDeleteSubPot={handleDeleteSubPot}
                         onDeletePot={handleDeletePot}
                     />
                 )}
@@ -408,11 +408,11 @@ export default function PotsBoard({ compteId, refreshKey }: Props) {
                         <PotColumn
                             key={pot.id}
                             pot={pot}
-                            onAddSousPot={handleAddSousPot}
-                            onPersistSousPot={handlePersistNewSousPot}
-                            onUpdateSousPot={handleUpdateSousPot}
+                            onAddSubPot={handleAddSubPot}
+                            onPersistSubPot={handlePersistNewSubPot}
+                            onUpdateSubPot={handleUpdateSubPot}
                             onUpdatePot={handleUpdatePot}
-                            onDeleteSousPot={handleDeleteSousPot}
+                            onDeleteSubPot={handleDeleteSubPot}
                             onDeletePot={handleDeletePot}
                         />
                     ))}

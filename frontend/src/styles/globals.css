@@ -33,8 +33,8 @@
 
 /* ---- Pots ---- */
 .pots-container {}
-.compte-selector {}
-.compte-select {}
+.account-selector {}
+.account-select {}
 .pot-creation {}
 .pot-add-btn {}
 .pot-create-form { display: flex; gap: 0.5rem; }
@@ -46,21 +46,21 @@
 .pot-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
 .pot-handle {}
 .pot-actions {}
-.pot-souspots-headers {}
-.pot-souspots-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.pot-subpots-headers {}
+.pot-subpots-list { display: flex; flex-direction: column; gap: 0.5rem; }
 
-/* ---- SousPots ---- */
-.sous-pot-item {}
-.sous-pot-content { display: flex; align-items: center; gap: 0.5rem; }
-.sous-pot-handle { cursor: grab; }
-.sous-pot-name { font-size: 0.875rem; }
-.sous-pot-prevision { font-size: 0.75rem; opacity: 0.7; }
-.sous-pot-current { font-size: 0.75rem; }
-.sous-pot-percentage { font-size: 0.75rem; }
-.sous-pot-bar-wrapper { width: 100%; height: 0.5rem; background-color: hsl(var(--b3)); border-radius: 0.25rem; overflow: hidden; }
-.sous-pot-bar.red { background-color: #dc2626; }
-.sous-pot-bar.orange { background-color: #fb8c00; }
-.sous-pot-bar.green { background-color: #16a34a; }
+/* ---- SubPots ---- */
+.sub-pot-item {}
+.sub-pot-content { display: flex; align-items: center; gap: 0.5rem; }
+.sub-pot-handle { cursor: grab; }
+.sub-pot-name { font-size: 0.875rem; }
+.sub-pot-prevision { font-size: 0.75rem; opacity: 0.7; }
+.sub-pot-current { font-size: 0.75rem; }
+.sub-pot-percentage { font-size: 0.75rem; }
+.sub-pot-bar-wrapper { width: 100%; height: 0.5rem; background-color: hsl(var(--b3)); border-radius: 0.25rem; overflow: hidden; }
+.sub-pot-bar.red { background-color: #dc2626; }
+.sub-pot-bar.orange { background-color: #fb8c00; }
+.sub-pot-bar.green { background-color: #16a34a; }
 
 /* ---- Drag Overlay ---- */
 .drag-overlay { pointer-events: none; }

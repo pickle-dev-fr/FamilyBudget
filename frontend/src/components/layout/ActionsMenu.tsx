@@ -1,6 +1,6 @@
 import { useClickOutside } from "@/utils"
-import { t } from "i18next"
 import { useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 type ActionsMenuProps = {
     onDelete: () => void
@@ -8,6 +8,7 @@ type ActionsMenuProps = {
 }
 
 export function ActionsMenu({ onDelete, onEdit }: ActionsMenuProps) {
+    const { t } = useTranslation();
     const [open, setOpen] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
 

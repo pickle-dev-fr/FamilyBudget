@@ -3,7 +3,7 @@ import type { UIPot } from "./types"
 export function getActiveLabel(
     pots: UIPot[],
     activeId: string | null,
-    activeType: "pot" | "souspot" | null
+    activeType: "pot" | "subpot" | null
 ): string {
     if (!activeId) return ""
 
@@ -12,9 +12,9 @@ export function getActiveLabel(
         return pot?.name ?? ""
     }
 
-    if (activeType === "souspot") {
+    if (activeType === "subpot") {
         for (const pot of pots) {
-            const sp = pot.sous_pots.find(s => s.id === activeId)
+            const sp = pot.sub_pots.find(s => s.id === activeId)
             if (sp) return sp.name
         }
     }
