@@ -13,7 +13,7 @@ const getLangOptions = (): LangOption[] => [
 
 export default function LanguageSelector() {
     const [current, setCurrent] = useState(i18n.language);
-    const [langs, setLangs] = useState(getLangOptions());
+    const [langs] = useState(getLangOptions());
 
     useEffect(() => {
         const handleChange = () => {
