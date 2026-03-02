@@ -1,14 +1,15 @@
-FROM node:20
+FROM node:20 AS builder
 
 WORKDIR /app
-
-# Copier package.json pour installer vite vite
 COPY package*.json ./
-
 RUN npm install
-
-# Copier le reste du code (prod) ou monter le volume en dev
 COPY . .
+RUN npm run build
 
-# Commande dev pour hot reload
-CMD ["npm", "run", "dev"]
+FROM nginx:alpine
+
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

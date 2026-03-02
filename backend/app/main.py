@@ -23,7 +23,11 @@ async def lifespan(app: FastAPI):
     yield
     print("APP STOP")
 
-app = FastAPI(title="FamilyBudget API", lifespan=lifespan)
+
+if os.getenv("APP_ENV") == "production":
+    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+else:
+    app = FastAPI()
 
 app.include_router(auth_controller)
 app.include_router(user_router)

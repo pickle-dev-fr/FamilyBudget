@@ -3,7 +3,7 @@ import os
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql+psycopg2://postgres:postgres@dev-db:5432/budgetdb"
+    "postgresql+psycopg2://postgres:postgres@db:5432/budgetdb"
 )
 
 engine = create_engine(

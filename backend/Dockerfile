@@ -1,17 +1,16 @@
-# Image Python officielle
 FROM python:3.12-slim
 
-# Définir le répertoire de travail dans le container
 WORKDIR /app
 
-# Copier uniquement le fichier des dépendances pour installer vite
-COPY requirements.txt .
+RUN apt-get update && apt-get install -y netcat-openbsd
 
-# Installer les dépendances Python
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copier le reste du code (utile pour prod, mais en dev on monte le volume)
 COPY . .
 
-# Commande par défaut (dev avec hot reload)
-CMD ["uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+RUN chmod +x entrypoint.sh
+ENTRYPOINT ["./entrypoint.sh"]
+
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "app.main:app", "--bind", "0.0.0.0:8000", "--workers", "1"]
+
