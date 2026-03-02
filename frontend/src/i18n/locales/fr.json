@@ -1,0 +1,122 @@
+{
+  "languageName": "Français",
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "username": "Nom d'utilisateur",
+      "password": "Mot de passe",
+      "submit": "Se connecter",
+      "link_register": "Créer un compte"
+    },
+    "register": {
+      "title": "Inscription",
+      "username": "Nom d'utilisateur",
+      "password": "Mot de passe",
+      "submit": "Créer le compte",
+      "link_login": "Connexion",
+      "already_account":"Déjà un compte ?"
+    },
+    "disconnect": "Déconnexion"
+  },
+  "common": {
+    "create": "Valider",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "actions": "Actions",
+    "confirm": "Confirmation",
+    "confirm_delete": "Confirmer la suppression ?"
+  },
+  "theme": {
+    "dark": "Sombre",
+    "light": "Clair"
+  },
+  "menu": {
+    "home": "Accueil",
+    "accounts": "Comptes",
+    "pots": "Pots",
+    "transactions": "Transactions",
+    "transactions_recurrent": "Transactions récurrentes",
+    "stats": "Statistiques",
+    "options": "Options"
+  },
+  "home": {
+    "title": "Accueil",
+    "total_balance": "Solde total",
+    "accounts_list": "Mes comptes",
+    "today_transactions": "Transactions aujourd’hui",
+    "tomorrow_transactions": "Transactions demain"
+  },
+  "accounts": {
+    "create": "Créer un compte",
+    "title": "Gestion des comptes",
+    "add": "Ajouter un compte",
+    "edit": "Modifier un compte",
+    "name": "Nom",
+    "balance": "Solde",
+    "start_day": "Début mois",
+    "initial_value": "Valeur initiale"
+  },
+  "transactions": {
+    "add": "Ajouter une transaction",
+    "edit": "Modifier une transaction",
+    "delete": {
+      "title": "Suppression d'une transaction",
+      "confirm": "Confirmer la suppression de la transaction"
+    },
+    "transfers": {
+      "add": "Ajouter un virement",
+      "source_account": "Compte à prélever",
+      "destination_account": "Compte à créditer"
+    },
+    "date": "Date",
+    "account": "Compte",
+    "debit": "Débit",
+    "credit": "Crédit",
+    "type": "Type",
+    "motif": "Motif",
+    "amount": "Valeur",
+    "recurrent": "Récurrent",
+    "recurrence_end": "Date de fin",
+    "sub_pot": "Sous-Pot",
+    "transfer": "Effectuer un virement"
+  },
+  "recurring":  {
+    "title": "Gestion des transactions récurrentes",
+    "add": "Ajouter une transaction récurrente",
+    "next_date": "Prochaine transaction",
+    "recurrence_type": {
+      "label": "Récurrence",
+      "day": "Jour",
+      "weeks": "Semaines",
+      "month": "Mois"
+    },
+    "end_date": "Fin de la récurrence",
+    "empty": "Aucune transaction récurrente",
+    "delete": {
+      "title": "Suppression de la récurrence d'une transaction",
+      "confirm": "Confirmer le retrait de la récurrence",
+      "also_future": "Supprimer aussi la transaction prévue ?"
+    }
+  },
+  "pots": {
+    "name": "Nom du pot",
+    "select_account": "Selectionner un compte",
+    "title": "Pots",
+    "add": "+ Ajouter un pot",
+    "empty": "Aucun pot",
+    "prevision": "Prévu",
+    "current": "Actuel",
+    "reste": "Reste"
+  },
+  "sub_pots": {
+    "aucun": "Aucun Sous-Pot",
+    "name": "Nom du Sous-Pot",
+    "pourcentage": "Pourcentage",
+    "prevision": "Prévu",
+    "current": "Actuel",
+    "reste": "Reste",
+    "progression": "Progression"
+  }
+}

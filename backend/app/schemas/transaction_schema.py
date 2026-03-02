@@ -1,0 +1,60 @@
+# app/schemas/transaction_schema.py
+from datetime import date
+from typing import Optional
+from sqlmodel import SQLModel
+
+from app.models import TypeTransaction, TypeRecurrence
+
+
+class TransactionCreate(SQLModel):
+    amount: float
+    transaction_type: TypeTransaction
+    transaction_date: Optional[date] = None
+    motif: Optional[str] = None
+
+    account_id: Optional[str] = None
+    sub_pot_id: Optional[str] = None
+
+    recurrent: bool = False
+    recurrence_type: Optional[TypeRecurrence] = None
+    recurrence_end_date: Optional[date] = None
+
+class TransactionUpdate(SQLModel):
+    amount: Optional[float]
+    transaction_type: Optional[TypeTransaction]
+    transaction_date: Optional[date]
+    motif: Optional[str]
+
+    account_id: Optional[str]
+    sub_pot_id: Optional[str]
+
+    recurrent: Optional[bool]
+    recurrence_type: Optional[TypeRecurrence]
+    recurrence_end_date: Optional[date]
+
+
+class TransactionRead(SQLModel):
+    id: str
+    amount: float
+    transaction_type: TypeTransaction
+    transaction_date: date
+    motif: Optional[str]
+    account_id: Optional[str]
+    sub_pot_id: Optional[str]
+    recurrent: bool
+    recurrence_type: Optional[TypeRecurrence]
+    recurrence_end_date: Optional[date]
+
+class TransferCreate(SQLModel):
+    amount: float
+    transaction_date: Optional[date] = None
+    motif: Optional[str] = None
+
+    account_source_id: str
+    account_destination_id: str
+
+    sub_pot_id: Optional[str]
+
+    recurrent: bool = False
+    recurrence_type: Optional[TypeRecurrence] = None
+    recurrence_end_date: Optional[date] = None

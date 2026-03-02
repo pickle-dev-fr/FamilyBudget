@@ -1,0 +1,122 @@
+{
+    "languageName": "English",
+    "auth": {
+        "login": {
+            "title": "Login",
+            "username": "Username",
+            "password": "Password",
+            "submit": "Sign in",
+            "link_register": "Create an account"
+        },
+        "register": {
+            "title": "Register",
+            "username": "Username",
+            "password": "Password",
+            "submit": "Create account",
+            "link_login": "Login",
+            "already_account": "Already have an account?"
+        },
+        "disconnect": "Logout"
+    },
+    "common": {
+        "create": "Confirm",
+        "cancel": "Cancel",
+        "save": "Save",
+        "edit": "Edit",
+        "delete": "Delete",
+        "actions": "Actions",
+        "confirm": "Confirmation",
+        "confirm_delete": "Confirm deletion?"
+    },
+    "theme": {
+        "dark": "Dark",
+        "light": "Light"
+    },
+    "menu": {
+        "home": "Home",
+        "accounts": "Accounts",
+        "pots": "Pots",
+        "transactions": "Transactions",
+        "transactions_recurrent": "Recurring transactions",
+        "stats": "Statistics",
+        "options": "Settings"
+    },
+    "home": {
+        "title": "Home",
+        "total_balance": "Total balance",
+        "accounts_list": "My accounts",
+        "today_transactions": "Today's transactions",
+        "tomorrow_transactions": "Tomorrow's transactions"
+    },
+    "accounts": {
+        "create": "Create account",
+        "title": "Account management",
+        "add": "Add account",
+        "edit": "Edit account",
+        "name": "Name",
+        "balance": "Balance",
+        "start_day": "Month start day",
+        "initial_value": "Initial value"
+    },
+    "transactions": {
+        "add": "Add transaction",
+        "edit": "Edit transaction",
+        "delete": {
+            "title": "Delete transaction",
+            "confirm": "Confirm transaction deletion"
+        },
+        "transfers": {
+            "add": "Add transfer",
+            "source_account": "Source account",
+            "destination_account": "Destination account"
+        },
+        "date": "Date",
+        "account": "Account",
+        "debit": "Debit",
+        "credit": "Credit",
+        "type": "Type",
+        "motif": "Description",
+        "amount": "Amount",
+        "recurrent": "Recurring",
+        "recurrence_end": "End date",
+        "sub_pot": "Sub-pot",
+        "transfer": "Make a transfer"
+    },
+    "recurring": {
+        "title": "Recurring transactions management",
+        "add": "Add recurring transaction",
+        "next_date": "Next transaction",
+        "recurrence_type": {
+            "label": "Recurrence",
+            "day": "Day",
+            "weeks": "Weeks",
+            "month": "Month"
+        },
+        "end_date": "Recurrence end",
+        "empty": "No recurring transaction",
+        "delete": {
+            "title": "Delete transaction recurrence",
+            "confirm": "Confirm recurrence removal",
+            "also_future": "Also delete the scheduled transaction?"
+        }
+    },
+    "pots": {
+        "name": "Pot name",
+        "select_account": "Select an account",
+        "title": "Pots",
+        "add": "+ Add pot",
+        "empty": "No pots",
+        "prevision": "Planned",
+        "current": "Current",
+        "reste": "Remaining"
+    },
+    "sub_pots": {
+        "aucun": "No sub-pot",
+        "name": "Sub-pot name",
+        "pourcentage": "Percentage",
+        "prevision": "Planned",
+        "current": "Current",
+        "reste": "Remaining",
+        "progression": "Progress"
+    }
+}
