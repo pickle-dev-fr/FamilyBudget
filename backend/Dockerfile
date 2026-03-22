@@ -1,16 +1,6 @@
 FROM python:3.12-slim
-
 WORKDIR /app
-
-RUN apt-get update && apt-get install -y netcat-openbsd
-
+RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-RUN chmod +x entrypoint.sh
-ENTRYPOINT ["./entrypoint.sh"]
-
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "app.main:app", "--bind", "0.0.0.0:8000", "--workers", "1"]
-
+CMD ["sh", "-c", "chmod +x entrypoint.sh && ./entrypoint.sh uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]

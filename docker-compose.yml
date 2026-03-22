@@ -1,0 +1,43 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: familybudget-backend-dev
+    restart: unless-stopped
+    env_file: .env.dev
+    volumes:
+      - ./backend:/app
+    networks:
+      - dev-db-internal
+      - traefik-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.familybudget-dev-api.rule=Host(`budget-dev.homepickle.ddns.net`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.familybudget-dev-api.entrypoints=websecure"
+      - "traefik.http.routers.familybudget-dev-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.familybudget-dev-api.loadbalancer.server.port=8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: familybudget-frontend-dev
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - traefik-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.familybudget-dev.rule=Host(`budget-dev.homepickle.ddns.net`)"
+      - "traefik.http.routers.familybudget-dev.entrypoints=websecure"
+      - "traefik.http.routers.familybudget-dev.tls.certresolver=letsencrypt"
+      - "traefik.http.services.familybudget-dev.loadbalancer.server.port=5173"
+
+networks:
+  dev-db-internal:
+    external: true
+  traefik-proxy:
+    external: true

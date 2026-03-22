@@ -25,9 +25,9 @@ async def lifespan(app: FastAPI):
 
 
 if os.getenv("APP_ENV") == "production":
-    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, root_path="/api")
 else:
-    app = FastAPI()
+    app = FastAPI(root_path="/api")
 
 app.include_router(auth_controller)
 app.include_router(user_router)
