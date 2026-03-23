@@ -50,3 +50,15 @@ class AuthService:
             return None
 
         return user
+    
+    ## Change password
+    def changePassword(username: str, password: str, session: Session):
+        user = session.exec(
+            select(User).where(User.username == username)
+        ).first()
+
+        user.hashed_password = hash_password(password)
+
+        session.add(user)
+        session.commit()
+        session.refresh(user)

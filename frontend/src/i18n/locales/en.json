@@ -39,7 +39,7 @@
         "transactions": "Transactions",
         "transactions_recurrent": "Recurring transactions",
         "stats": "Statistics",
-        "options": "Settings"
+        "settings": "Settings"
     },
     "home": {
         "title": "Home",

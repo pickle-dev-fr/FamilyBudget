@@ -11,6 +11,7 @@ import AccountsPage from "@/features/accounts/AccountsPage";
 import PotsPage from "@/features/pots/PotsPage";
 import TransactionsPage from "@/features/transactions/TransactionsPage";
 import RecurringPage from "@/features/recurrents/RecurrentsPage";
+import SettingsPage from "@/features/settings/SettingsPage";
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/pots" element={<PotsPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/recurring" element={<RecurringPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </AuthProvider>

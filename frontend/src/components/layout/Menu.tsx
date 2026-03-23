@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 export default function Menu() {
-  const { t } = useTranslation();
+    const { t } = useTranslation();
 
     return (
         <nav className="flex flex-col gap-2 p-4 bg-bg-soft">
@@ -62,12 +62,12 @@ export default function Menu() {
             </NavLink>
 
             <NavLink
-                to="/options"
+                to="/settings"
                 className={({ isActive }) =>
                     `px-3 py-2 rounded hover:bg-base-300 ${isActive ? "bg-base-300 font-bold" : "text-text"}`
                 }
             >
-                {t("menu.options")}
+                {t("menu.settings")}
             </NavLink>
         </nav>
     );

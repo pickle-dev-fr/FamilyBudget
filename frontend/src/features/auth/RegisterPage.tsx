@@ -17,18 +17,14 @@ export default function RegisterPage() {
 
     const navigate = useNavigate();
 
-    async function handleSubmit(e: React.FormEvent) {
+    async function handleSubmit(e: React.SubmitEvent) {
         e.preventDefault();
 
-        try {
         await register({ username, password });
         const result = await login({ username, password })
         setToken(result.access_token);
         await refreshAuth();
         navigate("/", { replace: true })
-        } catch (err: any) {
-        } finally {
-        }
     }
 
     return (

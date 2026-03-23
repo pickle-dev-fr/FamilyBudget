@@ -20,3 +20,7 @@ class UserLogin(SQLModel):
 class TokenRead(SQLModel):
     access_token: str
     token_type: str = "bearer"
+
+class UserChange(SQLModel):
+    access_token: str
+    password: str

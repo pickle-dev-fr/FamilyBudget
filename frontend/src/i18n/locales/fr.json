@@ -14,7 +14,7 @@
       "password": "Mot de passe",
       "submit": "Créer le compte",
       "link_login": "Connexion",
-      "already_account":"Déjà un compte ?"
+      "already_account": "Déjà un compte ?"
     },
     "disconnect": "Déconnexion"
   },
@@ -39,7 +39,7 @@
     "transactions": "Transactions",
     "transactions_recurrent": "Transactions récurrentes",
     "stats": "Statistiques",
-    "options": "Options"
+    "settings": "Options"
   },
   "home": {
     "title": "Accueil",
@@ -82,7 +82,7 @@
     "sub_pot": "Sous-Pot",
     "transfer": "Effectuer un virement"
   },
-  "recurring":  {
+  "recurring": {
     "title": "Gestion des transactions récurrentes",
     "add": "Ajouter une transaction récurrente",
     "next_date": "Prochaine transaction",
