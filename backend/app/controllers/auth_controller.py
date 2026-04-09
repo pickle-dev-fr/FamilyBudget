@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
 from app.database import get_session
+from app.models import User
 from app.schemas.user_schema import (
     UserCreate,
     UserRead,
@@ -75,4 +76,11 @@ def changePassword(
     AuthService.changePassword(username, session=session, password=payload.password)
 
     return
-    
+
+
+@router.delete("/me", status_code=204)
+def delete_account(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    AuthService.delete_user(session, current_user)

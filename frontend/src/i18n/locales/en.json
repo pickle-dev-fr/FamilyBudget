@@ -124,6 +124,15 @@
     },
     "settings": {
         "change_password": "New password",
-        "repeat_password": "Repeat password"
+        "repeat_password": "Repeat password",
+        "danger_zone": "Danger zone",
+        "delete_account": "Delete my account",
+        "delete_account_description": "This action is irreversible. All your data will be permanently deleted.",
+        "delete_account_modal_title": "Delete account",
+        "delete_account_modal_description": "This action cannot be undone. This will permanently delete your account and all associated data.",
+        "delete_account_confirm_label": "To confirm, type <1>delete</1> below",
+        "delete_account_confirm_placeholder": "delete",
+        "delete_account_confirm_word": "delete",
+        "delete_account_confirm_button": "I understand, permanently delete my account"
     }
 }

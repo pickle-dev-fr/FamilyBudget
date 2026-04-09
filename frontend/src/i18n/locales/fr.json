@@ -48,7 +48,7 @@
     "title": "Accueil",
     "total_balance": "Solde total",
     "accounts_list": "Mes comptes",
-    "today_transactions": "Transactions aujourd’hui",
+    "today_transactions": "Transactions aujourd'hui",
     "tomorrow_transactions": "Transactions demain"
   },
   "accounts": {
@@ -124,6 +124,15 @@
   },
   "settings": {
     "change_password": "Nouveau mot de passe",
-    "repeat_password": "Répéter le mot de passe"
+    "repeat_password": "Répéter le mot de passe",
+    "danger_zone": "Zone de danger",
+    "delete_account": "Supprimer mon compte",
+    "delete_account_description": "Cette action est irréversible. Toutes vos données seront définitivement supprimées.",
+    "delete_account_modal_title": "Supprimer le compte",
+    "delete_account_modal_description": "Cette action ne peut pas être annulée. Cela supprimera définitivement votre compte et toutes les données associées.",
+    "delete_account_confirm_label": "Pour confirmer, tapez <1>supprimer</1> ci-dessous",
+    "delete_account_confirm_placeholder": "supprimer",
+    "delete_account_confirm_word": "supprimer",
+    "delete_account_confirm_button": "Supprimer définitivement mon compte"
   }
 }

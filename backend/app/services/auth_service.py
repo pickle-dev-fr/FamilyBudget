@@ -50,7 +50,7 @@ class AuthService:
             return None
 
         return user
-    
+
     ## Change password
     def changePassword(username: str, password: str, session: Session):
         user = session.exec(
@@ -62,3 +62,9 @@ class AuthService:
         session.add(user)
         session.commit()
         session.refresh(user)
+
+    ## Delete user
+    @staticmethod
+    def delete_user(session: Session, user: User) -> None:
+        session.delete(user)
+        session.commit()

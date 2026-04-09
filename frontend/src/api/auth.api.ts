@@ -30,5 +30,8 @@ export async function passwordChange(password: string): Promise<void> {
   } catch {
     // TODO alertes + log security error
   }
+}
 
+export function deleteAccount(): Promise<void> {
+  return apiClient.delete("/auth/me");
 }
