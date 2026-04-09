@@ -42,7 +42,8 @@
         "transactions": "Transactions",
         "transactions_recurrent": "Recurring transactions",
         "stats": "Statistics",
-        "settings": "Settings"
+        "settings": "Settings",
+        "requires_account": "Create a bank account first"
     },
     "home": {
         "title": "Home",
@@ -59,7 +60,8 @@
         "name": "Name",
         "balance": "Balance",
         "start_day": "Month start day",
-        "initial_value": "Initial value"
+        "initial_value": "Initial value",
+        "no_account_yet": "You don't have a bank account yet. Create one to access pots, transactions and statistics."
     },
     "transactions": {
         "add": "Add transaction",

@@ -42,7 +42,8 @@
     "transactions": "Transactions",
     "transactions_recurrent": "Transactions récurrentes",
     "stats": "Statistiques",
-    "settings": "Options"
+    "settings": "Options",
+    "requires_account": "Créez d'abord un compte bancaire"
   },
   "home": {
     "title": "Accueil",
@@ -59,7 +60,8 @@
     "name": "Nom",
     "balance": "Solde",
     "start_day": "Début mois",
-    "initial_value": "Valeur initiale"
+    "initial_value": "Valeur initiale",
+    "no_account_yet": "Vous n'avez pas encore de compte bancaire. Créez-en un pour accéder aux pots, transactions et statistiques."
   },
   "transactions": {
     "add": "Ajouter une transaction",

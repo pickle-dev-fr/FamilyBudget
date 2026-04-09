@@ -26,6 +26,7 @@ import {
 import SortableTableRow from "@/components/table/SortableTableRow";
 import { ActionsMenu } from "@/components/layout/ActionsMenu";
 import { useTranslation } from "react-i18next";
+import { useAccount } from "@/auth/AccountContext";
 
 type AccountWithMeta = Account & {
     start_day: number;
@@ -34,6 +35,7 @@ type AccountWithMeta = Account & {
 
 export default function AccountsPage() {
     const { t } = useTranslation();
+    const { refreshAccounts } = useAccount();
 
     const [accounts, setAccounts] = useState<AccountWithMeta[]>([]);
     const [balances, setBalances] = useState<Record<string, number>>({});
@@ -76,11 +78,13 @@ export default function AccountsPage() {
 
         setCreateOpen(false);
         await loadAccounts();
+        await refreshAccounts();
     }
     
     async function handleDelete(id: string) {
-        await deleteAccount(id)
-        setAccounts(prev => prev.filter(t => t.id !== id))
+        await deleteAccount(id);
+        setAccounts(prev => prev.filter(t => t.id !== id));
+        await refreshAccounts();
     }
 
     if (loading) {
@@ -89,6 +93,11 @@ export default function AccountsPage() {
 
     return (
         <div className="page flex flex-col gap-6 p-4">
+            {accounts.length === 0 && !loading && (
+                <div role="alert" className="alert alert-info">
+                    <span>{t("accounts.no_account_yet")}</span>
+                </div>
+            )}
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold">{t("accounts.title")}</h1>
                 <button
