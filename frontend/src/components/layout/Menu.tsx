@@ -1,11 +1,16 @@
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { FamilyBudgetLogo } from "../ui/FamilyBudgetLogo";
 
 export default function Menu() {
     const { t } = useTranslation();
 
     return (
         <nav className="flex flex-col gap-2 p-4 bg-bg-soft">
+            <div className="flex justify-center py-4">
+                <FamilyBudgetLogo size="md" />
+            </div>
+            <div className="border-t border-base-300 mb-2" />
             <NavLink
                 to="/"
                 end

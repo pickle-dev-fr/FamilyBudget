@@ -1,5 +1,8 @@
 {
     "languageName": "English",
+    "logo": {
+        "subtitle": "FAMILY MANAGEMENT"
+    },
     "auth": {
         "login": {
             "title": "Login",

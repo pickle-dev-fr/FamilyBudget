@@ -1,5 +1,8 @@
 {
   "languageName": "Français",
+  "logo": {
+    "subtitle": "GESTION FAMILIALE"
+  },
   "auth": {
     "login": {
       "title": "Connexion",
