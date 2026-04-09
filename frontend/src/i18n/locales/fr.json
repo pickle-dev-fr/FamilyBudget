@@ -121,5 +121,9 @@
     "current": "Actuel",
     "reste": "Reste",
     "progression": "Progression"
+  },
+  "settings": {
+    "change_password": "Nouveau mot de passe",
+    "repeat_password": "Répéter le mot de passe"
   }
 }
