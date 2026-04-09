@@ -3,6 +3,7 @@ import { AuthProvider } from "@/auth/AuthContext";
 import { AccountProvider } from "@/auth/AccountContext";
 import ProtectedRoute from "@/auth/ProtectedRoute";
 import RequiresAccount from "@/auth/RequiresAccount";
+import ToastContainer from "@/components/ui/ToastContainer";
 
 import LoginPage from "@/features/auth/LoginPage";
 import RegisterPage from "@/features/auth/RegisterPage";
@@ -19,6 +20,7 @@ export default function App() {
   return (
     <AuthProvider>
       <AccountProvider>
+        <ToastContainer />
         <Routes>
           {/* Public */}
           <Route path="/login" element={<LoginPage />} />

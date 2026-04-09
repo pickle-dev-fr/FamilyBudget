@@ -5,6 +5,7 @@ import { login } from "@/api/auth.api";
 import { setToken } from "@/api/token";
 import { useAuth } from "@/auth/AuthContext";
 import { useTranslation } from "react-i18next";
+import { toast } from "@/lib/toast";
 
 
 
@@ -22,13 +23,12 @@ export default function LoginPage() {
         e.preventDefault();
 
         try {
-        const result = await login({ username, password });
-        setToken(result.access_token);
-        await refreshAuth();
-        // redirection
-        navigate("/", { replace: true })
-        } catch (err: any) {
-        } finally {
+            const result = await login({ username, password });
+            setToken(result.access_token);
+            await refreshAuth();
+            navigate("/", { replace: true });
+        } catch {
+            toast.error(t("toast.error.login_failed"));
         }
     }
 

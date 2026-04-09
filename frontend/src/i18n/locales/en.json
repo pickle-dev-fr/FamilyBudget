@@ -1,5 +1,20 @@
 {
     "languageName": "English",
+    "toast": {
+        "success": {
+            "account_created": "Account created successfully",
+            "account_updated": "Account updated successfully",
+            "account_deleted": "Account deleted",
+            "password_changed": "Password changed successfully"
+        },
+        "error": {
+            "unauthorized": "Session expired, please log in again",
+            "server": "Server error, please try again",
+            "unknown": "An error occurred",
+            "passwords_mismatch": "Passwords do not match",
+            "login_failed": "Incorrect username or password"
+        }
+    },
     "logo": {
         "subtitle": "FAMILY MANAGEMENT"
     },

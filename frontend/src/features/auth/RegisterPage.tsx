@@ -5,6 +5,7 @@ import { register, login } from "@/api/auth.api";
 import { setToken } from "@/api/token";
 import { useAuth } from "@/auth/AuthContext";
 import { useTranslation } from "react-i18next";
+import { toast } from "@/lib/toast";
 
 
 export default function RegisterPage() {
@@ -17,14 +18,18 @@ export default function RegisterPage() {
 
     const navigate = useNavigate();
 
-    async function handleSubmit(e: React.SubmitEvent) {
+    async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
 
-        await register({ username, password });
-        const result = await login({ username, password })
-        setToken(result.access_token);
-        await refreshAuth();
-        navigate("/", { replace: true })
+        try {
+            await register({ username, password });
+            const result = await login({ username, password });
+            setToken(result.access_token);
+            await refreshAuth();
+            navigate("/", { replace: true });
+        } catch {
+            // Le toast d'erreur est géré automatiquement par client.ts
+        }
     }
 
     return (

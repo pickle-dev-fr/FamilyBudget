@@ -18,18 +18,13 @@ export function register(payload: AuthPayload): Promise<AuthResponse> {
   return apiClient.post("/auth/register", payload);
 }
 
-export function me(): Promise<void> {
-  return apiClient.head("/auth/me");
+export function me(silent = false): Promise<void> {
+  return apiClient.head("/auth/me", undefined, silent);
 }
 
 export async function passwordChange(password: string): Promise<void> {
-  try {
-    await me();
-    console.log(getToken())
-    return apiClient.post("/auth/change", { access_token: getToken(), password })
-  } catch {
-    // TODO alertes + log security error
-  }
+  await me(true);
+  return apiClient.post("/auth/change", { access_token: getToken(), password });
 }
 
 export function deleteAccount(): Promise<void> {

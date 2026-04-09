@@ -1,5 +1,20 @@
 {
   "languageName": "Français",
+  "toast": {
+    "success": {
+      "account_created": "Compte créé avec succès",
+      "account_updated": "Compte modifié avec succès",
+      "account_deleted": "Compte supprimé",
+      "password_changed": "Mot de passe modifié avec succès"
+    },
+    "error": {
+      "unauthorized": "Session expirée, veuillez vous reconnecter",
+      "server": "Erreur serveur, veuillez réessayer",
+      "unknown": "Une erreur est survenue",
+      "passwords_mismatch": "Les mots de passe ne correspondent pas",
+      "login_failed": "Identifiants incorrects"
+    }
+  },
   "logo": {
     "subtitle": "GESTION FAMILIALE"
   },

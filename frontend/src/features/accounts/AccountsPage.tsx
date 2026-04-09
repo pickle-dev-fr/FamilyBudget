@@ -27,6 +27,7 @@ import SortableTableRow from "@/components/table/SortableTableRow";
 import { ActionsMenu } from "@/components/layout/ActionsMenu";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "@/auth/AccountContext";
+import { toast } from "@/lib/toast";
 
 type AccountWithMeta = Account & {
     start_day: number;
@@ -79,12 +80,14 @@ export default function AccountsPage() {
         setCreateOpen(false);
         await loadAccounts();
         await refreshAccounts();
+        toast.success(t("toast.success.account_created"));
     }
     
     async function handleDelete(id: string) {
         await deleteAccount(id);
-        setAccounts(prev => prev.filter(t => t.id !== id));
+        setAccounts(prev => prev.filter(a => a.id !== id));
         await refreshAccounts();
+        toast.success(t("toast.success.account_deleted"));
     }
 
     if (loading) {
@@ -190,6 +193,7 @@ export default function AccountsPage() {
                     });
                     setEditingAccount(null);
                     await loadAccounts();
+                    toast.success(t("toast.success.account_updated"));
                 }}
             />
 

@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      await me(); // HEAD /auth/me
+      await me(true); // HEAD /auth/me — silent: pas de toast si token expiré au chargement
       setAuthenticated(true);
     } catch {
       clearToken();

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Modal from "@/components/ui/Modal";
+import { toast } from "@/lib/toast";
 
 
 export default function SettingsPage() {
@@ -22,10 +23,14 @@ export default function SettingsPage() {
         e.preventDefault();
 
         if (!password || password !== repeatPassword) {
+            toast.warning(t("toast.error.passwords_mismatch"));
             return;
         }
 
         await passwordChange(password);
+        setPassword("");
+        setRepeatPassword("");
+        toast.success(t("toast.success.password_changed"));
     }
 
     async function handleDeleteAccount() {

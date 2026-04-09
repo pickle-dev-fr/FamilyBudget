@@ -1,3 +1,6 @@
+import { toast } from "@/lib/toast";
+import i18n from "@/i18n";
+
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 export type ApiError = {
@@ -8,7 +11,8 @@ export type ApiError = {
 async function request(
   method: string,
   path: string,
-  body?: unknown
+  body?: unknown,
+  silent = false,
 ) {
   const token = localStorage.getItem("auth_token");
 
@@ -36,10 +40,21 @@ async function request(
   }
 
   if (!response.ok) {
-    throw {
-      status: response.status,
-      data,
-    };
+    if (!silent) {
+      const detail: string | undefined = data?.detail;
+
+      if (response.status === 401) {
+        toast.error(i18n.t("toast.error.unauthorized"));
+      } else if (response.status >= 500) {
+        toast.error(i18n.t("toast.error.server"));
+      } else if (detail) {
+        toast.warning(detail);
+      } else {
+        toast.error(i18n.t("toast.error.unknown"));
+      }
+    }
+
+    throw { status: response.status, data } as ApiError;
   }
 
   return data;
@@ -68,8 +83,8 @@ function buildUrl(
 
 
 export const apiClient = {
-    head: (path: string, query?: Record<string, any>) =>
-        request("HEAD", buildUrl(path, query)),
+    head: (path: string, query?: Record<string, any>, silent = false) =>
+        request("HEAD", buildUrl(path, query), undefined, silent),
 
     get: (path: string, query?: Record<string, any>) =>
         request("GET", buildUrl(path, query)),
