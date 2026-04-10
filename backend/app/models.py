@@ -50,7 +50,8 @@ class User(SQLModel, table=True):
         sa_relationship_kwargs={
             "order_by": lambda: Account.position,
         })
-    settings: Optional["UserSettings"] = Relationship(back_populates="user")
+    settings: Optional["UserSettings"] = Relationship(back_populates="user",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 
 class Account(SQLModel, table=True):
