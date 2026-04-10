@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
 
-from app.models import User, UserSettings, Currency, Language
+from app.models import User, UserSettings, Currency, Language, Theme
 from app.security.password import hash_password, verify_password
 
 
@@ -83,12 +83,14 @@ class AuthService:
         return settings
 
     @staticmethod
-    def update_settings(session: Session, user: User, currency: Currency | None = None, language: Language | None = None) -> UserSettings:
+    def update_settings(session: Session, user: User, currency: Currency | None = None, language: Language | None = None, theme: Theme | None = None) -> UserSettings:
         settings = AuthService.get_settings(session, user)
         if currency is not None:
             settings.currency = currency
         if language is not None:
             settings.language = language
+        if theme is not None:
+            settings.theme = theme
         session.add(settings)
         session.commit()
         session.refresh(settings)

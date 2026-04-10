@@ -3,8 +3,9 @@ import { Sun, Moon } from "lucide-react";
 
 type Theme = "dark" | "light";
 
+// Utilisé sur les pages publiques (pas de contexte settings disponible)
 export default function ThemeSelector() {
-    const [theme, setTheme] = useState<Theme>(
+    const [theme, setThemeState] = useState<Theme>(
         (localStorage.getItem("theme") as Theme) || "dark"
     );
 
@@ -13,10 +14,6 @@ export default function ThemeSelector() {
         localStorage.setItem("theme", theme);
     }, [theme]);
 
-    const toggleTheme = () => {
-        setTheme(theme === "dark" ? "light" : "dark");
-    };
-
     return (
         <label className="flex items-center gap-2 cursor-pointer">
             <Sun className={`w-5 h-5 ${theme === "light" ? "text-yellow-400" : "text-gray-400"}`} />
@@ -24,7 +21,7 @@ export default function ThemeSelector() {
                 type="checkbox"
                 className="toggle toggle-sm"
                 checked={theme === "dark"}
-                onChange={toggleTheme}
+                onChange={() => setThemeState(theme === "dark" ? "light" : "dark")}
             />
             <Moon className={`w-5 h-5 ${theme === "dark" ? "text-blue-400" : "text-gray-400"}`} />
         </label>

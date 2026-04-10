@@ -36,6 +36,10 @@ class Language(str, Enum):
     FR = "FR"
     EN = "EN"
 
+class Theme(str, Enum):
+    DARK = "DARK"
+    LIGHT = "LIGHT"
+
 # --- Models ---
 class User(SQLModel, table=True):
     id: str = Field(default_factory=generate_ulid, primary_key=True)
@@ -138,6 +142,7 @@ class UserSettings(SQLModel, table=True):
     id: str = Field(default_factory=generate_ulid, primary_key=True)
     currency: Currency = Field(default=Currency.EUR, sa_column=Column(SAEnum(Currency, name="currency"), nullable=False, server_default="EUR"))
     language: Language = Field(default=Language.FR, sa_column=Column(SAEnum(Language, name="userlanguage"), nullable=False, server_default="FR"))
+    theme: Theme = Field(default=Theme.DARK, sa_column=Column(SAEnum(Theme, name="usertheme"), nullable=False, server_default="DARK"))
 
     user_id: str = Field(foreign_key="user.id", unique=True)
     user: Optional[User] = Relationship(back_populates="settings")

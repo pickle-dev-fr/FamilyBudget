@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { Currency, Language } from "@/api/settings.api";
+import type { Currency, Language, Theme } from "@/api/settings.api";
 
 export const CURRENCY_SYMBOLS: Record<Currency, string> = {
   EUR: "€",
@@ -20,8 +20,10 @@ export type CurrencyContextType = {
   currency: Currency;
   currencySymbol: string;
   language: Language;
+  theme: Theme;
   setCurrency: (currency: Currency) => Promise<void>;
   setLanguage: (language: Language) => Promise<void>;
+  setTheme: (theme: Theme) => Promise<void>;
 };
 
 export const CurrencyContext = createContext<CurrencyContextType | null>(null);

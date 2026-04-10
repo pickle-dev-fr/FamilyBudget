@@ -28,9 +28,10 @@ export default function RegisterPage() {
             await register({ username, password });
             const result = await login({ username, password });
             setToken(result.access_token);
-            // Sauvegarder la langue choisie sur la page d'inscription
+            // Sauvegarder langue + thème choisis sur la page d'inscription
             const currentLang = (Object.entries(LANGUAGE_I18N).find(([, v]) => v === i18n.language)?.[0] ?? "FR") as "FR" | "EN";
-            await updateSettings({ language: currentLang }).catch(() => {});
+            const currentTheme = (localStorage.getItem("theme") === "light" ? "LIGHT" : "DARK") as "DARK" | "LIGHT";
+            await updateSettings({ language: currentLang, theme: currentTheme }).catch(() => {});
             await refreshAuth();
             navigate("/", { replace: true });
         } catch {

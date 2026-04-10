@@ -7,8 +7,8 @@ import Modal from "@/components/ui/Modal";
 import { toast } from "@/lib/toast";
 import { useCurrency } from "@/auth/currency";
 import { useAuth } from "@/auth/AuthContext";
-import ThemeSelector from "@/components/ui/ThemeSelector";
-import type { Currency, Language } from "@/api/settings.api";
+import { Sun, Moon } from "lucide-react";
+import type { Currency, Language, Theme } from "@/api/settings.api";
 
 
 export default function SettingsPage() {
@@ -16,7 +16,7 @@ export default function SettingsPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { refreshAuth } = useAuth();
-    const { currency, currencySymbol, language, setCurrency, setLanguage } = useCurrency();
+    const { currency, currencySymbol, language, theme, setCurrency, setLanguage, setTheme } = useCurrency();
 
     const [password, setPassword] = useState("");
     const [repeatPassword, setRepeatPassword] = useState("");
@@ -74,7 +74,16 @@ export default function SettingsPage() {
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-medium">{t("settings.theme")}</span>
-                            <ThemeSelector />
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <Sun className={`w-5 h-5 ${theme === "LIGHT" ? "text-yellow-400" : "text-gray-400"}`} />
+                                <input
+                                    type="checkbox"
+                                    className="toggle toggle-sm"
+                                    checked={theme === "DARK"}
+                                    onChange={() => setTheme(theme === "DARK" ? "LIGHT" : "DARK" as Theme)}
+                                />
+                                <Moon className={`w-5 h-5 ${theme === "DARK" ? "text-blue-400" : "text-gray-400"}`} />
+                            </label>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-medium">{t("settings.currency")}</span>
