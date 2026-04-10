@@ -141,6 +141,20 @@
     "reste": "Reste",
     "progression": "Progression"
   },
+  "stats": {
+    "title": "Statistiques",
+    "balance": "Solde",
+    "income": "Entrées",
+    "expenses": "Sorties",
+    "delta": "Delta",
+    "balance_history": "Évolution du solde",
+    "monthly_summary": "Entrées / Sorties par mois",
+    "by_pot": "Dépenses par pot",
+    "heatmap": "Heatmap des dépenses",
+    "top_subpots": "Top sous-pots",
+    "no_data": "Aucune donnée",
+    "current_month": "Mois en cours"
+  },
   "settings": {
     "appearance": "Apparence",
     "language": "Langue",

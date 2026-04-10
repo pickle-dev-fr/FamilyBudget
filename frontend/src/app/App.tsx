@@ -17,6 +17,7 @@ import PotsPage from "@/features/pots/PotsPage";
 import TransactionsPage from "@/features/transactions/TransactionsPage";
 import RecurringPage from "@/features/recurrents/RecurrentsPage";
 import SettingsPage from "@/features/settings/SettingsPage";
+import StatsPage from "@/features/stats/StatsPage";
 
 export default function App() {
   return (
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="/pots" element={<RequiresAccount><PotsPage /></RequiresAccount>} />
             <Route path="/transactions" element={<RequiresAccount><TransactionsPage /></RequiresAccount>} />
             <Route path="/recurring" element={<RequiresAccount><RecurringPage /></RequiresAccount>} />
+            <Route path="/stats" element={<RequiresAccount><StatsPage /></RequiresAccount>} />
           </Route>
         </Routes>
       </AccountProvider>

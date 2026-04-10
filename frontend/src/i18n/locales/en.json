@@ -141,6 +141,20 @@
         "reste": "Remaining",
         "progression": "Progress"
     },
+    "stats": {
+        "title": "Statistics",
+        "balance": "Balance",
+        "income": "Income",
+        "expenses": "Expenses",
+        "delta": "Delta",
+        "balance_history": "Balance evolution",
+        "monthly_summary": "Income / Expenses by month",
+        "by_pot": "Expenses by pot",
+        "heatmap": "Spending heatmap",
+        "top_subpots": "Top sub-pots",
+        "no_data": "No data",
+        "current_month": "Current month"
+    },
     "settings": {
         "appearance": "Appearance",
         "language": "Language",
