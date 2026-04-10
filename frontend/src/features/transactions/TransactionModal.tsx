@@ -39,7 +39,7 @@ export default function TransactionModal({
     const [selectedSubPotId, setSelectedSubPotId] = useState<string | null>(null)
 
     const [transactionDate, setTransactionDate] = useState(today)
-    const [recurrence, setRecurrence] = useState(false)
+    const [recurrence, setRecurrence] = useState(isForcedRecurrent ?? false)
     const [recurrenceEndDate, setRecurrenceEndDate] = useState<string | null>(null)
 
     useEffect(() => {
