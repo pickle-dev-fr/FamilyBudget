@@ -33,7 +33,7 @@ export default function Modal({
                 </div>
 
                 {footer && (
-                    <div className="flex justify-end gap-2 p-6 pt-0 shrink-0">
+                    <div className="flex flex-wrap justify-end gap-2 p-6 pt-0 shrink-0">
                         {footer}
                     </div>
                 )}
