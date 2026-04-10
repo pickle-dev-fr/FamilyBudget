@@ -53,17 +53,17 @@ export default function PotColumn({ pot, onAddSubPot, onPersistSubPot, onUpdateS
         data: { type: "pot" },
         disabled,
     })
-    const totalPrevision = pot.sub_pots.reduce(
+    const totalPrevision = Math.round(pot.sub_pots.reduce(
         (acc, sp) => acc + (sp.prevision ?? 0),
         0
-    )
+    ) * 100) / 100
 
-    const totalCurrent = pot.sub_pots.reduce(
+    const totalCurrent = Math.round(pot.sub_pots.reduce(
         (acc, sp) => acc + (sp.current ?? 0),
         0
-    )
+    ) * 100) / 100
 
-    const remaining = totalPrevision - totalCurrent
+    const remaining = Math.round((totalPrevision - totalCurrent) * 100) / 100
 
     const percentage =
         totalPrevision > 0
