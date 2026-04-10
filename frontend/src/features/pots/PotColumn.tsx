@@ -7,6 +7,7 @@ import { ActionsMenu } from "@/components/layout/ActionsMenu"
 import { type UpdateSubPotPayload } from "@/api/sub_pots.api"
 import type { UpdatePotPayload } from "@/api/pots.api"
 import { useTranslation } from "react-i18next"
+import { formatAmount } from "@/utils"
 
 type Props = {
     pot: UIPot
@@ -171,12 +172,12 @@ export default function PotColumn({ pot, onAddSubPot, onPersistSubPot, onUpdateS
                 <div className="flex gap-4">
                     <div>
                         <span className="opacity-60">{t("pots.prevision")} </span>
-                        <span className="font-medium">{totalPrevision}</span>
+                        <span className="font-medium">{formatAmount(totalPrevision)}</span>
                     </div>
 
                     <div>
                         <span className="opacity-60">{t("pots.current")} </span>
-                        <span className="font-medium">{totalCurrent}</span>
+                        <span className="font-medium">{formatAmount(totalCurrent)}</span>
                     </div>
 
                     <div>
@@ -184,7 +185,7 @@ export default function PotColumn({ pot, onAddSubPot, onPersistSubPot, onUpdateS
                         <span className={`font-medium ${
                             remaining < 0 ? "text-error" : ""
                         }`}>
-                            {remaining}
+                            {formatAmount(remaining)}
                         </span>
                     </div>
                 </div>

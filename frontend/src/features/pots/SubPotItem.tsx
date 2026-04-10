@@ -5,6 +5,7 @@ import { ActionsMenu } from "@/components/layout/ActionsMenu"
 import type { UpdateSubPotPayload } from "@/api/sub_pots.api"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
+import { formatAmount } from "@/utils"
 
 type Props = {
     subPot: UISubPot
@@ -94,10 +95,10 @@ export default function SubPotItem({
                             onPointerDown={(e) => e.stopPropagation()}
                         />
                     ) : (
-                        subPot.prevision
+                        formatAmount(subPot.prevision)
                     )}
                 </div>
-                <div className="text-sm">{current}</div>
+                <div className="text-sm">{formatAmount(current)}</div>
                 <div className="text-sm">{percentage.toFixed(0)} %</div>
                 <div className="ml-auto flex gap-1">
                     {!disabled && (
