@@ -101,7 +101,8 @@
         "recurrent": "Recurring",
         "recurrence_end": "End date",
         "sub_pot": "Sub-pot",
-        "transfer": "Make a transfer"
+        "transfer": "Make a transfer",
+    "current_month": "Current month"
     },
     "recurring": {
         "title": "Recurring transactions management",

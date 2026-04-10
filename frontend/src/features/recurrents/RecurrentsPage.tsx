@@ -18,6 +18,7 @@ import TransferModal from "../transactions/TransfertModal"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/auth/currency"
 import { useLoading } from "@/context/loading"
+import { usePersistedState } from "@/hooks/usePersistedState"
 
 export default function RecurringPage() {
     const { t } = useTranslation();
@@ -26,7 +27,7 @@ export default function RecurringPage() {
     const [accounts, setAccounts] = useState<Account[]>([])
     const [pots, setPots] = useState<UIPot[]>([])
     const [subPots, setSubPots] = useState<UISubPot[]>([])
-    const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
+    const [selectedAccountId, setSelectedAccountId] = usePersistedState<string | null>("last_account_id", null)
     const [transactions, setTransactions] = useState<Transaction[]>([])
 
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -45,7 +46,8 @@ export default function RecurringPage() {
             setAccounts(data)
 
             if (data.length > 0) {
-                setSelectedAccountId(data[0].id)
+                const valid = data.find((a: { id: string }) => a.id === selectedAccountId)
+                if (!valid) setSelectedAccountId(data[0].id)
             }
         }
 

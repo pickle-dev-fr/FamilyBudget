@@ -3,6 +3,7 @@ import PotsBoard from "./PotsBoard"
 import { getAccounts } from "@/api/accounts.api"
 import { createPot } from "@/api/pots.api"
 import { useTranslation } from "react-i18next"
+import { usePersistedState } from "@/hooks/usePersistedState"
 
 type Account = {
     id: string
@@ -12,7 +13,7 @@ type Account = {
 export default function PotsPage(): React.JSX.Element {
     const { t } = useTranslation();
     const [accounts, setAccounts] = useState<Account[]>([])
-    const [selectedAccountId, setSelectedAccountId] = useState<string>("")
+    const [selectedAccountId, setSelectedAccountId] = usePersistedState<string>("last_account_id", "")
     const [newPotName, setNewPotName] = useState<string>("")
     const [refreshKey, setRefreshKey] = useState<number>(0)
 	const [showCreate, setShowCreate] = useState<boolean>(false)
@@ -24,7 +25,8 @@ export default function PotsPage(): React.JSX.Element {
             setAccounts(data)
 
             if (data.length > 0) {
-                setSelectedAccountId(data[0].id)
+                const valid = data.find((a: { id: string }) => a.id === selectedAccountId)
+                if (!valid) setSelectedAccountId(data[0].id)
             }
         }
 

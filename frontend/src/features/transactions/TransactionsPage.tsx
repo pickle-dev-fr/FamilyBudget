@@ -9,11 +9,12 @@ import { getPotsAndSubPotsByAccount } from "@/api/pots.api"
 import { getPeriode } from "@/api/utils.api"
 import TransferModal from "./TransfertModal"
 import { useTranslation } from "react-i18next"
+import { usePersistedState } from "@/hooks/usePersistedState"
 
 export default function TransactionsPage(): React.JSX.Element {
     const { t } = useTranslation();
     const [accounts, setAccounts] = useState<Account[]>([])
-    const [selectedAccountId, setSelectedAccountId] = useState<string>("")
+    const [selectedAccountId, setSelectedAccountId] = usePersistedState<string>("last_account_id", "")
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
     const [modalTarget, setModalTarget] = useState<CreateTransactionPayload | UpdateTransactionPayload | null>(null)
@@ -24,17 +25,18 @@ export default function TransactionsPage(): React.JSX.Element {
     const [pots, setPots] = useState<UIPot[]>([])
     const [sub_pots, setSubPots] = useState<UISubPot[]>([])
 
-    const [currentRefMonth, setCurrentRefMonth] = useState<{
+    const [currentRefMonth, setCurrentRefMonth] = usePersistedState<{
         year: number
         month: number
-    } | null>(null)
+    } | null>(`last_month_${selectedAccountId}`, null)
 
     useEffect(() => {
         async function loadAccounts() {
             const data = await getAccounts()
             setAccounts(data)
             if (data.length > 0) {
-                setSelectedAccountId(data[0].id)
+                const valid = data.find((a: Account) => a.id === selectedAccountId)
+                if (!valid) setSelectedAccountId(data[0].id)
             }
         }
         loadAccounts()
@@ -43,17 +45,20 @@ export default function TransactionsPage(): React.JSX.Element {
     useEffect(() => {
         async function loadPeriode() {
             if (!selectedAccountId) return
+            if (currentRefMonth) return
 
             const period = await getPeriode(selectedAccountId)
-
-            setCurrentRefMonth({
-                year: period.year,
-                month: period.month
-            })
+            setCurrentRefMonth({ year: period.year, month: period.month })
         }
 
         loadPeriode()
     }, [selectedAccountId])
+
+    async function goToCurrentMonth() {
+        if (!selectedAccountId) return
+        const period = await getPeriode(selectedAccountId)
+        setCurrentRefMonth({ year: period.year, month: period.month })
+    }
 
     useEffect(() => {
         if (!selectedAccountId) return
@@ -142,7 +147,7 @@ export default function TransactionsPage(): React.JSX.Element {
             {/* Navigation mois */}
             <div className="flex items-center gap-2">
                 <button className="btn btn-sm" onClick={prevMonth}>{"<"}</button>
-                <span className="font-medium">
+                <span className="font-medium min-w-36 text-center">
                     {currentRefMonth && (
                         new Date(
                             currentRefMonth.year,
@@ -154,6 +159,9 @@ export default function TransactionsPage(): React.JSX.Element {
                     )}
                 </span>
                 <button className="btn btn-sm" onClick={nextMonth}>{">"}</button>
+                <button className="btn btn-sm btn-ghost" onClick={goToCurrentMonth} title={t("transactions.current_month")}>
+                    ⌂
+                </button>
             </div>
 
             {/* Boutons */}

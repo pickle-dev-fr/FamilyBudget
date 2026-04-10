@@ -101,7 +101,8 @@
     "recurrent": "Récurrent",
     "recurrence_end": "Date de fin",
     "sub_pot": "Sous-Pot",
-    "transfer": "Effectuer un virement"
+    "transfer": "Effectuer un virement",
+    "current_month": "Mois en cours"
   },
   "recurring": {
     "title": "Gestion des transactions récurrentes",
