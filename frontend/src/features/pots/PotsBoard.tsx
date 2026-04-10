@@ -19,6 +19,9 @@ import { createSubPot, deleteSubPot, reorderSubPots, updateSubPot, type UpdateSu
 import PotColumn from "./PotColumn"
 import type { UIPot, UISubPot } from "./types"
 import { generateTempId, getActiveLabel, } from "./utils"
+import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/auth/currency"
+import { formatAmount } from "@/utils"
 
 
 type Props = {
@@ -27,6 +30,8 @@ type Props = {
 }
 
 export default function PotsBoard({ accountId, refreshKey }: Props) {
+    const { t } = useTranslation()
+    const { currencySymbol } = useCurrency()
 
     const [pots, setPots] = useState<UIPot[]>([])
     const [activeId, setActiveId] = useState<string | null>(null)
@@ -34,6 +39,11 @@ export default function PotsBoard({ accountId, refreshKey }: Props) {
     const initialStateRef = useRef<UIPot[]>([])
     const defaultPot = pots.find(p => p.position === 0)
     const movablePots = pots.filter(p => p.position !== 0)
+
+    const allSubPots = pots.flatMap(p => p.sub_pots)
+    const totalPrevision = Math.round(allSubPots.reduce((acc, sp) => acc + (sp.prevision ?? 0), 0) * 100) / 100
+    const totalCurrent = Math.round(allSubPots.reduce((acc, sp) => acc + (sp.current ?? 0), 0) * 100) / 100
+    const totalRemaining = Math.round((totalPrevision - totalCurrent) * 100) / 100
 
     useEffect(() => {
         if (!accountId) return
@@ -384,6 +394,26 @@ export default function PotsBoard({ accountId, refreshKey }: Props) {
             onDragEnd={handleDragEnd}
         >
             <div className="flex flex-col gap-4 pots-list">
+
+                {/* Récapitulatif total */}
+                {pots.length > 0 && (
+                    <div className="card bg-base-200 border border-base-300 rounded-lg px-4 py-3 flex flex-row gap-6 text-sm">
+                        <span>
+                            <span className="opacity-60">{t("pots.prevision")} </span>
+                            <span className="font-semibold">{formatAmount(totalPrevision)} {currencySymbol}</span>
+                        </span>
+                        <span>
+                            <span className="opacity-60">{t("pots.current")} </span>
+                            <span className="font-semibold">{formatAmount(totalCurrent)} {currencySymbol}</span>
+                        </span>
+                        <span>
+                            <span className="opacity-60">{t("pots.reste")} </span>
+                            <span className={`font-semibold ${totalRemaining < 0 ? "text-error" : ""}`}>
+                                {formatAmount(totalRemaining)} {currencySymbol}
+                            </span>
+                        </span>
+                    </div>
+                )}
 
                 {/* Default fixe (hors SortableContext) */}
                 {defaultPot && (
