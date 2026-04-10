@@ -92,12 +92,11 @@ export default function AccountsPage() {
         toast.success(t("toast.success.account_deleted"));
     }
 
-    if (loading) {
-        return <div className="page">Loading…</div>;
-    }
-
     return (
         <div className="page flex flex-col gap-6 p-4">
+            {loading && (
+                <p className="text-sm text-base-content/60">{t("common.loading")}</p>
+            )}
             {accounts.length === 0 && !loading && (
                 <div role="alert" className="alert alert-info">
                     <span>{t("accounts.no_account_yet")}</span>

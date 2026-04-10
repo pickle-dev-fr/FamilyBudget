@@ -44,7 +44,8 @@
     "delete": "Supprimer",
     "actions": "Actions",
     "confirm": "Confirmation",
-    "confirm_delete": "Confirmer la suppression ?"
+    "confirm_delete": "Confirmer la suppression ?",
+    "loading": "Chargement…"
   },
   "theme": {
     "dark": "Sombre",

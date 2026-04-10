@@ -99,10 +99,6 @@ export default function HomePage() {
         }
     }
 
-    if (loading) {
-        return <div className="p-6">{t("common.loading")}</div>
-    }
-
     return (
         <div className="flex flex-col gap-8 p-6">
 
@@ -119,6 +115,10 @@ export default function HomePage() {
                     </div>
                 </div>
             </div>
+
+            {loading && (
+                <p className="text-sm text-base-content/60">{t("common.loading")}</p>
+            )}
 
             {/* BALANCE TOTAL */}
             <div className="card bg-base-200 border border-base-300 p-4 rounded-lg flex justify-between items-center">

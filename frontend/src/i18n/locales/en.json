@@ -44,7 +44,8 @@
         "delete": "Delete",
         "actions": "Actions",
         "confirm": "Confirmation",
-        "confirm_delete": "Confirm deletion?"
+        "confirm_delete": "Confirm deletion?",
+        "loading": "Loading…"
     },
     "theme": {
         "dark": "Dark",
