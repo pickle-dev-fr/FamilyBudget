@@ -30,3 +30,11 @@ class HeatmapPoint(BaseModel):
     date: str
     amount: float
     count: int
+
+
+class TransactionStat(BaseModel):
+    date: str
+    amount: float
+    motif: str | None
+    sub_pot: str
+    pot: str

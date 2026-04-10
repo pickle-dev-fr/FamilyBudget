@@ -5,7 +5,7 @@ from datetime import date
 from app.models import Account, User, Sub_Pot, Pot, Transaction, TypeTransaction
 from app.services.account_service import AccountService
 from app.utils.budget_cycle import get_budget_cycle_for_month, previous_month
-from app.schemas.stats_schema import BalancePoint, MonthlySummaryPoint, PotAmount, SubPotAmount, HeatmapPoint
+from app.schemas.stats_schema import BalancePoint, MonthlySummaryPoint, PotAmount, SubPotAmount, HeatmapPoint, TransactionStat
 
 
 class StatService:
@@ -43,9 +43,32 @@ class StatService:
         )
 
     @staticmethod
-    def balance_history(session: Session, account: Account, n_months: int = 12) -> list[BalancePoint]:
+    def _months_since(start_year: int, start_month: int) -> list[tuple[int, int]]:
+        today = date.today()
+        months = []
+        y, m = today.year, today.month
+        while (y > start_year) or (y == start_year and m >= start_month):
+            months.append((y, m))
+            y, m = previous_month(y, m)
+        return list(reversed(months))
+
+    @staticmethod
+    def balance_history(session: Session, account: Account) -> list[BalancePoint]:
+        earliest = session.exec(
+            select(func.min(Transaction.transaction_date))
+            .outerjoin(Sub_Pot, Transaction.sub_pot_id == Sub_Pot.id)
+            .outerjoin(Pot, Sub_Pot.pot_id == Pot.id)
+            .where(or_(Transaction.account_id == account.id, Pot.account_id == account.id))
+        ).one()
+
+        today = date.today()
+        if earliest:
+            start_year, start_month = earliest.year, earliest.month
+        else:
+            start_year, start_month = today.year, today.month
+
         result = []
-        for year, month in StatService._last_n_months(n_months):
+        for year, month in StatService._months_since(start_year, start_month):
             cycle = get_budget_cycle_for_month(year, month, account.start_day)
             txs = session.exec(
                 StatService._account_transactions_query(account).where(
@@ -135,6 +158,33 @@ class StatService:
                     result.append(SubPotAmount(pot=pot.name, sub_pot=sp.name, amount=round(float(total), 2)))
 
         return sorted(result, key=lambda x: x.amount, reverse=True)
+
+    @staticmethod
+    def top_transactions(session: Session, account: Account, year: int, month: int, limit: int = 20) -> list[TransactionStat]:
+        cycle = get_budget_cycle_for_month(year, month, account.start_day)
+        txs = session.exec(
+            StatService._account_transactions_query(account)
+            .where(
+                Transaction.transaction_type == TypeTransaction.DEBIT,
+                Transaction.transaction_date >= cycle["start"],
+                Transaction.transaction_date <= cycle["end"],
+            )
+            .order_by(Transaction.amount.desc())
+            .limit(limit)
+        ).all()
+
+        result = []
+        for t in txs:
+            sp = session.get(Sub_Pot, t.sub_pot_id) if t.sub_pot_id else None
+            pot = session.get(Pot, sp.pot_id) if sp else None
+            result.append(TransactionStat(
+                date=str(t.transaction_date),
+                amount=round(t.amount, 2),
+                motif=t.motif,
+                sub_pot=sp.name if sp else "—",
+                pot=pot.name if pot else "—",
+            ))
+        return result
 
     @staticmethod
     def heatmap(session: Session, account: Account, year: int) -> list[HeatmapPoint]:

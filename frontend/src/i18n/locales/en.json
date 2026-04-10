@@ -153,6 +153,7 @@
         "by_subpot": "Distribution by sub-pot",
         "heatmap": "Spending heatmap",
         "top_subpots": "Top sub-pots",
+        "top_transactions": "Month transactions",
         "no_data": "No data",
         "current_month": "Current month"
     },

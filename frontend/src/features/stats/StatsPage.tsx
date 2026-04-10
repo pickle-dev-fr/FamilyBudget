@@ -3,13 +3,15 @@ import { useTranslation } from "react-i18next"
 import { usePersistedState } from "@/hooks/usePersistedState"
 import { getAccounts, type Account } from "@/api/accounts.api"
 import { getPeriode } from "@/api/utils.api"
-import { getBalanceHistory, getMonthlySummary, getBySubPot, getHeatmap, type BalancePoint, type MonthlySummaryPoint, type SubPotAmount, type HeatmapPoint } from "@/api/stats.api"
+import {
+    getBalanceHistory, getMonthlySummary, getBySubPot, getHeatmap, getTopTransactions,
+    type BalancePoint, type MonthlySummaryPoint, type SubPotAmount, type HeatmapPoint, type TransactionStat,
+} from "@/api/stats.api"
 import { formatAmount } from "@/utils"
 import { useCurrency } from "@/auth/currency"
 import {
-    ResponsiveContainer, LineChart, Line, BarChart, Bar, ComposedChart,
-    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine,
-    PieChart, Pie, Cell,
+    ResponsiveContainer, LineChart, Line, ComposedChart, Bar, XAxis, YAxis,
+    CartesianGrid, Tooltip, Legend, ReferenceLine, PieChart, Pie, Cell,
 } from "recharts"
 
 const COLORS = ["#60a5fa", "#34d399", "#f87171", "#a78bfa", "#fbbf24", "#f472b6", "#38bdf8", "#4ade80"]
@@ -38,26 +40,19 @@ function StatCard({ label, value, color }: { label: string; value: string; color
     )
 }
 
-type CalendarHeatmapProps = {
-    data: HeatmapPoint[]
-    year: number
-}
-
-function CalendarHeatmap({ data, year }: CalendarHeatmapProps) {
+function CalendarHeatmap({ data, year }: { data: HeatmapPoint[]; year: number }) {
     const byDate = Object.fromEntries(data.map(d => [d.date, d]))
     const maxAmount = data.length ? Math.max(...data.map(d => d.amount)) : 1
 
-    const months = Array.from({ length: 12 }, (_, i) => i)
-
     return (
-        <div className="flex flex-col gap-2 overflow-x-auto">
-            {months.map(mi => {
+        <div className="flex flex-col gap-1.5 overflow-x-auto">
+            {Array.from({ length: 12 }, (_, mi) => {
                 const daysInMonth = new Date(year, mi + 1, 0).getDate()
                 const monthName = new Date(year, mi).toLocaleString("default", { month: "short" })
                 return (
                     <div key={mi} className="flex items-center gap-1">
                         <span className="text-xs opacity-50 w-8 shrink-0">{monthName}</span>
-                        <div className="flex gap-0.5 flex-wrap">
+                        <div className="flex gap-0.5">
                             {Array.from({ length: daysInMonth }, (_, d) => {
                                 const dateStr = `${year}-${String(mi + 1).padStart(2, "0")}-${String(d + 1).padStart(2, "0")}`
                                 const point = byDate[dateStr]
@@ -67,11 +62,7 @@ function CalendarHeatmap({ data, year }: CalendarHeatmapProps) {
                                         key={d}
                                         className="w-4 h-4 rounded-sm tooltip"
                                         data-tip={point ? `${dateStr}: ${formatAmount(point.amount)} (${point.count} tx)` : dateStr}
-                                        style={{
-                                            backgroundColor: point
-                                                ? `rgba(96, 165, 250, ${intensity})`
-                                                : "rgba(100,100,100,0.1)",
-                                        }}
+                                        style={{ backgroundColor: point ? `rgba(96,165,250,${intensity})` : "rgba(100,100,100,0.1)" }}
                                     />
                                 )
                             })}
@@ -97,6 +88,7 @@ export default function StatsPage() {
     const [monthlySummary, setMonthlySummary] = useState<MonthlySummaryPoint[]>([])
     const [bySubPot, setBySubPot] = useState<SubPotAmount[]>([])
     const [heatmap, setHeatmap] = useState<HeatmapPoint[]>([])
+    const [topTransactions, setTopTransactions] = useState<TransactionStat[]>([])
 
     useEffect(() => {
         async function load() {
@@ -121,19 +113,19 @@ export default function StatsPage() {
 
     useEffect(() => {
         if (!selectedAccountId || !currentRefMonth) return
-
         const { year, month } = currentRefMonth
-
         Promise.all([
             getBalanceHistory(selectedAccountId),
             getMonthlySummary(selectedAccountId),
             getBySubPot(selectedAccountId, year, month),
             getHeatmap(selectedAccountId, year),
-        ]).then(([bh, ms, bsp, hm]) => {
+            getTopTransactions(selectedAccountId, year, month),
+        ]).then(([bh, ms, bsp, hm, tt]) => {
             setBalanceHistory(bh)
             setMonthlySummary(ms)
             setBySubPot(bsp)
             setHeatmap(hm)
+            setTopTransactions(tt)
         })
     }, [selectedAccountId, currentRefMonth])
 
@@ -143,11 +135,12 @@ export default function StatsPage() {
         setCurrentRefMonth({ year: period.year, month: period.month })
     }
 
+    // mois en 1-12 (cohérent avec l'API)
     const changeMonth = (delta: number) => {
         let { year, month } = currentRefMonth!
         month += delta
-        if (month < 0) { month = 11; year -= 1 }
-        else if (month > 11) { month = 0; year += 1 }
+        if (month < 1) { month = 12; year -= 1 }
+        else if (month > 12) { month = 1; year += 1 }
         setCurrentRefMonth({ year, month })
     }
 
@@ -158,6 +151,10 @@ export default function StatsPage() {
     const currentBalance = currentRefMonth
         ? balanceHistory.find(m => m.year === currentRefMonth.year && m.month === currentRefMonth.month)
         : null
+
+    const monthTitle = currentRefMonth
+        ? new Date(currentRefMonth.year, currentRefMonth.month - 1).toLocaleString("default", { month: "long", year: "numeric" })
+        : ""
 
     const chartData = monthlySummary.map(m => ({
         label: monthLabel(m.year, m.month),
@@ -185,50 +182,43 @@ export default function StatsPage() {
                 </select>
                 <div className="flex items-center gap-2">
                     <button className="btn btn-sm" onClick={() => changeMonth(-1)}>{"<"}</button>
-                    <span className="font-medium min-w-36 text-center text-sm">
-                        {currentRefMonth && new Date(currentRefMonth.year, currentRefMonth.month - 1)
-                            .toLocaleString("default", { month: "long", year: "numeric" })}
-                    </span>
+                    <span className="font-medium min-w-36 text-center text-sm">{monthTitle}</span>
                     <button className="btn btn-sm" onClick={() => changeMonth(1)}>{">"}</button>
                     <button className="btn btn-sm btn-ghost" onClick={goToCurrentMonth} title={t("stats.current_month")}>⌂</button>
                 </div>
             </div>
 
-            {/* Cartes synthèse */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <StatCard
-                    label={t("stats.balance")}
-                    value={`${formatAmount(currentBalance?.balance)} ${currencySymbol}`}
-                />
-                <StatCard
-                    label={t("stats.income")}
-                    value={`${formatAmount(currentSummary?.income)} ${currencySymbol}`}
-                    color="text-success"
-                />
-                <StatCard
-                    label={t("stats.expenses")}
-                    value={`${formatAmount(currentSummary?.expenses)} ${currencySymbol}`}
-                    color="text-error"
-                />
-                <StatCard
-                    label={t("stats.delta")}
-                    value={`${formatAmount(currentSummary?.delta)} ${currencySymbol}`}
-                    color={(currentSummary?.delta ?? 0) >= 0 ? "text-success" : "text-error"}
-                />
+            {/* Cartes synthèse du mois */}
+            <div className="flex flex-col gap-2">
+                <p className="text-xs opacity-50 uppercase tracking-wide">{monthTitle}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <StatCard label={t("stats.balance")} value={`${formatAmount(currentBalance?.balance)} ${currencySymbol}`} />
+                    <StatCard label={t("stats.income")} value={`${formatAmount(currentSummary?.income)} ${currencySymbol}`} color="text-success" />
+                    <StatCard label={t("stats.expenses")} value={`${formatAmount(currentSummary?.expenses)} ${currencySymbol}`} color="text-error" />
+                    <StatCard
+                        label={t("stats.delta")}
+                        value={`${formatAmount(currentSummary?.delta)} ${currencySymbol}`}
+                        color={(currentSummary?.delta ?? 0) >= 0 ? "text-success" : "text-error"}
+                    />
+                </div>
             </div>
 
-            {/* Évolution du solde */}
+            {/* Évolution du solde (depuis le début) */}
             <SectionCard title={t("stats.balance_history")}>
-                <ResponsiveContainer width="100%" height={220}>
-                    <LineChart data={balanceData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                        <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                        <YAxis tick={{ fontSize: 11 }} tickFormatter={v => formatAmount(v)} width={70} />
-                        <Tooltip formatter={(v: number) => [`${formatAmount(v)} ${currencySymbol}`, t("stats.balance")]} />
-                        <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
-                        <Line type="monotone" dataKey="balance" stroke="#60a5fa" strokeWidth={2} dot={{ r: 3 }} />
-                    </LineChart>
-                </ResponsiveContainer>
+                {balanceData.length === 0 ? (
+                    <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
+                ) : (
+                    <ResponsiveContainer width="100%" height={220}>
+                        <LineChart data={balanceData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                            <XAxis dataKey="label" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                            <YAxis tick={{ fontSize: 11 }} tickFormatter={v => formatAmount(v)} width={70} />
+                            <Tooltip formatter={(v: number) => [`${formatAmount(v)} ${currencySymbol}`, t("stats.balance")]} />
+                            <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
+                            <Line type="monotone" dataKey="balance" stroke="#60a5fa" strokeWidth={2} dot={balanceData.length <= 24 ? { r: 3 } : false} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                )}
             </SectionCard>
 
             {/* Entrées / Sorties / Delta */}
@@ -247,14 +237,14 @@ export default function StatsPage() {
                 </ResponsiveContainer>
             </SectionCard>
 
-            {/* Répartition par sous-pot */}
+            {/* Répartition par sous-pot + Transactions du mois */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
                 <SectionCard title={t("stats.by_subpot")}>
                     {bySubPot.length === 0 ? (
                         <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
                     ) : (
-                        <ResponsiveContainer width="100%" height={240}>
+                        <ResponsiveContainer width="100%" height={260}>
                             <PieChart>
                                 <Pie
                                     data={bySubPot}
@@ -277,32 +267,23 @@ export default function StatsPage() {
                     )}
                 </SectionCard>
 
-                <SectionCard title={t("stats.top_subpots")}>
-                    {bySubPot.length === 0 ? (
+                <SectionCard title={t("stats.top_transactions")}>
+                    {topTransactions.length === 0 ? (
                         <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
                     ) : (
-                        <ResponsiveContainer width="100%" height={240}>
-                            <BarChart
-                                data={bySubPot.slice(0, 8)}
-                                layout="vertical"
-                                margin={{ top: 0, right: 40, left: 0, bottom: 0 }}
-                            >
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.2} />
-                                <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={v => formatAmount(v)} />
-                                <YAxis type="category" dataKey="sub_pot" tick={{ fontSize: 10 }} width={80} />
-                                <Tooltip
-                                    formatter={(v: number, _: string, props: any) => [
-                                        `${formatAmount(v)} ${currencySymbol}`,
-                                        `${props.payload.pot} · ${props.payload.sub_pot}`,
-                                    ]}
-                                />
-                                <Bar dataKey="amount" radius={[0, 4, 4, 0]}>
-                                    {bySubPot.slice(0, 8).map((_, i) => (
-                                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <div className="flex flex-col divide-y divide-base-300 max-h-64 overflow-y-auto">
+                            {topTransactions.map((tx, i) => (
+                                <div key={i} className="flex items-center justify-between py-2 gap-2">
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-sm font-medium truncate">{tx.motif || "—"}</span>
+                                        <span className="text-xs opacity-50">{tx.pot} · {tx.sub_pot} · {tx.date}</span>
+                                    </div>
+                                    <span className="text-sm font-semibold text-error shrink-0">
+                                        -{formatAmount(tx.amount)} {currencySymbol}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
                     )}
                 </SectionCard>
 

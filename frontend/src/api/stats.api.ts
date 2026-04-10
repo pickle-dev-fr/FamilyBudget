@@ -5,6 +5,7 @@ export type MonthlySummaryPoint = { year: number; month: number; income: number;
 export type PotAmount = { pot: string; amount: number };
 export type SubPotAmount = { pot: string; sub_pot: string; amount: number };
 export type HeatmapPoint = { date: string; amount: number; count: number };
+export type TransactionStat = { date: string; amount: number; motif: string | null; sub_pot: string; pot: string };
 
 export function getTotalBalance(): Promise<number> {
   return apiClient.get("/stats/total-balance");
@@ -24,6 +25,10 @@ export function getByPot(accountId: string, year: number, month: number): Promis
 
 export function getBySubPot(accountId: string, year: number, month: number): Promise<SubPotAmount[]> {
   return apiClient.get(`/stats/accounts/${accountId}/by-subpot?year=${year}&month=${month}`);
+}
+
+export function getTopTransactions(accountId: string, year: number, month: number): Promise<TransactionStat[]> {
+  return apiClient.get(`/stats/accounts/${accountId}/top-transactions?year=${year}&month=${month}`);
 }
 
 export function getHeatmap(accountId: string, year: number): Promise<HeatmapPoint[]> {

@@ -5,7 +5,7 @@ from typing import Optional
 from app.database import get_session
 from app.security.dependencies import get_current_user
 from app.services.stat_service import StatService
-from app.schemas.stats_schema import BalancePoint, MonthlySummaryPoint, PotAmount, SubPotAmount, HeatmapPoint
+from app.schemas.stats_schema import BalancePoint, MonthlySummaryPoint, PotAmount, SubPotAmount, HeatmapPoint, TransactionStat
 from app.models import User, Account
 from app.i18n.messages import msg
 
@@ -57,6 +57,18 @@ def get_by_pot(
 ):
     account = _get_account(session, account_id, current_user)
     return StatService.by_pot(session, account, year, month)
+
+
+@router.get("/accounts/{account_id}/top-transactions", response_model=list[TransactionStat])
+def get_top_transactions(
+    account_id: str,
+    year: int = Query(...),
+    month: int = Query(...),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    account = _get_account(session, account_id, current_user)
+    return StatService.top_transactions(session, account, year, month)
 
 
 @router.get("/accounts/{account_id}/by-subpot", response_model=list[SubPotAmount])
