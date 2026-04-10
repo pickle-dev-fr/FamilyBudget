@@ -20,6 +20,12 @@ class PotAmount(BaseModel):
     amount: float
 
 
+class SubPotAmount(BaseModel):
+    pot: str
+    sub_pot: str
+    amount: float
+
+
 class HeatmapPoint(BaseModel):
     date: str
     amount: float

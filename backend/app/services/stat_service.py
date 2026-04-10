@@ -5,7 +5,7 @@ from datetime import date
 from app.models import Account, User, Sub_Pot, Pot, Transaction, TypeTransaction
 from app.services.account_service import AccountService
 from app.utils.budget_cycle import get_budget_cycle_for_month, previous_month
-from app.schemas.stats_schema import BalancePoint, MonthlySummaryPoint, PotAmount, HeatmapPoint
+from app.schemas.stats_schema import BalancePoint, MonthlySummaryPoint, PotAmount, SubPotAmount, HeatmapPoint
 
 
 class StatService:
@@ -104,6 +104,35 @@ class StatService:
                 )
             ).one()
             result.append(PotAmount(pot=pot.name, amount=round(float(total), 2)))
+
+        return sorted(result, key=lambda x: x.amount, reverse=True)
+
+    @staticmethod
+    def by_subpot(session: Session, account: Account, year: int, month: int) -> list[SubPotAmount]:
+        cycle = get_budget_cycle_for_month(year, month, account.start_day)
+        pots = session.exec(
+            select(Pot)
+            .where(Pot.account_id == account.id, Pot.position != 0)
+            .order_by(Pot.position)
+        ).all()
+
+        result = []
+        for pot in pots:
+            sub_pots = session.exec(
+                select(Sub_Pot).where(Sub_Pot.pot_id == pot.id, Sub_Pot.position != 0)
+            ).all()
+            for sp in sub_pots:
+                total = session.exec(
+                    select(func.coalesce(func.sum(Transaction.amount), 0.0))
+                    .where(
+                        Transaction.sub_pot_id == sp.id,
+                        Transaction.transaction_type == TypeTransaction.DEBIT,
+                        Transaction.transaction_date >= cycle["start"],
+                        Transaction.transaction_date <= cycle["end"],
+                    )
+                ).one()
+                if float(total) > 0:
+                    result.append(SubPotAmount(pot=pot.name, sub_pot=sp.name, amount=round(float(total), 2)))
 
         return sorted(result, key=lambda x: x.amount, reverse=True)
 

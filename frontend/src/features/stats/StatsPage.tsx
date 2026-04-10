@@ -3,16 +3,14 @@ import { useTranslation } from "react-i18next"
 import { usePersistedState } from "@/hooks/usePersistedState"
 import { getAccounts, type Account } from "@/api/accounts.api"
 import { getPeriode } from "@/api/utils.api"
-import { getBalanceHistory, getMonthlySummary, getByPot, getHeatmap, type BalancePoint, type MonthlySummaryPoint, type PotAmount, type HeatmapPoint } from "@/api/stats.api"
-import { getPotsAndSubPotsByAccount } from "@/api/pots.api"
-import type { UISubPot } from "@/features/pots/types"
+import { getBalanceHistory, getMonthlySummary, getBySubPot, getHeatmap, type BalancePoint, type MonthlySummaryPoint, type SubPotAmount, type HeatmapPoint } from "@/api/stats.api"
 import { formatAmount } from "@/utils"
 import { useCurrency } from "@/auth/currency"
 import {
     ResponsiveContainer, LineChart, Line, BarChart, Bar, ComposedChart,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine,
+    PieChart, Pie, Cell,
 } from "recharts"
-import { PieChart, Pie, Cell } from "recharts"
 
 const COLORS = ["#60a5fa", "#34d399", "#f87171", "#a78bfa", "#fbbf24", "#f472b6", "#38bdf8", "#4ade80"]
 
@@ -97,9 +95,8 @@ export default function StatsPage() {
 
     const [balanceHistory, setBalanceHistory] = useState<BalancePoint[]>([])
     const [monthlySummary, setMonthlySummary] = useState<MonthlySummaryPoint[]>([])
-    const [byPot, setByPot] = useState<PotAmount[]>([])
+    const [bySubPot, setBySubPot] = useState<SubPotAmount[]>([])
     const [heatmap, setHeatmap] = useState<HeatmapPoint[]>([])
-    const [topSubPots, setTopSubPots] = useState<(UISubPot & { pot_name: string })[]>([])
 
     useEffect(() => {
         async function load() {
@@ -130,21 +127,13 @@ export default function StatsPage() {
         Promise.all([
             getBalanceHistory(selectedAccountId),
             getMonthlySummary(selectedAccountId),
-            getByPot(selectedAccountId, year, month),
+            getBySubPot(selectedAccountId, year, month),
             getHeatmap(selectedAccountId, year),
-            getPotsAndSubPotsByAccount(selectedAccountId, year, month),
-        ]).then(([bh, ms, bp, hm, pots]) => {
+        ]).then(([bh, ms, bsp, hm]) => {
             setBalanceHistory(bh)
             setMonthlySummary(ms)
-            setByPot(bp)
+            setBySubPot(bsp)
             setHeatmap(hm)
-            const subs: (UISubPot & { pot_name: string })[] = pots
-                .filter((p: any) => p.position !== 0)
-                .flatMap((p: any) => p.sub_pots.map((sp: UISubPot) => ({ ...sp, pot_name: p.name })))
-                .filter((sp: UISubPot) => (sp.current ?? 0) > 0)
-                .sort((a: UISubPot, b: UISubPot) => (b.current ?? 0) - (a.current ?? 0))
-                .slice(0, 8)
-            setTopSubPots(subs)
         })
     }, [selectedAccountId, currentRefMonth])
 
@@ -258,57 +247,62 @@ export default function StatsPage() {
                 </ResponsiveContainer>
             </SectionCard>
 
-            {/* Par pot + Top sous-pots */}
+            {/* Répartition par sous-pot */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
-                <SectionCard title={t("stats.by_pot")}>
-                    {byPot.length === 0 ? (
+                <SectionCard title={t("stats.by_subpot")}>
+                    {bySubPot.length === 0 ? (
                         <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
                     ) : (
-                        <ResponsiveContainer width="100%" height={220}>
+                        <ResponsiveContainer width="100%" height={240}>
                             <PieChart>
                                 <Pie
-                                    data={byPot}
+                                    data={bySubPot}
                                     dataKey="amount"
-                                    nameKey="pot"
+                                    nameKey="sub_pot"
                                     cx="50%"
                                     cy="50%"
                                     innerRadius={55}
                                     outerRadius={85}
                                     paddingAngle={2}
                                 >
-                                    {byPot.map((_, i) => (
+                                    {bySubPot.map((_, i) => (
                                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
                                     ))}
                                 </Pie>
                                 <Tooltip formatter={(v: number, name: string) => [`${formatAmount(v)} ${currencySymbol}`, name]} />
-                                <Legend iconType="circle" iconSize={8} formatter={(value) => value} />
+                                <Legend iconType="circle" iconSize={8} />
                             </PieChart>
                         </ResponsiveContainer>
                     )}
                 </SectionCard>
 
                 <SectionCard title={t("stats.top_subpots")}>
-                    {topSubPots.length === 0 ? (
+                    {bySubPot.length === 0 ? (
                         <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
                     ) : (
-                        <div className="flex flex-col gap-2">
-                            {topSubPots.map((sp, i) => {
-                                const pct = sp.prevision > 0 ? Math.min((sp.current ?? 0) / sp.prevision * 100, 100) : 100
-                                const color = pct > 100 ? "bg-error" : pct >= 80 ? "bg-warning" : "bg-success"
-                                return (
-                                    <div key={sp.id} className="flex flex-col gap-0.5">
-                                        <div className="flex justify-between text-xs">
-                                            <span className="opacity-70">{sp.pot_name} · {sp.name}</span>
-                                            <span className="font-medium">{formatAmount(sp.current)} {currencySymbol}</span>
-                                        </div>
-                                        <div className="h-1.5 w-full rounded bg-base-300">
-                                            <div className={`h-full rounded ${color}`} style={{ width: `${pct}%` }} />
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
+                        <ResponsiveContainer width="100%" height={240}>
+                            <BarChart
+                                data={bySubPot.slice(0, 8)}
+                                layout="vertical"
+                                margin={{ top: 0, right: 40, left: 0, bottom: 0 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.2} />
+                                <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={v => formatAmount(v)} />
+                                <YAxis type="category" dataKey="sub_pot" tick={{ fontSize: 10 }} width={80} />
+                                <Tooltip
+                                    formatter={(v: number, _: string, props: any) => [
+                                        `${formatAmount(v)} ${currencySymbol}`,
+                                        `${props.payload.pot} · ${props.payload.sub_pot}`,
+                                    ]}
+                                />
+                                <Bar dataKey="amount" radius={[0, 4, 4, 0]}>
+                                    {bySubPot.slice(0, 8).map((_, i) => (
+                                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
                     )}
                 </SectionCard>
 

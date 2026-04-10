@@ -150,6 +150,7 @@
         "balance_history": "Balance evolution",
         "monthly_summary": "Income / Expenses by month",
         "by_pot": "Expenses by pot",
+        "by_subpot": "Distribution by sub-pot",
         "heatmap": "Spending heatmap",
         "top_subpots": "Top sub-pots",
         "no_data": "No data",
