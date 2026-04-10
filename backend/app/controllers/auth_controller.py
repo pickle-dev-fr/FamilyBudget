@@ -8,7 +8,9 @@ from app.schemas.user_schema import (
     UserRead,
     UserLogin,
     TokenRead,
-    UserChange
+    UserChange,
+    UserSettingsRead,
+    UserSettingsUpdate,
 )
 from app.services.auth_service import AuthService
 from app.security.dependencies import get_current_user
@@ -84,3 +86,20 @@ def delete_account(
     session: Session = Depends(get_session),
 ):
     AuthService.delete_user(session, current_user)
+
+
+@router.get("/settings", response_model=UserSettingsRead)
+def get_settings(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    return AuthService.get_settings(session, current_user)
+
+
+@router.patch("/settings", response_model=UserSettingsRead)
+def update_settings(
+    payload: UserSettingsUpdate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    return AuthService.update_settings(session, current_user, payload.currency)

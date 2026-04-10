@@ -23,6 +23,15 @@ class TypeRecurrence(str, Enum):
     WEEK = "WEEK"
     MONTH = "MONTH"
 
+class Currency(str, Enum):
+    EUR = "EUR"
+    USD = "USD"
+    GBP = "GBP"
+    CHF = "CHF"
+    JPY = "JPY"
+    CAD = "CAD"
+    AUD = "AUD"
+
 # --- Models ---
 class User(SQLModel, table=True):
     id: str = Field(default_factory=generate_ulid, primary_key=True)
@@ -30,9 +39,10 @@ class User(SQLModel, table=True):
     hashed_password: str
 
     accounts: List["Account"] = Relationship(back_populates="user",
-        sa_relationship_kwargs={            
+        sa_relationship_kwargs={
             "order_by": lambda: Account.position,
         })
+    settings: Optional["UserSettings"] = Relationship(back_populates="user")
 
 
 class Account(SQLModel, table=True):
@@ -118,6 +128,14 @@ class Sub_Pot(SQLModel, table=True):
     pot: Optional[Pot] = Relationship(back_populates="sub_pots")
 
     transactions: List["Transaction"] = Relationship(back_populates="sub_pot")
+
+
+class UserSettings(SQLModel, table=True):
+    id: str = Field(default_factory=generate_ulid, primary_key=True)
+    currency: Currency = Field(default=Currency.EUR, sa_column=Column(SAEnum(Currency, name="currency"), nullable=False, server_default="EUR"))
+
+    user_id: str = Field(foreign_key="user.id", unique=True)
+    user: Optional[User] = Relationship(back_populates="settings")
 
 
 class Transaction(SQLModel, table=True):

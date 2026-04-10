@@ -150,6 +150,8 @@
     "delete_account_confirm_label": "Pour confirmer, tapez <1>supprimer</1> ci-dessous",
     "delete_account_confirm_placeholder": "supprimer",
     "delete_account_confirm_word": "supprimer",
-    "delete_account_confirm_button": "Supprimer définitivement mon compte"
+    "delete_account_confirm_button": "Supprimer définitivement mon compte",
+    "currency": "Devise",
+    "currency_current": "Symbole actuel : {{symbol}}"
   }
 }

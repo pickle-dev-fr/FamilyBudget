@@ -150,6 +150,8 @@
         "delete_account_confirm_label": "To confirm, type <1>delete</1> below",
         "delete_account_confirm_placeholder": "delete",
         "delete_account_confirm_word": "delete",
-        "delete_account_confirm_button": "I understand, permanently delete my account"
+        "delete_account_confirm_button": "I understand, permanently delete my account",
+        "currency": "Currency",
+        "currency_current": "Current symbol: {{symbol}}"
     }
 }

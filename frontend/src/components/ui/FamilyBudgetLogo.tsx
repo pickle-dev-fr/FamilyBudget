@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useCurrency } from '@/auth/currency';
 
 type Size = 'sm' | 'md' | 'lg';
 
@@ -17,7 +18,7 @@ const sizeConfig: Record<Size, SizeConfig> = {
   lg: { icon: 96,  wordmark: 42, subtitle: 19, gap: 20, subtitleMt: 6, wordmarkGap: 5 },
 };
 
-function HouseIcon({ size }: { size: number }) {
+function HouseIcon({ size, currencySymbol }: { size: number; currencySymbol: string }) {
   return (
     <svg
       width={size}
@@ -35,7 +36,7 @@ function HouseIcon({ size }: { size: number }) {
       <polygon points="50,18 84,52 16,52" fill="#1A7A52" />
       {/* Porte centrée */}
       <rect x="41" y="63" width="18" height="17" rx="1" fill="#2D9B6F" />
-      {/* Symbole € blanc centré */}
+      {/* Symbole devise blanc centré */}
       <text
         x="50"
         y="50"
@@ -46,7 +47,7 @@ function HouseIcon({ size }: { size: number }) {
         fontSize="19"
         fontWeight="bold"
       >
-        €
+        {currencySymbol}
       </text>
     </svg>
   );
@@ -58,11 +59,12 @@ interface FamilyBudgetLogoProps {
 
 export function FamilyBudgetLogo({ size = 'md' }: FamilyBudgetLogoProps) {
   const { t } = useTranslation();
+  const { currencySymbol } = useCurrency();
   const c = sizeConfig[size];
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: c.gap }}>
-      <HouseIcon size={c.icon} />
+      <HouseIcon size={c.icon} currencySymbol={currencySymbol} />
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {/* Wordmark */}
         <div style={{ fontSize: c.wordmark, fontWeight: 500, lineHeight: 1 }}>

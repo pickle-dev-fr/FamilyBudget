@@ -5,12 +5,15 @@ import { useTranslation, Trans } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Modal from "@/components/ui/Modal";
 import { toast } from "@/lib/toast";
+import { useCurrency } from "@/auth/currency";
+import type { Currency } from "@/api/settings.api";
 
 
 export default function SettingsPage() {
 
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { currency, currencySymbol, setCurrency } = useCurrency();
     const [password, setPassword] = useState("");
     const [repeatPassword, setRepeatPassword] = useState("");
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -56,6 +59,25 @@ export default function SettingsPage() {
                     </fieldset>
                     <button className="btn" type="submit">{t("common.save")}</button>
                 </form>
+
+                {/* Currency */}
+                <fieldset className="fieldset">
+                    <legend className="fieldset-legend">{t("settings.currency")}</legend>
+                    <select
+                        className="select"
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value as Currency)}
+                    >
+                        <option value="EUR">EUR — €</option>
+                        <option value="USD">USD — $</option>
+                        <option value="GBP">GBP — £</option>
+                        <option value="CHF">CHF — Fr.</option>
+                        <option value="JPY">JPY — ¥</option>
+                        <option value="CAD">CAD — CA$</option>
+                        <option value="AUD">AUD — A$</option>
+                    </select>
+                    <label className="fieldset-label">{t("settings.currency_current", { symbol: currencySymbol })}</label>
+                </fieldset>
 
                 {/* Danger zone */}
                 <div className="border border-error rounded-lg overflow-hidden">

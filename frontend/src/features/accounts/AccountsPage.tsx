@@ -26,6 +26,7 @@ import {
 import SortableTableRow from "@/components/table/SortableTableRow";
 import { ActionsMenu } from "@/components/layout/ActionsMenu";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "@/auth/currency";
 import { useAccount } from "@/auth/AccountContext";
 import { toast } from "@/lib/toast";
 
@@ -36,6 +37,7 @@ type AccountWithMeta = Account & {
 
 export default function AccountsPage() {
     const { t } = useTranslation();
+    const { currencySymbol } = useCurrency();
     const { refreshAccounts } = useAccount();
 
     const [accounts, setAccounts] = useState<AccountWithMeta[]>([]);
@@ -151,7 +153,7 @@ export default function AccountsPage() {
                                 <SortableTableRow key={a.id} id={a.id}>
                                     <td>{a.name}</td>
                                     <td className={`${balances[a.id] >= 0 ? "text-green-500" : "text-red-500"}`}>
-                                        {formatAmount(balances[a.id])} €
+                                        {formatAmount(balances[a.id])} {currencySymbol}
                                     </td>
                                     <td>{a.start_day}</td>
                                     <td>

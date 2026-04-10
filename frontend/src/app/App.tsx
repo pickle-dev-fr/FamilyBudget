@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/auth/AuthContext";
+import { CurrencyProvider } from "@/auth/CurrencyContext";
 import { AccountProvider } from "@/auth/AccountContext";
 import ProtectedRoute from "@/auth/ProtectedRoute";
 import RequiresAccount from "@/auth/RequiresAccount";
@@ -19,6 +20,7 @@ import SettingsPage from "@/features/settings/SettingsPage";
 export default function App() {
   return (
     <AuthProvider>
+      <CurrencyProvider>
       <AccountProvider>
         <ToastContainer />
         <Routes>
@@ -45,6 +47,7 @@ export default function App() {
           </Route>
         </Routes>
       </AccountProvider>
+      </CurrencyProvider>
     </AuthProvider>
   );
 }

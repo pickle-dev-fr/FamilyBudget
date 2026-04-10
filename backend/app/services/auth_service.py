@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
 
-from app.models import User
+from app.models import User, UserSettings, Currency
 from app.security.password import hash_password, verify_password
 
 
@@ -68,3 +68,25 @@ class AuthService:
     def delete_user(session: Session, user: User) -> None:
         session.delete(user)
         session.commit()
+
+    ## Settings
+    @staticmethod
+    def get_settings(session: Session, user: User) -> UserSettings:
+        settings = session.exec(
+            select(UserSettings).where(UserSettings.user_id == user.id)
+        ).first()
+        if not settings:
+            settings = UserSettings(user_id=user.id)
+            session.add(settings)
+            session.commit()
+            session.refresh(settings)
+        return settings
+
+    @staticmethod
+    def update_settings(session: Session, user: User, currency: Currency) -> UserSettings:
+        settings = AuthService.get_settings(session, user)
+        settings.currency = currency
+        session.add(settings)
+        session.commit()
+        session.refresh(settings)
+        return settings

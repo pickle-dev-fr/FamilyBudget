@@ -11,9 +11,11 @@ import {
 import { getPotsAndSubPotsByAccount } from "@/api/pots.api"
 import type { UIPot } from "../pots/types"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/auth/currency"
 
 export default function HomePage() {
     const { t } = useTranslation();
+    const { currencySymbol } = useCurrency();
 
     const [loading, setLoading] = useState(true)
 
@@ -124,7 +126,7 @@ export default function HomePage() {
                     {t("home.total_balance")}
                 </div>
                 <div className="text-xl font-bold">
-                    {formatAmount(total)} €
+                    {formatAmount(total)} {currencySymbol}
                 </div>
             </div>
 
@@ -155,7 +157,7 @@ export default function HomePage() {
                                             : "text-error font-semibold"
                                     }
                                 >
-                                    {formatAmount(balance)} €
+                                    {formatAmount(balance)} {currencySymbol}
                                 </div>
                             </div>
                         )
@@ -197,6 +199,7 @@ function TransactionsTable({
     methodFindAccount: Function
 }) {
     const { t } = useTranslation();
+    const { currencySymbol } = useCurrency();
 
     if (!items.length) {
         return (
@@ -246,7 +249,7 @@ function TransactionsTable({
                                             : "text-error font-semibold"
                                     }
                                 >
-                                    {formatAmount(tx.amount)} €
+                                    {formatAmount(tx.amount)} {currencySymbol}
                                 </td>
 
                                 <td>{tx.motif}</td>

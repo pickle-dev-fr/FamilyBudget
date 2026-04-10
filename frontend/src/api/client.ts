@@ -95,6 +95,9 @@ export const apiClient = {
     put: (path: string, body?: unknown) =>
         request("PUT", path, body),
 
+    patch: (path: string, body?: unknown) =>
+        request("PATCH", path, body),
+
     delete: (path: string) =>
         request("DELETE", path),
 };

@@ -16,9 +16,11 @@ import { ActionsMenu } from "@/components/layout/ActionsMenu"
 import DeleteRecurringModal from "./DeleteRecurrentModal"
 import TransferModal from "../transactions/TransfertModal"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/auth/currency"
 
 export default function RecurringPage() {
     const { t } = useTranslation();
+    const { currencySymbol } = useCurrency();
     const [accounts, setAccounts] = useState<Account[]>([])
     const [pots, setPots] = useState<UIPot[]>([])
     const [subPots, setSubPots] = useState<UISubPot[]>([])
@@ -217,7 +219,7 @@ export default function RecurringPage() {
                                             </td>
 
                                             <td>
-                                                {tx.amount.toFixed(2)} €
+                                                {tx.amount.toFixed(2)} {currencySymbol}
                                             </td>
 
                                             <td>
