@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, Security, status, Query
 from sqlmodel import Session
+from datetime import date
+from typing import Optional
 
 from app.database import get_session
 from app.security.dependencies import get_current_user
@@ -8,6 +10,7 @@ from app.services.pot_service import PotService
 from app.schemas.pot_schema import PotCreate, PotRead, PotUpdate, ControlPotRead
 from app.schemas.reorder_schema import PotReorderPayload
 from app.i18n.messages import msg
+from app.utils.budget_cycle import get_budget_cycle_for_month
 from fastapi import HTTPException
 
 
@@ -25,6 +28,7 @@ def _check_account_owner(session: Session, account_id: str, user: User) -> Accou
             detail=msg("account.not_found"),
         )
     return account
+
     
 @router.put("/pots/reorder", status_code=204)
 def reorder_pots(
@@ -60,16 +64,23 @@ def create_pot(
 def list_pots(
     account_id: str,
     include: bool = Query(False, description="Inclure les sub-pots"),
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
     session: Session = Depends(get_session),
     current_user: User = Security(get_current_user),
 ):
+    account = _check_account_owner(session, account_id, current_user)
 
-    _check_account_owner(session, account_id, current_user)
+    ref_date = None
+    if year and month:
+        cycle = get_budget_cycle_for_month(year, month, account.start_day)
+        ref_date = cycle["start"]
 
     return PotService.list_by_account(
         session,
         account_id,
         include=include,
+        ref_date=ref_date,
     )
 
 @router.get(

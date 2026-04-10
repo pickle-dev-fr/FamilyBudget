@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import PotsBoard from "./PotsBoard"
 import { getAccounts } from "@/api/accounts.api"
 import { createPot } from "@/api/pots.api"
+import { getPeriode } from "@/api/utils.api"
 import { useTranslation } from "react-i18next"
 import { usePersistedState } from "@/hooks/usePersistedState"
 
@@ -16,8 +17,12 @@ export default function PotsPage(): React.JSX.Element {
     const [selectedAccountId, setSelectedAccountId] = usePersistedState<string>("last_account_id", "")
     const [newPotName, setNewPotName] = useState<string>("")
     const [refreshKey, setRefreshKey] = useState<number>(0)
-	const [showCreate, setShowCreate] = useState<boolean>(false)
+    const [showCreate, setShowCreate] = useState<boolean>(false)
 
+    const [currentRefMonth, setCurrentRefMonth] = usePersistedState<{
+        year: number
+        month: number
+    } | null>(`last_month_${selectedAccountId}`, null)
 
     useEffect(() => {
         async function load() {
@@ -33,6 +38,32 @@ export default function PotsPage(): React.JSX.Element {
         load()
     }, [])
 
+    useEffect(() => {
+        async function loadPeriode() {
+            if (!selectedAccountId) return
+            if (currentRefMonth) return
+
+            const period = await getPeriode(selectedAccountId)
+            setCurrentRefMonth({ year: period.year, month: period.month })
+        }
+
+        loadPeriode()
+    }, [selectedAccountId])
+
+    async function goToCurrentMonth() {
+        if (!selectedAccountId) return
+        const period = await getPeriode(selectedAccountId)
+        setCurrentRefMonth({ year: period.year, month: period.month })
+    }
+
+    const changeMonth = (delta: number) => {
+        let { year, month } = currentRefMonth!
+        month += delta
+        if (month < 0) { month = 11; year -= 1 }
+        else if (month > 11) { month = 0; year += 1 }
+        setCurrentRefMonth({ year, month })
+    }
+
     async function handleCreatePot() {
         if (!newPotName.trim()) return
         if (!selectedAccountId) return
@@ -43,12 +74,12 @@ export default function PotsPage(): React.JSX.Element {
 
         setNewPotName("")
         setRefreshKey(prev => prev + 1)
-		setShowCreate(false)
+        setShowCreate(false)
     }
 
     return (
         <div className="flex flex-col gap-6 pots-container">
-            {/* Sélecteur de account */}
+            {/* Sélecteur de compte */}
             <div className="w-full account-selector">
                 <select
                     value={selectedAccountId}
@@ -61,6 +92,26 @@ export default function PotsPage(): React.JSX.Element {
                         </option>
                     ))}
                 </select>
+            </div>
+
+            {/* Navigation mois */}
+            <div className="flex items-center gap-2">
+                <button className="btn btn-sm" onClick={() => changeMonth(-1)}>{"<"}</button>
+                <span className="font-medium min-w-36 text-center">
+                    {currentRefMonth && (
+                        new Date(
+                            currentRefMonth.year,
+                            currentRefMonth.month - 1
+                        ).toLocaleString("default", {
+                            month: "long",
+                            year: "numeric"
+                        })
+                    )}
+                </span>
+                <button className="btn btn-sm" onClick={() => changeMonth(1)}>{">"}</button>
+                <button className="btn btn-sm btn-ghost" onClick={goToCurrentMonth} title={t("transactions.current_month")}>
+                    ⌂
+                </button>
             </div>
 
             {/* Création pot */}
@@ -104,10 +155,12 @@ export default function PotsPage(): React.JSX.Element {
             </div>
 
             {/* Board */}
-            {selectedAccountId && (
+            {selectedAccountId && currentRefMonth && (
                 <PotsBoard
                     accountId={selectedAccountId}
                     refreshKey={refreshKey}
+                    year={currentRefMonth.year}
+                    month={currentRefMonth.month}
                 />
             )}
         </div>

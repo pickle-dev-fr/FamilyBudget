@@ -36,8 +36,13 @@ export function getPotsByAccount(accountId: string) {
   return apiClient.get(`/accounts/${accountId}/pots`);
 }
 
-export function getPotsAndSubPotsByAccount(accountId: string) {
-  return apiClient.get(`/accounts/${accountId}/pots?include=true`);
+export function getPotsAndSubPotsByAccount(accountId: string, year?: number, month?: number) {
+  const params = new URLSearchParams({ include: "true" });
+  if (year !== undefined && month !== undefined) {
+    params.set("year", String(year));
+    params.set("month", String(month));
+  }
+  return apiClient.get(`/accounts/${accountId}/pots?${params.toString()}`);
 }
 
 export function createPot(accountId: string, payload: CreatePotPayload) {

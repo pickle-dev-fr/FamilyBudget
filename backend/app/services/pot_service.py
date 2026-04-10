@@ -32,6 +32,7 @@ class PotService:
         session: Session,
         account_id: str,
         include: bool = False,
+        ref_date=None,
     ) -> list[PotRead]:
 
         pots = session.exec(
@@ -50,6 +51,7 @@ class PotService:
                 sub_pots = SousPotService.list_by_pot(
                     session,
                     pot.id,
+                    ref_date=ref_date,
                 )
 
             result.append(

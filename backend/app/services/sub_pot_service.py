@@ -47,7 +47,7 @@ class SousPotService:
 
 
     @staticmethod
-    def list_by_pot(session: Session, pot_id: str) -> list[SousPotRead]:
+    def list_by_pot(session: Session, pot_id: str, ref_date: date | None = None) -> list[SousPotRead]:
         sub_pots = session.exec(
             select(Sub_Pot).where(Sub_Pot.pot_id == pot_id).order_by(Sub_Pot.position)
         ).all()
@@ -55,7 +55,7 @@ class SousPotService:
         result: list[SousPotRead] = []
 
         for sp in sub_pots:
-            current = SousPotService.calculer_current_mois(session, sp)
+            current = SousPotService.calculer_current_mois(session, sp, ref_date=ref_date)
 
             result.append(
                 SousPotRead(
@@ -143,9 +143,11 @@ class SousPotService:
     def calculer_current_mois(
         session: Session,
         sub_pot: Sub_Pot,
+        ref_date: date | None = None,
     ) -> float:
         """
         Calcule le balance courant du sub-pot sur la période définie par le account.
+        Si ref_date est fourni, utilise le cycle de ce mois-là.
         """
 
         # 1️⃣ Récupération du pot
@@ -155,7 +157,8 @@ class SousPotService:
         account = session.get(Account, pot.account_id)
 
         # 3️⃣ Calcul de la période
-        period = get_budget_cycle_for_date(date.today(), account.start_day)
+        target = ref_date or date.today()
+        period = get_budget_cycle_for_date(target, account.start_day)
         start_date = period["start"]
         end_date = period["end"]
 

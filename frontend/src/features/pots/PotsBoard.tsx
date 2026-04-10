@@ -27,9 +27,11 @@ import { formatAmount } from "@/utils"
 type Props = {
     accountId: string
     refreshKey?: number
+    year?: number
+    month?: number
 }
 
-export default function PotsBoard({ accountId, refreshKey }: Props) {
+export default function PotsBoard({ accountId, refreshKey, year, month }: Props) {
     const { t } = useTranslation()
     const { currencySymbol } = useCurrency()
 
@@ -49,7 +51,7 @@ export default function PotsBoard({ accountId, refreshKey }: Props) {
         if (!accountId) return
 
         async function load() {
-            const data = await getPotsAndSubPotsByAccount(accountId)
+            const data = await getPotsAndSubPotsByAccount(accountId, year, month)
 
             const sorted = [...data].sort(
                 (a, b) => a.position - b.position
@@ -59,7 +61,7 @@ export default function PotsBoard({ accountId, refreshKey }: Props) {
         }
 
         load()
-    }, [accountId, refreshKey])
+    }, [accountId, refreshKey, year, month])
 
 
 
@@ -156,7 +158,7 @@ export default function PotsBoard({ accountId, refreshKey }: Props) {
     async function reloadPots() {
         if (!accountId) return
 
-        const data = await getPotsAndSubPotsByAccount(accountId)
+        const data = await getPotsAndSubPotsByAccount(accountId, year, month)
 
         const sorted = [...data].sort(
             (a, b) => a.position - b.position
@@ -267,7 +269,7 @@ export default function PotsBoard({ accountId, refreshKey }: Props) {
         } catch {
             // fallback reload
             const fallback =
-                await getPotsAndSubPotsByAccount(accountId)
+                await getPotsAndSubPotsByAccount(accountId, year, month)
 
             const sorted = [...fallback].sort(
                 (a, b) => a.position - b.position
@@ -293,7 +295,7 @@ export default function PotsBoard({ accountId, refreshKey }: Props) {
 
         } catch {
             const fallback =
-                await getPotsAndSubPotsByAccount(accountId)
+                await getPotsAndSubPotsByAccount(accountId, year, month)
 
             const sorted = [...fallback].sort(
                 (a, b) => a.position - b.position
@@ -319,7 +321,7 @@ export default function PotsBoard({ accountId, refreshKey }: Props) {
 
             // Reload après création
             const dataAfterCreate =
-                await getPotsAndSubPotsByAccount(accountId)
+                await getPotsAndSubPotsByAccount(accountId, year, month)
 
             const sortedAfterCreate = [...dataAfterCreate].sort(
                 (a, b) => a.position - b.position
