@@ -18,11 +18,6 @@ export default function SettingsPage() {
     const { refreshAuth } = useAuth();
     const { currency, currencySymbol, language, setCurrency, setLanguage } = useCurrency();
 
-    function logout() {
-        clearToken();
-        refreshAuth();
-        navigate("/login", { replace: true });
-    }
     const [password, setPassword] = useState("");
     const [repeatPassword, setRepeatPassword] = useState("");
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -31,14 +26,18 @@ export default function SettingsPage() {
     const confirmWord = t("settings.delete_account_confirm_word");
     const isConfirmed = confirmText === confirmWord;
 
+    function logout() {
+        clearToken();
+        refreshAuth();
+        navigate("/login", { replace: true });
+    }
+
     async function changePassword(e: React.FormEvent) {
         e.preventDefault();
-
         if (!password || password !== repeatPassword) {
             toast.warning(t("toast.error.passwords_mismatch"));
             return;
         }
-
         await passwordChange(password);
         setPassword("");
         setRepeatPassword("");
@@ -54,55 +53,65 @@ export default function SettingsPage() {
 
     return (
         <>
-            <div className="max-w-lg flex flex-col gap-8">
+            <div className="max-w-lg flex flex-col gap-6">
 
-                {/* Langue + Thème + Déconnexion */}
-                <div className="flex flex-wrap items-center gap-4">
-                    <select
-                        className="select select-bordered select-sm"
-                        value={language}
-                        onChange={(e) => setLanguage(e.target.value as Language)}
-                    >
-                        <option value="FR">{t("languageName", { lng: "fr" })}</option>
-                        <option value="EN">{t("languageName", { lng: "en" })}</option>
-                    </select>
-                    <ThemeSelector />
-                    <button className="btn btn-error btn-sm ml-auto" onClick={logout}>
-                        {t("auth.disconnect")}
-                    </button>
+                {/* Apparence */}
+                <div className="card bg-base-100 border border-base-300 rounded-lg overflow-hidden">
+                    <div className="bg-base-200 px-4 py-3 border-b border-base-300">
+                        <h2 className="font-semibold text-sm uppercase tracking-wide">{t("settings.appearance")}</h2>
+                    </div>
+                    <div className="px-4 py-4 flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{t("settings.language")}</span>
+                            <select
+                                className="select select-bordered select-sm"
+                                value={language}
+                                onChange={(e) => setLanguage(e.target.value as Language)}
+                            >
+                                <option value="FR">{t("languageName", { lng: "fr" })}</option>
+                                <option value="EN">{t("languageName", { lng: "en" })}</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{t("settings.theme")}</span>
+                            <ThemeSelector />
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{t("settings.currency")}</span>
+                            <select
+                                className="select select-bordered select-sm"
+                                value={currency}
+                                onChange={(e) => setCurrency(e.target.value as Currency)}
+                            >
+                                <option value="EUR">EUR — €</option>
+                                <option value="USD">USD — $</option>
+                                <option value="GBP">GBP — £</option>
+                                <option value="CHF">CHF — Fr.</option>
+                                <option value="JPY">JPY — ¥</option>
+                                <option value="CAD">CAD — CA$</option>
+                                <option value="AUD">AUD — A$</option>
+                            </select>
+                        </div>
+                        <p className="text-xs text-base-content/50">{t("settings.currency_current", { symbol: currencySymbol })}</p>
+                    </div>
                 </div>
 
-                {/* Change password */}
-                <form onSubmit={changePassword}>
-                    <fieldset className="fieldset">
-                        <legend className="fieldset-legend">{t("settings.change_password")}</legend>
-                        <input type="password" className="input" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                    </fieldset>
-                    <fieldset className="fieldset">
-                        <legend className="fieldset-legend">{t("settings.repeat_password")}</legend>
-                        <input type="password" className="input" placeholder="Password" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} />
-                    </fieldset>
-                    <button className="btn" type="submit">{t("common.save")}</button>
-                </form>
+                {/* Mot de passe */}
+                <div className="card bg-base-100 border border-base-300 rounded-lg overflow-hidden">
+                    <div className="bg-base-200 px-4 py-3 border-b border-base-300">
+                        <h2 className="font-semibold text-sm uppercase tracking-wide">{t("settings.change_password")}</h2>
+                    </div>
+                    <form onSubmit={changePassword} className="px-4 py-4 flex flex-col gap-3">
+                        <input type="password" className="input input-bordered w-full" placeholder={t("settings.change_password")} value={password} onChange={(e) => setPassword(e.target.value)} />
+                        <input type="password" className="input input-bordered w-full" placeholder={t("settings.repeat_password")} value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} />
+                        <button className="btn btn-sm self-start" type="submit">{t("common.save")}</button>
+                    </form>
+                </div>
 
-                {/* Currency */}
-                <fieldset className="fieldset">
-                    <legend className="fieldset-legend">{t("settings.currency")}</legend>
-                    <select
-                        className="select"
-                        value={currency}
-                        onChange={(e) => setCurrency(e.target.value as Currency)}
-                    >
-                        <option value="EUR">EUR — €</option>
-                        <option value="USD">USD — $</option>
-                        <option value="GBP">GBP — £</option>
-                        <option value="CHF">CHF — Fr.</option>
-                        <option value="JPY">JPY — ¥</option>
-                        <option value="CAD">CAD — CA$</option>
-                        <option value="AUD">AUD — A$</option>
-                    </select>
-                    <label className="fieldset-label">{t("settings.currency_current", { symbol: currencySymbol })}</label>
-                </fieldset>
+                {/* Déconnexion */}
+                <button className="btn btn-outline w-full" onClick={logout}>
+                    {t("auth.disconnect")}
+                </button>
 
                 {/* Danger zone */}
                 <div className="border border-error rounded-lg overflow-hidden">
@@ -120,10 +129,7 @@ export default function SettingsPage() {
                         </div>
                         <button
                             className="btn btn-error btn-sm shrink-0"
-                            onClick={() => {
-                                setConfirmText("");
-                                setShowDeleteModal(true);
-                            }}
+                            onClick={() => { setConfirmText(""); setShowDeleteModal(true); }}
                         >
                             {t("settings.delete_account")}
                         </button>
@@ -141,26 +147,17 @@ export default function SettingsPage() {
                         <button className="btn" onClick={() => setShowDeleteModal(false)}>
                             {t("common.cancel")}
                         </button>
-                        <button
-                            className="btn btn-error"
-                            disabled={!isConfirmed}
-                            onClick={handleDeleteAccount}
-                        >
+                        <button className="btn btn-error" disabled={!isConfirmed} onClick={handleDeleteAccount}>
                             {t("settings.delete_account_confirm_button")}
                         </button>
                     </>
                 }
             >
                 <div className="flex flex-col gap-4">
-                    <p className="text-sm">
-                        {t("settings.delete_account_modal_description")}
-                    </p>
+                    <p className="text-sm">{t("settings.delete_account_modal_description")}</p>
                     <div className="flex flex-col gap-1">
                         <label className="text-sm">
-                            <Trans
-                                i18nKey="settings.delete_account_confirm_label"
-                                components={[<strong key="0" className="font-mono" />]}
-                            />
+                            <Trans i18nKey="settings.delete_account_confirm_label" components={[<strong key="0" className="font-mono" />]} />
                         </label>
                         <input
                             type="text"

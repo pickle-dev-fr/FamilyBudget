@@ -142,6 +142,9 @@
     "progression": "Progression"
   },
   "settings": {
+    "appearance": "Apparence",
+    "language": "Langue",
+    "theme": "Thème",
     "change_password": "Nouveau mot de passe",
     "repeat_password": "Répéter le mot de passe",
     "danger_zone": "Zone de danger",

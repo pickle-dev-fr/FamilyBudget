@@ -6,6 +6,9 @@ import { setToken } from "@/api/token";
 import { useAuth } from "@/auth/AuthContext";
 import { useTranslation } from "react-i18next";
 import { toast } from "@/lib/toast";
+import { updateSettings } from "@/api/settings.api";
+import { LANGUAGE_I18N } from "@/auth/currency";
+import i18n from "i18next";
 
 
 export default function RegisterPage() {
@@ -25,6 +28,9 @@ export default function RegisterPage() {
             await register({ username, password });
             const result = await login({ username, password });
             setToken(result.access_token);
+            // Sauvegarder la langue choisie sur la page d'inscription
+            const currentLang = (Object.entries(LANGUAGE_I18N).find(([, v]) => v === i18n.language)?.[0] ?? "FR") as "FR" | "EN";
+            await updateSettings({ language: currentLang }).catch(() => {});
             await refreshAuth();
             navigate("/", { replace: true });
         } catch {
