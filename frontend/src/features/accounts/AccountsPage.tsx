@@ -29,6 +29,7 @@ import { useTranslation } from "react-i18next";
 import { useCurrency } from "@/auth/currency";
 import { useAccount } from "@/auth/AccountContext";
 import { toast } from "@/lib/toast";
+import { useLoading } from "@/context/LoadingContext";
 
 type AccountWithMeta = Account & {
     start_day: number;
@@ -39,10 +40,11 @@ export default function AccountsPage() {
     const { t } = useTranslation();
     const { currencySymbol } = useCurrency();
     const { refreshAccounts } = useAccount();
+    const { setLoading } = useLoading();
 
     const [accounts, setAccounts] = useState<AccountWithMeta[]>([]);
     const [balances, setBalances] = useState<Record<string, number>>({});
-    const [loading, setLoading] = useState(true);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
@@ -64,6 +66,7 @@ export default function AccountsPage() {
             setBalances(Object.fromEntries(balancesEntries));
         } finally {
             setLoading(false);
+            setIsLoaded(true);
         }
     }
 
@@ -94,10 +97,7 @@ export default function AccountsPage() {
 
     return (
         <div className="page flex flex-col gap-6 p-4">
-            {loading && (
-                <p className="text-sm text-base-content/60">{t("common.loading")}</p>
-            )}
-            {accounts.length === 0 && !loading && (
+            {accounts.length === 0 && isLoaded && (
                 <div role="alert" className="alert alert-info">
                     <span>{t("accounts.no_account_yet")}</span>
                 </div>

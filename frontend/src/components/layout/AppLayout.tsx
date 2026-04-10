@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import PrivateHeader from "./PrivateHeader";
 import Menu from "./Menu";
+import LoadingOverlay from "@/components/ui/LoadingOverlay";
 
 export default function AppLayout() {
     return (
@@ -27,7 +28,8 @@ export default function AppLayout() {
                     </div>
                 </div>
 
-                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+                <main className="relative flex-1 overflow-y-auto p-4 lg:p-6">
+                    <LoadingOverlay />
                     <Outlet />
                 </main>
             </div>

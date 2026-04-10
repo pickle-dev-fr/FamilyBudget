@@ -12,12 +12,12 @@ import { getPotsAndSubPotsByAccount } from "@/api/pots.api"
 import type { UIPot } from "../pots/types"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/auth/currency"
+import { useLoading } from "@/context/LoadingContext"
 
 export default function HomePage() {
     const { t } = useTranslation();
     const { currencySymbol } = useCurrency();
-
-    const [loading, setLoading] = useState(true)
+    const { setLoading } = useLoading();
 
     const [now, setNow] = useState(new Date())
 
@@ -45,6 +45,7 @@ export default function HomePage() {
     /* ========================= */
 
     useEffect(() => {
+        setLoading(true)
         async function load() {
             try {
                 const [
@@ -115,10 +116,6 @@ export default function HomePage() {
                     </div>
                 </div>
             </div>
-
-            {loading && (
-                <p className="text-sm text-base-content/60">{t("common.loading")}</p>
-            )}
 
             {/* BALANCE TOTAL */}
             <div className="card bg-base-200 border border-base-300 p-4 rounded-lg flex justify-between items-center">

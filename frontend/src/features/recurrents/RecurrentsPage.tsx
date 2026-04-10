@@ -17,16 +17,17 @@ import DeleteRecurringModal from "./DeleteRecurrentModal"
 import TransferModal from "../transactions/TransfertModal"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/auth/currency"
+import { useLoading } from "@/context/LoadingContext"
 
 export default function RecurringPage() {
     const { t } = useTranslation();
     const { currencySymbol } = useCurrency();
+    const { setLoading } = useLoading();
     const [accounts, setAccounts] = useState<Account[]>([])
     const [pots, setPots] = useState<UIPot[]>([])
     const [subPots, setSubPots] = useState<UISubPot[]>([])
     const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
     const [transactions, setTransactions] = useState<Transaction[]>([])
-    const [loading, setLoading] = useState<boolean>(false)
 
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [selectedTx, setSelectedTx] = useState<Transaction | undefined>()
@@ -171,11 +172,7 @@ export default function RecurringPage() {
             <div className="card bg-base-100 shadow">
                 <div className="card-body p-0">
 
-                    {loading ? (
-                        <div className="p-6">
-                            {t("common.loading")}
-                        </div>
-                    ) : (
+                    {(
                         <div className="overflow-x-auto">
                             <table className="table">
                                 <thead>
@@ -260,7 +257,8 @@ export default function RecurringPage() {
                                 </tbody>
                             </table>
                         </div>
-                    )}
+                    )
+                    }
                 </div>
             </div>
 
