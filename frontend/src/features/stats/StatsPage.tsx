@@ -10,11 +10,24 @@ import {
 import { formatAmount } from "@/utils"
 import { useCurrency } from "@/auth/currency"
 import {
-    ResponsiveContainer, LineChart, Line, ComposedChart, Bar, XAxis, YAxis,
+    ResponsiveContainer, LineChart, Line, ComposedChart, BarChart, Bar, XAxis, YAxis,
     CartesianGrid, Tooltip, Legend, ReferenceLine, PieChart, Pie, Cell,
 } from "recharts"
 
-const COLORS = ["#60a5fa", "#34d399", "#f87171", "#a78bfa", "#fbbf24", "#f472b6", "#38bdf8", "#4ade80"]
+// Teintes de base pour les sous-pots (HSL hue)
+const SUB_POT_HUES = [145, 200, 30, 270, 160, 0, 45, 310, 180, 60, 240, 15]
+
+function subPotBaseColor(index: number): string {
+    const hue = SUB_POT_HUES[index % SUB_POT_HUES.length]
+    return `hsl(${hue}, 50%, 45%)`
+}
+
+// tx_0 = plus grande transaction = teinte la plus sombre
+function subPotTxColor(subPotIndex: number, txIndex: number, maxTx: number): string {
+    const hue = SUB_POT_HUES[subPotIndex % SUB_POT_HUES.length]
+    const lightness = 30 + (txIndex / Math.max(maxTx - 1, 1)) * 30
+    return `hsl(${hue}, 55%, ${lightness}%)`
+}
 
 function monthLabel(year: number, month: number) {
     return new Date(year, month - 1).toLocaleString("default", { month: "short", year: "2-digit" })
@@ -156,6 +169,26 @@ export default function StatsPage() {
         ? new Date(currentRefMonth.year, currentRefMonth.month - 1).toLocaleString("default", { month: "long", year: "numeric" })
         : ""
 
+    // Stacked bar : transactions groupées par sous-pot
+    const subPotGroups = new Map<string, { pot: string; sub_pot: string; txs: TransactionStat[] }>()
+    for (const tx of topTransactions) {
+        const key = `${tx.pot}§${tx.sub_pot}`
+        if (!subPotGroups.has(key)) subPotGroups.set(key, { pot: tx.pot, sub_pot: tx.sub_pot, txs: [] })
+        subPotGroups.get(key)!.txs.push(tx)
+    }
+    const sortedGroups = [...subPotGroups.values()].sort(
+        (a, b) => b.txs.reduce((s, t) => s + t.amount, 0) - a.txs.reduce((s, t) => s + t.amount, 0)
+    )
+    const maxTxPerSubPot = sortedGroups.length ? Math.max(...sortedGroups.map(g => g.txs.length)) : 0
+    const stackedData = sortedGroups.map(({ pot, sub_pot, txs }, j) => {
+        const entry: Record<string, unknown> = { name: sub_pot, pot, _subPotIdx: j }
+        for (let i = 0; i < maxTxPerSubPot; i++) {
+            entry[`tx_${i}`] = txs[i]?.amount ?? 0
+            entry[`motif_${i}`] = txs[i]?.motif ?? "—"
+        }
+        return entry
+    })
+
     const chartData = monthlySummary.map(m => ({
         label: monthLabel(m.year, m.month),
         income: m.income,
@@ -237,7 +270,7 @@ export default function StatsPage() {
                 </ResponsiveContainer>
             </SectionCard>
 
-            {/* Répartition par sous-pot + Transactions du mois */}
+            {/* Répartition par sous-pot */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
                 <SectionCard title={t("stats.by_subpot")}>
@@ -246,19 +279,8 @@ export default function StatsPage() {
                     ) : (
                         <ResponsiveContainer width="100%" height={260}>
                             <PieChart>
-                                <Pie
-                                    data={bySubPot}
-                                    dataKey="amount"
-                                    nameKey="sub_pot"
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={55}
-                                    outerRadius={85}
-                                    paddingAngle={2}
-                                >
-                                    {bySubPot.map((_, i) => (
-                                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                                    ))}
+                                <Pie data={bySubPot} dataKey="amount" nameKey="sub_pot" cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={2}>
+                                    {bySubPot.map((_, i) => <Cell key={i} fill={subPotBaseColor(i)} />)}
                                 </Pie>
                                 <Tooltip formatter={(v: number, name: string) => [`${formatAmount(v)} ${currencySymbol}`, name]} />
                                 <Legend iconType="circle" iconSize={8} />
@@ -278,9 +300,7 @@ export default function StatsPage() {
                                         <span className="text-sm font-medium truncate">{tx.motif || "—"}</span>
                                         <span className="text-xs opacity-50">{tx.pot} · {tx.sub_pot} · {tx.date}</span>
                                     </div>
-                                    <span className="text-sm font-semibold text-error shrink-0">
-                                        -{formatAmount(tx.amount)} {currencySymbol}
-                                    </span>
+                                    <span className="text-sm font-semibold text-error shrink-0">-{formatAmount(tx.amount)} {currencySymbol}</span>
                                 </div>
                             ))}
                         </div>
@@ -288,6 +308,55 @@ export default function StatsPage() {
                 </SectionCard>
 
             </div>
+
+            {/* Stacked bar : transactions empilées par sous-pot */}
+            <SectionCard title={t("stats.stacked_by_subpot")}>
+                {stackedData.length === 0 ? (
+                    <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
+                ) : (
+                    <ResponsiveContainer width="100%" height={Math.max(260, stackedData.length * 36)}>
+                        <BarChart
+                            data={stackedData}
+                            layout="vertical"
+                            margin={{ top: 4, right: 60, left: 0, bottom: 4 }}
+                        >
+                            <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.2} />
+                            <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={v => formatAmount(v)} />
+                            <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={90} />
+                            <Tooltip
+                                content={({ active, payload, label }) => {
+                                    if (!active || !payload?.length) return null
+                                    const segments = payload.filter(p => (p.value as number) > 0)
+                                    const total = segments.reduce((s, p) => s + (p.value as number), 0)
+                                    const subPotIdx = (segments[0]?.payload as any)?._subPotIdx ?? 0
+                                    return (
+                                        <div className="bg-base-200 border border-base-300 rounded p-2 text-xs shadow-lg">
+                                            <p className="font-semibold mb-1">{label} — {formatAmount(total)} {currencySymbol}</p>
+                                            {segments.map((p, i) => {
+                                                const txIdx = parseInt((p.dataKey as string).replace("tx_", ""))
+                                                const motif = (p.payload as any)[`motif_${txIdx}`] || "—"
+                                                const color = subPotTxColor(subPotIdx, txIdx, maxTxPerSubPot)
+                                                return (
+                                                    <p key={i} style={{ color }}>
+                                                        {motif} : {formatAmount(p.value as number)} {currencySymbol}
+                                                    </p>
+                                                )
+                                            })}
+                                        </div>
+                                    )
+                                }}
+                            />
+                            {Array.from({ length: maxTxPerSubPot }, (_, i) => (
+                                <Bar key={i} dataKey={`tx_${i}`} stackId="a" radius={i === maxTxPerSubPot - 1 ? [0, 4, 4, 0] : undefined}>
+                                    {sortedGroups.map((_, j) => (
+                                        <Cell key={j} fill={subPotTxColor(j, i, maxTxPerSubPot)} />
+                                    ))}
+                                </Bar>
+                            ))}
+                        </BarChart>
+                    </ResponsiveContainer>
+                )}
+            </SectionCard>
 
             {/* Heatmap */}
             <SectionCard title={`${t("stats.heatmap")} ${currentRefMonth?.year ?? ""}`}>

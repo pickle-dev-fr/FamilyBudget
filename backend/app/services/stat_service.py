@@ -160,7 +160,7 @@ class StatService:
         return sorted(result, key=lambda x: x.amount, reverse=True)
 
     @staticmethod
-    def top_transactions(session: Session, account: Account, year: int, month: int, limit: int = 20) -> list[TransactionStat]:
+    def top_transactions(session: Session, account: Account, year: int, month: int) -> list[TransactionStat]:
         cycle = get_budget_cycle_for_month(year, month, account.start_day)
         txs = session.exec(
             StatService._account_transactions_query(account)
@@ -170,7 +170,6 @@ class StatService:
                 Transaction.transaction_date <= cycle["end"],
             )
             .order_by(Transaction.amount.desc())
-            .limit(limit)
         ).all()
 
         result = []

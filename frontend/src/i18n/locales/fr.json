@@ -154,6 +154,7 @@
     "heatmap": "Heatmap des dépenses",
     "top_subpots": "Top sous-pots",
     "top_transactions": "Transactions du mois",
+    "stacked_by_subpot": "Dépenses par sous-pot (détail)",
     "no_data": "Aucune donnée",
     "current_month": "Mois en cours"
   },
