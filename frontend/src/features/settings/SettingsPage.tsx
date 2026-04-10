@@ -6,14 +6,23 @@ import { useNavigate } from "react-router-dom";
 import Modal from "@/components/ui/Modal";
 import { toast } from "@/lib/toast";
 import { useCurrency } from "@/auth/currency";
-import type { Currency } from "@/api/settings.api";
+import { useAuth } from "@/auth/AuthContext";
+import ThemeSelector from "@/components/ui/ThemeSelector";
+import type { Currency, Language } from "@/api/settings.api";
 
 
 export default function SettingsPage() {
 
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { currency, currencySymbol, setCurrency } = useCurrency();
+    const { refreshAuth } = useAuth();
+    const { currency, currencySymbol, language, setCurrency, setLanguage } = useCurrency();
+
+    function logout() {
+        clearToken();
+        refreshAuth();
+        navigate("/login", { replace: true });
+    }
     const [password, setPassword] = useState("");
     const [repeatPassword, setRepeatPassword] = useState("");
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -46,6 +55,22 @@ export default function SettingsPage() {
     return (
         <>
             <div className="max-w-lg flex flex-col gap-8">
+
+                {/* Langue + Thème + Déconnexion */}
+                <div className="flex flex-wrap items-center gap-4">
+                    <select
+                        className="select select-bordered select-sm"
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value as Language)}
+                    >
+                        <option value="FR">{t("languageName", { lng: "fr" })}</option>
+                        <option value="EN">{t("languageName", { lng: "en" })}</option>
+                    </select>
+                    <ThemeSelector />
+                    <button className="btn btn-error btn-sm ml-auto" onClick={logout}>
+                        {t("auth.disconnect")}
+                    </button>
+                </div>
 
                 {/* Change password */}
                 <form onSubmit={changePassword}>

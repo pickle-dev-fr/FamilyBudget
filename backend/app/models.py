@@ -32,6 +32,10 @@ class Currency(str, Enum):
     CAD = "CAD"
     AUD = "AUD"
 
+class Language(str, Enum):
+    FR = "FR"
+    EN = "EN"
+
 # --- Models ---
 class User(SQLModel, table=True):
     id: str = Field(default_factory=generate_ulid, primary_key=True)
@@ -133,6 +137,7 @@ class Sub_Pot(SQLModel, table=True):
 class UserSettings(SQLModel, table=True):
     id: str = Field(default_factory=generate_ulid, primary_key=True)
     currency: Currency = Field(default=Currency.EUR, sa_column=Column(SAEnum(Currency, name="currency"), nullable=False, server_default="EUR"))
+    language: Language = Field(default=Language.FR, sa_column=Column(SAEnum(Language, name="userlanguage"), nullable=False, server_default="FR"))
 
     user_id: str = Field(foreign_key="user.id", unique=True)
     user: Optional[User] = Relationship(back_populates="settings")

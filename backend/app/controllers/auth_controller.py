@@ -102,4 +102,4 @@ def update_settings(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    return AuthService.update_settings(session, current_user, payload.currency)
+    return AuthService.update_settings(session, current_user, currency=payload.currency, language=payload.language)

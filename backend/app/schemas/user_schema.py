@@ -1,6 +1,6 @@
 from typing import Optional
 from sqlmodel import SQLModel
-from app.models import Currency
+from app.models import Currency, Language
 
 
 class UserCreate(SQLModel):
@@ -28,6 +28,8 @@ class UserChange(SQLModel):
 
 class UserSettingsRead(SQLModel):
     currency: Currency
+    language: Language
 
 class UserSettingsUpdate(SQLModel):
-    currency: Currency
+    currency: Optional[Currency] = None
+    language: Optional[Language] = None
