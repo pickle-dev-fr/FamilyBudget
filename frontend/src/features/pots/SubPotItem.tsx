@@ -146,9 +146,9 @@ export default function SubPotItem({
             <div className="h-2 w-full rounded overflow-hidden">
                 <div
                     className={`h-full transition-all ${
-                        percentage >= 100
+                        percentage > 100
                             ? "bg-error"
-                            : percentage > 80
+                            : percentage >= 80
                             ? "bg-warning"
                             : "bg-success"
                     }`}

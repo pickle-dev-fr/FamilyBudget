@@ -199,9 +199,9 @@ export default function PotColumn({ pot, onAddSubPot, onPersistSubPot, onUpdateS
             <div className="mt-1 h-1.5 w-full bg-base-300 rounded overflow-hidden">
                 <div
                     className={`h-full transition-all ${
-                        percentage >= 100
+                        percentage > 100
                             ? "bg-error"
-                            : percentage > 80
+                            : percentage >= 80
                             ? "bg-warning"
                             : "bg-success"
                     }`}
