@@ -19,20 +19,24 @@ export default function Modal({
 
 	return (
         <div
-            className="fixed inset-0 bg-black/50 flex justify-center items-center z-50"
+            className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4"
             onClick={onClose}
         >
             <div
-                className="bg-base-100 p-6 rounded-lg shadow-lg max-w-md w-full"
+                className="bg-base-100 rounded-lg shadow-lg max-w-md w-full flex flex-col max-h-full"
                 onClick={(e) => e.stopPropagation()}
             >
-                {title && <h2 className="text-lg font-semibold mb-4">{title}</h2>}
+                {title && <h2 className="text-lg font-semibold p-6 pb-0 shrink-0">{title}</h2>}
 
-                <div className="mb-4">
+                <div className="overflow-y-auto p-6 flex-1">
                     {children}
                 </div>
 
-                {footer && <div className="flex justify-end gap-2">{footer}</div>}
+                {footer && (
+                    <div className="flex justify-end gap-2 p-6 pt-0 shrink-0">
+                        {footer}
+                    </div>
+                )}
             </div>
         </div>
 
