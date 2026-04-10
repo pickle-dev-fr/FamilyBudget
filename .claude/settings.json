@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m ':*)",
+      "Bash(curl -s -X POST https://forgejo.homepickle.ddns.net/api/v1/repos/pickle-dev-fr/FamilyBudget/pulls -H 'Content-Type: application/json' -H 'Authorization: token 099433d2d66641a2cd761c85c82211fb33c5791b' -d '{:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('html_url'\\) or d\\)\")"
+    ],
+    "additionalDirectories": [
+      "/home/coder/dev/FamilyBudget/backend/app/controllers"
+    ]
+  }
+}

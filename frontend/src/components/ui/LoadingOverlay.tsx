@@ -1,4 +1,4 @@
-import { useLoading } from "@/context/LoadingContext";
+import { useLoading } from "@/context/loading";
 
 export default function LoadingOverlay() {
   const { loading } = useLoading();

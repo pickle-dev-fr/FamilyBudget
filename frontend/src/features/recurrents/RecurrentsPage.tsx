@@ -17,7 +17,7 @@ import DeleteRecurringModal from "./DeleteRecurrentModal"
 import TransferModal from "../transactions/TransfertModal"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/auth/currency"
-import { useLoading } from "@/context/LoadingContext"
+import { useLoading } from "@/context/loading"
 
 export default function RecurringPage() {
     const { t } = useTranslation();

@@ -29,7 +29,7 @@ import { useTranslation } from "react-i18next";
 import { useCurrency } from "@/auth/currency";
 import { useAccount } from "@/auth/AccountContext";
 import { toast } from "@/lib/toast";
-import { useLoading } from "@/context/LoadingContext";
+import { useLoading } from "@/context/loading";
 
 type AccountWithMeta = Account & {
     start_day: number;
