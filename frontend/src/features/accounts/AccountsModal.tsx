@@ -27,7 +27,7 @@ export default function AccountsModal({
     const { t } = useTranslation();
 
     const [startDay, setStartDay] = useState(1);
-    const [initialValue, setInitialValue] = useState(0);
+    const [initialValue, setInitialValue] = useState("0");
     const [name, setName] = useState("");
     const [decallage, setDecallage] = useState(0);
 
@@ -36,12 +36,12 @@ export default function AccountsModal({
         if (defaultValues) {
             setName(defaultValues.name);
             setStartDay(defaultValues.startDay);
-            setInitialValue(defaultValues.initialValue);
+            setInitialValue(String(defaultValues.initialValue));
             setDecallage(defaultValues.decallage);
         } else {
             setName("");
             setStartDay(1);
-            setInitialValue(0);
+            setInitialValue("0");
             setDecallage(0);
         }
     }, [defaultValues, open]);
@@ -51,7 +51,7 @@ export default function AccountsModal({
         onSubmit({
             name,
             startDay,
-            initialValue,
+            initialValue: parseFloat(initialValue) || 0,
             decallage,
         });
     }
@@ -110,9 +110,15 @@ export default function AccountsModal({
                     </label>
                     <input
                         className="input input-bordered w-full bg-bg-soft text-text"
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         value={initialValue}
-                        onChange={(e) => setInitialValue(Number(e.target.value))}
+                        onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === "" || v === "-" || /^-?\d*\.?\d*$/.test(v)) {
+                                setInitialValue(v);
+                            }
+                        }}
                     />
                 </div>
             </div>
