@@ -161,35 +161,32 @@ class StatService:
         return sorted(result, key=lambda x: x.amount, reverse=True)
 
     @staticmethod
-    def daily_balance_for_month(session: Session, account: Account, year: int, month: int) -> list[DailyBalancePoint]:
-        cycle = get_budget_cycle_for_month(year, month, account.start_day)
+    def balance_for_range(session: Session, account: Account, from_date: date, to_date: date) -> list[DailyBalancePoint]:
         today = date.today()
 
-        # Solde cumulé avant le début du cycle
         txs_before = session.exec(
             StatService._account_transactions_query(account).where(
-                Transaction.transaction_date < cycle["start"]
+                Transaction.transaction_date < from_date
             )
         ).all()
         balance = account.initial_value + account.archived_value
         for t in txs_before:
             balance += t.amount if t.transaction_type == TypeTransaction.CREDIT else -t.amount
 
-        # Toutes les transactions dans le cycle (passées + futures planifiées)
-        txs_in_cycle = session.exec(
+        txs_in_range = session.exec(
             StatService._account_transactions_query(account).where(
-                Transaction.transaction_date >= cycle["start"],
-                Transaction.transaction_date <= cycle["end"],
+                Transaction.transaction_date >= from_date,
+                Transaction.transaction_date <= to_date,
             ).order_by(Transaction.transaction_date)
         ).all()
 
         by_date: dict[date, list] = defaultdict(list)
-        for t in txs_in_cycle:
+        for t in txs_in_range:
             by_date[t.transaction_date].append(t)
 
         result = []
-        current = cycle["start"]
-        while current <= cycle["end"]:
+        current = from_date
+        while current <= to_date:
             for t in by_date.get(current, []):
                 balance += t.amount if t.transaction_type == TypeTransaction.CREDIT else -t.amount
             result.append(DailyBalancePoint(
@@ -200,6 +197,11 @@ class StatService:
             current += timedelta(days=1)
 
         return result
+
+    @staticmethod
+    def daily_balance_for_month(session: Session, account: Account, year: int, month: int) -> list[DailyBalancePoint]:
+        cycle = get_budget_cycle_for_month(year, month, account.start_day)
+        return StatService.balance_for_range(session, account, cycle["start"], cycle["end"])
 
     @staticmethod
     def all_transactions(session: Session, account: Account, year: int, month: int) -> list[TransactionStat]:

@@ -159,6 +159,11 @@
         "no_subpot": "No sub-pot",
         "no_subpot_expenses": "Expenses without sub-pot",
         "stacked_by_subpot": "Expenses by sub-pot (detail)",
+        "view_day": "Day",
+        "view_month": "Month",
+        "view_year": "Year",
+        "sort_date": "Date",
+        "sort_amount": "Amount",
         "no_data": "No data",
         "current_month": "Current month"
     },

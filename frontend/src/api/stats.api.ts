@@ -28,6 +28,10 @@ export function getDailyBalance(accountId: string, year: number, month: number):
   return apiClient.get(`/stats/accounts/${accountId}/daily-balance?year=${year}&month=${month}`);
 }
 
+export function getBalanceRange(accountId: string, fromDate: string, toDate: string): Promise<DailyBalancePoint[]> {
+  return apiClient.get(`/stats/accounts/${accountId}/balance-range?from_date=${fromDate}&to_date=${toDate}`);
+}
+
 export function getMonthlySummary(accountId: string): Promise<MonthlySummaryPoint[]> {
   return apiClient.get(`/stats/accounts/${accountId}/monthly`);
 }

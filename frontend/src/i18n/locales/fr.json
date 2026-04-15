@@ -159,6 +159,11 @@
     "no_subpot": "Sans sous-pot",
     "no_subpot_expenses": "Dépenses sans sous-pot",
     "stacked_by_subpot": "Dépenses par sous-pot (détail)",
+    "view_day": "Jour",
+    "view_month": "Mois",
+    "view_year": "Année",
+    "sort_date": "Date",
+    "sort_amount": "Valeur",
     "no_data": "Aucune donnée",
     "current_month": "Mois en cours"
   },

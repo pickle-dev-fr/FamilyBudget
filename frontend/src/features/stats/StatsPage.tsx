@@ -1,38 +1,64 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { usePersistedState } from "@/hooks/usePersistedState"
 import { getAccounts, type Account } from "@/api/accounts.api"
 import { getPeriode } from "@/api/utils.api"
 import {
-    getDailyBalance, getMonthlySummary, getBySubPot, getHeatmap, getTopTransactions,
-    type DailyBalancePoint, type MonthlySummaryPoint, type SubPotAmount, type HeatmapPoint, type TransactionStat,
+    getBalanceRange, getBalanceHistory, getMonthlySummary, getBySubPot, getHeatmap, getTopTransactions,
+    type BalancePoint, type DailyBalancePoint, type MonthlySummaryPoint, type SubPotAmount,
+    type HeatmapPoint, type TransactionStat,
 } from "@/api/stats.api"
 import { formatAmount } from "@/utils"
 import { useCurrency } from "@/auth/currency"
 import {
     ResponsiveContainer, ComposedChart, Line, Area,
-    XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, PieChart, Pie, Cell, Legend,
+    XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine,
+    PieChart, Pie, Cell, Legend,
     BarChart, Bar,
 } from "recharts"
 
+// ─── Couleurs sous-pots ────────────────────────────────────────────────────
 const SUB_POT_HUES = [145, 200, 30, 270, 160, 0, 45, 310, 180, 60, 240, 15]
-
-function subPotBaseColor(index: number): string {
-    const hue = SUB_POT_HUES[index % SUB_POT_HUES.length]
-    return `hsl(${hue}, 50%, 45%)`
+function subPotBaseColor(i: number) { return `hsl(${SUB_POT_HUES[i % SUB_POT_HUES.length]}, 50%, 45%)` }
+function subPotTxColor(si: number, ti: number, max: number) {
+    const h = SUB_POT_HUES[si % SUB_POT_HUES.length]
+    return `hsl(${h}, 55%, ${30 + (ti / Math.max(max - 1, 1)) * 30}%)`
 }
 
-function subPotTxColor(subPotIndex: number, txIndex: number, maxTx: number): string {
-    const hue = SUB_POT_HUES[subPotIndex % SUB_POT_HUES.length]
-    const lightness = 30 + (txIndex / Math.max(maxTx - 1, 1)) * 30
-    return `hsl(${hue}, 55%, ${lightness}%)`
+// ─── Helpers date ──────────────────────────────────────────────────────────
+function todayStr() {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+function addDaysToStr(dateStr: string, n: number): string {
+    const d = new Date(dateStr + "T00:00:00")
+    d.setDate(d.getDate() + n)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+function addMonthsTo(y: number, m: number, delta: number): [number, number] {
+    let nm = m + delta, ny = y
+    while (nm > 12) { nm -= 12; ny++ }
+    while (nm < 1) { nm += 12; ny-- }
+    return [ny, nm]
+}
+function lastDayOfMonth(y: number, m: number) { return new Date(y, m, 0).getDate() }
+function formatDayLabel(dateStr: string) {
+    const d = new Date(dateStr + "T00:00:00")
+    return `${d.getDate()} ${d.toLocaleString("default", { month: "short" })}`
+}
+function monthLabel(y: number, m: number) {
+    return new Date(y, m - 1).toLocaleString("default", { month: "short", year: "2-digit" })
 }
 
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+// ─── Composants UI ────────────────────────────────────────────────────────
+function SectionCard({ title, headerRight, children }: {
+    title: string; headerRight?: React.ReactNode; children: React.ReactNode
+}) {
     return (
         <div className="card bg-base-100 border border-base-300 rounded-lg overflow-hidden">
-            <div className="bg-base-200 px-4 py-3 border-b border-base-300">
+            <div className="bg-base-200 px-4 py-3 border-b border-base-300 flex items-center justify-between gap-2">
                 <h2 className="font-semibold text-sm uppercase tracking-wide">{title}</h2>
+                {headerRight}
             </div>
             <div className="p-4">{children}</div>
         </div>
@@ -51,7 +77,6 @@ function StatCard({ label, value, color }: { label: string; value: string; color
 function CalendarHeatmap({ data, year }: { data: HeatmapPoint[]; year: number }) {
     const byDate = Object.fromEntries(data.map(d => [d.date, d]))
     const maxAmount = data.length ? Math.max(...data.map(d => d.amount)) : 1
-
     return (
         <div className="flex flex-col gap-1.5 overflow-x-auto">
             {Array.from({ length: 12 }, (_, mi) => {
@@ -62,14 +87,14 @@ function CalendarHeatmap({ data, year }: { data: HeatmapPoint[]; year: number })
                         <span className="text-xs opacity-50 w-8 shrink-0">{monthName}</span>
                         <div className="flex gap-0.5">
                             {Array.from({ length: daysInMonth }, (_, d) => {
-                                const dateStr = `${year}-${String(mi + 1).padStart(2, "0")}-${String(d + 1).padStart(2, "0")}`
-                                const point = byDate[dateStr]
+                                const ds = `${year}-${String(mi + 1).padStart(2, "0")}-${String(d + 1).padStart(2, "0")}`
+                                const point = byDate[ds]
                                 const intensity = point ? Math.max(0.15, point.amount / maxAmount) : 0
                                 return (
                                     <div
                                         key={d}
                                         className="w-4 h-4 rounded-sm tooltip"
-                                        data-tip={point ? `${dateStr}: ${formatAmount(point.amount)} (${point.count} tx)` : dateStr}
+                                        data-tip={point ? `${ds}: ${formatAmount(point.amount)} (${point.count} tx)` : ds}
                                         style={{ backgroundColor: point ? `rgba(96,165,250,${intensity})` : "rgba(100,100,100,0.1)" }}
                                     />
                                 )
@@ -82,59 +107,73 @@ function CalendarHeatmap({ data, year }: { data: HeatmapPoint[]; year: number })
     )
 }
 
-function formatDayLabel(dateStr: string): string {
-    const d = new Date(dateStr + "T00:00:00")
-    return `${d.getDate()} ${d.toLocaleString("default", { month: "short" })}`
-}
+// ─── Page principale ──────────────────────────────────────────────────────
+type BalanceView = "day" | "month" | "year"
+type TxSortKey = "date" | "amount"
+type TxSortDir = "asc" | "desc"
 
 export default function StatsPage() {
     const { t } = useTranslation()
     const { currencySymbol } = useCurrency()
 
+    // ── Sélection compte / mois ──
     const [accounts, setAccounts] = useState<Account[]>([])
     const [selectedAccountId, setSelectedAccountId] = usePersistedState<string>("last_account_id", "")
     const [currentRefMonth, setCurrentRefMonth] = usePersistedState<{ year: number; month: number } | null>(
         `last_month_${selectedAccountId}`, null
     )
 
-    const [dailyBalance, setDailyBalance] = useState<DailyBalancePoint[]>([])
+    // ── Données stats mensuelles ──
+    const [balanceHistory, setBalanceHistory] = useState<BalancePoint[]>([])
     const [monthlySummary, setMonthlySummary] = useState<MonthlySummaryPoint[]>([])
     const [bySubPot, setBySubPot] = useState<SubPotAmount[]>([])
     const [heatmap, setHeatmap] = useState<HeatmapPoint[]>([])
     const [allTransactions, setAllTransactions] = useState<TransactionStat[]>([])
 
+    // ── Graphique évolution du solde ──
+    const [balanceView, setBalanceView] = useState<BalanceView>("day")
+    const [dayCenter, setDayCenter] = useState<string>(todayStr)
+    const [monthCenter, setMonthCenter] = useState<{ year: number; month: number } | null>(null)
+    const [balanceYear, setBalanceYear] = useState(() => new Date().getFullYear())
+    const [balanceViewData, setBalanceViewData] = useState<DailyBalancePoint[]>([])
+
+    // ── Tri des transactions ──
+    const [txSortKey, setTxSortKey] = useState<TxSortKey>("date")
+    const [txSortDir, setTxSortDir] = useState<TxSortDir>("desc")
+
+    // ── Chargement des comptes ──
     useEffect(() => {
-        async function load() {
-            const data = await getAccounts()
+        getAccounts().then(data => {
             setAccounts(data)
-            if (data.length > 0) {
-                const valid = data.find((a: Account) => a.id === selectedAccountId)
-                if (!valid) setSelectedAccountId(data[0].id)
-            }
-        }
-        load()
+            if (data.length > 0 && !data.find((a: Account) => a.id === selectedAccountId))
+                setSelectedAccountId(data[0].id)
+        })
     }, [])
 
+    // ── Période courante ──
     useEffect(() => {
-        async function loadPeriode() {
-            if (!selectedAccountId || currentRefMonth) return
-            const period = await getPeriode(selectedAccountId)
-            setCurrentRefMonth({ year: period.year, month: period.month })
-        }
-        loadPeriode()
+        if (!selectedAccountId || currentRefMonth) return
+        getPeriode(selectedAccountId).then(p => setCurrentRefMonth({ year: p.year, month: p.month }))
     }, [selectedAccountId])
 
+    // ── Initialiser le centre du graphique mois ──
+    useEffect(() => {
+        if (currentRefMonth && !monthCenter)
+            setMonthCenter(currentRefMonth)
+    }, [currentRefMonth])
+
+    // ── Données mensuelles (changement compte / mois) ──
     useEffect(() => {
         if (!selectedAccountId || !currentRefMonth) return
         const { year, month } = currentRefMonth
         Promise.all([
-            getDailyBalance(selectedAccountId, year, month),
+            getBalanceHistory(selectedAccountId),
             getMonthlySummary(selectedAccountId),
             getBySubPot(selectedAccountId, year, month),
             getHeatmap(selectedAccountId, year),
             getTopTransactions(selectedAccountId, year, month),
-        ]).then(([db, ms, bsp, hm, tt]) => {
-            setDailyBalance(db)
+        ]).then(([bh, ms, bsp, hm, tt]) => {
+            setBalanceHistory(bh)
             setMonthlySummary(ms)
             setBySubPot(bsp)
             setHeatmap(hm)
@@ -142,50 +181,130 @@ export default function StatsPage() {
         })
     }, [selectedAccountId, currentRefMonth])
 
+    // ── Données graphique solde (changement vue / navigation) ──
+    useEffect(() => {
+        if (!selectedAccountId) return
+        if (balanceView === "month" && !monthCenter) return
+
+        let from: string, to: string
+        if (balanceView === "day") {
+            from = addDaysToStr(dayCenter, -15)
+            to = addDaysToStr(dayCenter, +15)
+        } else if (balanceView === "month" && monthCenter) {
+            const [fy, fm] = addMonthsTo(monthCenter.year, monthCenter.month, -6)
+            const [ty, tm] = addMonthsTo(monthCenter.year, monthCenter.month, +6)
+            from = `${fy}-${String(fm).padStart(2, "0")}-01`
+            to = `${ty}-${String(tm).padStart(2, "0")}-${String(lastDayOfMonth(ty, tm)).padStart(2, "0")}`
+        } else {
+            from = `${balanceYear}-01-01`
+            to = `${balanceYear}-12-31`
+        }
+
+        getBalanceRange(selectedAccountId, from, to).then(setBalanceViewData)
+    }, [selectedAccountId, balanceView, dayCenter, monthCenter, balanceYear])
+
+    // ── Navigation mois de stats ──
     async function goToCurrentMonth() {
         if (!selectedAccountId) return
-        const period = await getPeriode(selectedAccountId)
-        setCurrentRefMonth({ year: period.year, month: period.month })
+        const p = await getPeriode(selectedAccountId)
+        setCurrentRefMonth({ year: p.year, month: p.month })
     }
-
-    const changeMonth = (delta: number) => {
+    function changeMonth(delta: number) {
         let { year, month } = currentRefMonth!
         month += delta
-        if (month < 1) { month = 12; year -= 1 }
-        else if (month > 12) { month = 1; year += 1 }
+        if (month < 1) { month = 12; year-- }
+        else if (month > 12) { month = 1; year++ }
         setCurrentRefMonth({ year, month })
     }
 
+    // ── Navigation graphique solde ──
+    function navigateBalance(delta: number) {
+        if (balanceView === "day") setDayCenter(d => addDaysToStr(d, delta * 7))
+        else if (balanceView === "month" && monthCenter) {
+            const [ny, nm] = addMonthsTo(monthCenter.year, monthCenter.month, delta)
+            setMonthCenter({ year: ny, month: nm })
+        } else setBalanceYear(y => y + delta)
+    }
+    function resetBalanceToNow() {
+        setDayCenter(todayStr())
+        if (currentRefMonth) setMonthCenter(currentRefMonth)
+        setBalanceYear(new Date().getFullYear())
+    }
+
+    // ── Label période graphique ──
+    const balancePeriodLabel = useMemo(() => {
+        if (balanceView === "day") {
+            return `${formatDayLabel(addDaysToStr(dayCenter, -15))} — ${formatDayLabel(addDaysToStr(dayCenter, +15))}`
+        } else if (balanceView === "month" && monthCenter) {
+            const [fy, fm] = addMonthsTo(monthCenter.year, monthCenter.month, -6)
+            const [ty, tm] = addMonthsTo(monthCenter.year, monthCenter.month, +6)
+            return `${monthLabel(fy, fm)} — ${monthLabel(ty, tm)}`
+        } else return String(balanceYear)
+    }, [balanceView, dayCenter, monthCenter, balanceYear])
+
+    // ── Données chart solde ──
+    const balanceChartData = useMemo(() => {
+        if (balanceView === "day") {
+            return balanceViewData.map((p, i) => {
+                const isJunction = !p.is_future && balanceViewData[i + 1]?.is_future
+                return {
+                    label: formatDayLabel(p.date),
+                    balance: !p.is_future ? p.balance : undefined,
+                    balanceFuture: (p.is_future || isJunction) ? p.balance : undefined,
+                }
+            })
+        }
+        // Vues mois / année : agréger par mois (dernier point du mois)
+        const monthly = new Map<string, DailyBalancePoint>()
+        for (const p of balanceViewData) monthly.set(p.date.slice(0, 7), p)
+        return [...monthly.entries()].sort().map(([key, p], i, arr) => {
+            const isJunction = !p.is_future && arr[i + 1]?.[1].is_future
+            const [y, m] = key.split("-").map(Number)
+            return {
+                label: monthLabel(y, m),
+                balance: !p.is_future ? p.balance : undefined,
+                balanceFuture: (p.is_future || isJunction) ? p.balance : undefined,
+            }
+        })
+    }, [balanceViewData, balanceView])
+
+    const allBalances = balanceViewData.map(p => p.balance)
+    const bMin = allBalances.length ? Math.min(...allBalances) : 0
+    const bMax = allBalances.length ? Math.max(...allBalances) : 0
+    const bPad = (Math.abs(bMax - bMin) || 100) * 0.08
+
+    // ── Résumé mois courant ──
     const currentSummary = currentRefMonth
         ? monthlySummary.find(m => m.year === currentRefMonth.year && m.month === currentRefMonth.month)
         : null
-
-    // Dernier point passé pour la carte "Solde"
-    const lastPastBalance = dailyBalance.filter(p => !p.is_future).at(-1)?.balance ?? null
-
+    const currentMonthBalance = currentRefMonth
+        ? balanceHistory.find(m => m.year === currentRefMonth.year && m.month === currentRefMonth.month)
+        : null
     const monthTitle = currentRefMonth
         ? new Date(currentRefMonth.year, currentRefMonth.month - 1).toLocaleString("default", { month: "long", year: "numeric" })
         : ""
 
-    // Données graphique solde journalier : passé (trait plein) + futur (pointillé)
-    const dailyChartData = dailyBalance.map(p => ({
-        label: formatDayLabel(p.date),
-        balance: !p.is_future ? p.balance : undefined,
-        // point de jonction : aujourd'hui apparaît dans les deux séries
-        balanceFuture: p.is_future || (!p.is_future && dailyBalance[dailyBalance.indexOf(p) + 1]?.is_future)
-            ? p.balance
-            : undefined,
-    }))
+    // ── Transactions triées ──
+    const sortedTransactions = useMemo(() => {
+        return [...allTransactions].sort((a, b) => {
+            const mul = txSortDir === "asc" ? 1 : -1
+            if (txSortKey === "date") return mul * a.date.localeCompare(b.date)
+            return mul * (a.amount - b.amount)
+        })
+    }, [allTransactions, txSortKey, txSortDir])
 
-    const allBalances = dailyBalance.map(p => p.balance)
-    const balanceMin = allBalances.length ? Math.min(...allBalances) : 0
-    const balanceMax = allBalances.length ? Math.max(...allBalances) : 0
-    const balancePad = Math.abs(balanceMax - balanceMin) * 0.08 || 10
+    function toggleSort(key: TxSortKey) {
+        if (txSortKey === key) setTxSortDir(d => d === "asc" ? "desc" : "asc")
+        else { setTxSortKey(key); setTxSortDir("desc") }
+    }
 
-    // Transactions sans sous-pot (dépenses directes)
-    const noSubPotTx = allTransactions.filter(tx => tx.sub_pot === "—" && tx.transaction_type === "DEBIT")
+    // ── Dépenses sans sous-pot ──
+    const noSubPotTx = useMemo(() =>
+        allTransactions.filter(tx => tx.sub_pot === "—" && tx.transaction_type === "DEBIT"),
+        [allTransactions]
+    )
 
-    // Stacked bar : transactions DEBIT groupées par sous-pot
+    // ── Stacked bar (dépenses DEBIT par sous-pot, les plus grosses en haut) ──
     const debitTx = allTransactions.filter(tx => tx.transaction_type === "DEBIT")
     const subPotGroups = new Map<string, { pot: string; sub_pot: string; txs: TransactionStat[] }>()
     for (const tx of debitTx) {
@@ -193,8 +312,9 @@ export default function StatsPage() {
         if (!subPotGroups.has(key)) subPotGroups.set(key, { pot: tx.pot, sub_pot: tx.sub_pot, txs: [] })
         subPotGroups.get(key)!.txs.push(tx)
     }
+    // Tri croissant → recharts affiche le dernier en haut, donc le plus gros en haut
     const sortedGroups = [...subPotGroups.values()].sort(
-        (a, b) => b.txs.reduce((s, t) => s + t.amount, 0) - a.txs.reduce((s, t) => s + t.amount, 0)
+        (a, b) => a.txs.reduce((s, t) => s + t.amount, 0) - b.txs.reduce((s, t) => s + t.amount, 0)
     )
     const maxTxPerSubPot = sortedGroups.length ? Math.max(...sortedGroups.map(g => g.txs.length)) : 0
     const stackedData = sortedGroups.map(({ pot, sub_pot, txs }, j) => {
@@ -206,6 +326,7 @@ export default function StatsPage() {
         return entry
     })
 
+    // ─── Render ────────────────────────────────────────────────────────────
     return (
         <div className="flex flex-col gap-6 max-w-5xl">
 
@@ -226,9 +347,9 @@ export default function StatsPage() {
                 </div>
             </div>
 
-            {/* Cartes synthèse du mois */}
+            {/* Cartes synthèse */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <StatCard label={t("stats.balance")} value={`${formatAmount(lastPastBalance ?? undefined)} ${currencySymbol}`} />
+                <StatCard label={t("stats.balance")} value={`${formatAmount(currentMonthBalance?.balance)} ${currencySymbol}`} />
                 <StatCard label={t("stats.income")} value={`${formatAmount(currentSummary?.income)} ${currencySymbol}`} color="text-success" />
                 <StatCard label={t("stats.expenses")} value={`${formatAmount(currentSummary?.expenses)} ${currencySymbol}`} color="text-error" />
                 <StatCard
@@ -238,15 +359,38 @@ export default function StatsPage() {
                 />
             </div>
 
-            {/* Évolution du solde jour par jour (passé plein, futur pointillé) */}
-            <SectionCard title={t("stats.balance_history")}>
-                {dailyChartData.length === 0 ? (
+            {/* Évolution du solde — vues Jour / Mois / Année */}
+            <SectionCard
+                title={t("stats.balance_history")}
+                headerRight={
+                    <div className="flex items-center gap-1">
+                        {(["day", "month", "year"] as BalanceView[]).map(v => (
+                            <button
+                                key={v}
+                                className={`btn btn-xs ${balanceView === v ? "btn-primary" : "btn-ghost"}`}
+                                onClick={() => setBalanceView(v)}
+                            >
+                                {t(`stats.view_${v}`)}
+                            </button>
+                        ))}
+                    </div>
+                }
+            >
+                {/* Navigation de période */}
+                <div className="flex items-center justify-between mb-3 gap-2">
+                    <button className="btn btn-sm btn-ghost" onClick={() => navigateBalance(-1)}>{"<"}</button>
+                    <span className="text-xs opacity-60 text-center">{balancePeriodLabel}</span>
+                    <button className="btn btn-sm btn-ghost" onClick={() => navigateBalance(1)}>{">"}</button>
+                    <button className="btn btn-xs btn-ghost" onClick={resetBalanceToNow} title="Aujourd'hui">⌂</button>
+                </div>
+
+                {balanceChartData.length === 0 ? (
                     <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
                 ) : (
                     <ResponsiveContainer width="100%" height={220}>
-                        <ComposedChart data={dailyChartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                        <ComposedChart data={balanceChartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                             <defs>
-                                <linearGradient id="balanceGrad" x1="0" y1="0" x2="0" y2="1">
+                                <linearGradient id="bGrad" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.25} />
                                     <stop offset="95%" stopColor="#60a5fa" stopOpacity={0} />
                                 </linearGradient>
@@ -257,27 +401,27 @@ export default function StatsPage() {
                                 tick={{ fontSize: 11 }}
                                 tickFormatter={v => formatAmount(v)}
                                 width={70}
-                                domain={[Math.floor(balanceMin - balancePad), Math.ceil(balanceMax + balancePad)]}
+                                domain={[Math.floor(bMin - bPad), Math.ceil(bMax + bPad)]}
                             />
                             <Tooltip
                                 formatter={(v: number, name: string) => [
                                     `${formatAmount(v)} ${currencySymbol}`,
-                                    name === "balanceFuture" ? `${t("stats.balance")} (${t("stats.planned")})` : t("stats.balance"),
+                                    name === "balanceFuture"
+                                        ? `${t("stats.balance")} (${t("stats.planned")})`
+                                        : t("stats.balance"),
                                 ]}
                             />
                             <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
-                            {/* Zone sous la courbe passée */}
                             <Area
                                 type="monotone"
                                 dataKey="balance"
                                 stroke="#60a5fa"
                                 strokeWidth={2}
-                                fill="url(#balanceGrad)"
+                                fill="url(#bGrad)"
                                 dot={false}
                                 connectNulls={false}
                                 isAnimationActive={false}
                             />
-                            {/* Courbe future en pointillé */}
                             <Line
                                 type="monotone"
                                 dataKey="balanceFuture"
@@ -306,10 +450,8 @@ export default function StatsPage() {
                                     data={bySubPot}
                                     dataKey="amount"
                                     nameKey="sub_pot"
-                                    cx="50%"
-                                    cy="45%"
-                                    innerRadius={55}
-                                    outerRadius={85}
+                                    cx="50%" cy="45%"
+                                    innerRadius={55} outerRadius={85}
                                     paddingAngle={2}
                                 >
                                     {bySubPot.map((_, i) => <Cell key={i} fill={subPotBaseColor(i)} />)}
@@ -321,12 +463,30 @@ export default function StatsPage() {
                     )}
                 </SectionCard>
 
-                <SectionCard title={t("stats.monthly_transactions")}>
-                    {allTransactions.length === 0 ? (
+                <SectionCard
+                    title={t("stats.monthly_transactions")}
+                    headerRight={
+                        <div className="flex items-center gap-1">
+                            {(["date", "amount"] as TxSortKey[]).map(k => (
+                                <button
+                                    key={k}
+                                    className={`btn btn-xs ${txSortKey === k ? "btn-primary" : "btn-ghost"}`}
+                                    onClick={() => toggleSort(k)}
+                                >
+                                    {t(`stats.sort_${k}`)}
+                                    {txSortKey === k && (
+                                        <span className="ml-0.5">{txSortDir === "asc" ? "↑" : "↓"}</span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    }
+                >
+                    {sortedTransactions.length === 0 ? (
                         <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
                     ) : (
                         <div className="flex flex-col divide-y divide-base-300 max-h-72 overflow-y-auto">
-                            {allTransactions.map((tx, i) => (
+                            {sortedTransactions.map((tx, i) => (
                                 <div key={i} className="flex items-center justify-between py-2 gap-2">
                                     <div className="flex flex-col min-w-0">
                                         <div className="flex items-center gap-1.5">
@@ -350,7 +510,7 @@ export default function StatsPage() {
 
             </div>
 
-            {/* Stacked bar : dépenses par sous-pot (détail) */}
+            {/* Stacked bar : dépenses par sous-pot (plus grosses en haut) */}
             <SectionCard title={t("stats.stacked_by_subpot")}>
                 {stackedData.length === 0 ? (
                     <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
@@ -367,18 +527,17 @@ export default function StatsPage() {
                             <Tooltip
                                 content={({ active, payload, label }) => {
                                     if (!active || !payload?.length) return null
-                                    const segments = payload.filter(p => (p.value as number) > 0)
-                                    const total = segments.reduce((s, p) => s + (p.value as number), 0)
-                                    const subPotIdx = (segments[0]?.payload as Record<string, unknown>)?._subPotIdx as number ?? 0
+                                    const segs = payload.filter(p => (p.value as number) > 0)
+                                    const total = segs.reduce((s, p) => s + (p.value as number), 0)
+                                    const si = (segs[0]?.payload as Record<string, unknown>)?._subPotIdx as number ?? 0
                                     return (
                                         <div className="bg-base-200 border border-base-300 rounded p-2 text-xs shadow-lg">
                                             <p className="font-semibold mb-1">{label} — {formatAmount(total)} {currencySymbol}</p>
-                                            {segments.map((p, i) => {
-                                                const txIdx = parseInt((p.dataKey as string).replace("tx_", ""))
-                                                const motif = (p.payload as Record<string, unknown>)[`motif_${txIdx}`] as string || "—"
-                                                const color = subPotTxColor(subPotIdx, txIdx, maxTxPerSubPot)
+                                            {segs.map((p, i) => {
+                                                const ti = parseInt((p.dataKey as string).replace("tx_", ""))
+                                                const motif = (p.payload as Record<string, unknown>)[`motif_${ti}`] as string || "—"
                                                 return (
-                                                    <p key={i} style={{ color }}>
+                                                    <p key={i} style={{ color: subPotTxColor(si, ti, maxTxPerSubPot) }}>
                                                         {motif} : {formatAmount(p.value as number)} {currencySymbol}
                                                     </p>
                                                 )

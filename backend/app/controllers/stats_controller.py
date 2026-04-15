@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session
 from typing import Optional
+from datetime import date as DateType
 
 from app.database import get_session
 from app.security.dependencies import get_current_user
@@ -57,6 +58,18 @@ def get_daily_balance(
 ):
     account = _get_account(session, account_id, current_user)
     return StatService.daily_balance_for_month(session, account, year, month)
+
+
+@router.get("/accounts/{account_id}/balance-range", response_model=list[DailyBalancePoint])
+def get_balance_range(
+    account_id: str,
+    from_date: DateType = Query(...),
+    to_date: DateType = Query(...),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    account = _get_account(session, account_id, current_user)
+    return StatService.balance_for_range(session, account, from_date, to_date)
 
 
 @router.get("/accounts/{account_id}/by-pot", response_model=list[PotAmount])
