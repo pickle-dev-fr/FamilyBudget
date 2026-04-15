@@ -88,7 +88,7 @@ def update_account(
     user=Depends(get_current_user),
 ):
     try:
-        _check_account_owner(session=session, account_id=account_id, user=current_user)
+        _check_account_owner(session=session, account_id=account_id, user=user)
         return AccountService.update(
             session=session,
             account_id=account_id,
