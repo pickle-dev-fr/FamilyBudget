@@ -91,6 +91,7 @@ def update_account(
         _check_account_owner(session=session, account_id=account_id, user=user)
         return AccountService.update(
             session=session,
+            user=user,
             account_id=account_id,
             data=payload,
         )
