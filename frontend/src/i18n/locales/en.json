@@ -154,6 +154,10 @@
         "heatmap": "Spending heatmap",
         "top_subpots": "Top sub-pots",
         "top_transactions": "Month transactions",
+        "monthly_transactions": "Month transactions",
+        "planned": "Planned",
+        "no_subpot": "No sub-pot",
+        "no_subpot_expenses": "Expenses without sub-pot",
         "stacked_by_subpot": "Expenses by sub-pot (detail)",
         "no_data": "No data",
         "current_month": "Current month"

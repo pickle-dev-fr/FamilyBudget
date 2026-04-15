@@ -4,17 +4,17 @@ import { usePersistedState } from "@/hooks/usePersistedState"
 import { getAccounts, type Account } from "@/api/accounts.api"
 import { getPeriode } from "@/api/utils.api"
 import {
-    getBalanceHistory, getMonthlySummary, getBySubPot, getHeatmap, getTopTransactions,
-    type BalancePoint, type MonthlySummaryPoint, type SubPotAmount, type HeatmapPoint, type TransactionStat,
+    getDailyBalance, getMonthlySummary, getBySubPot, getHeatmap, getTopTransactions,
+    type DailyBalancePoint, type MonthlySummaryPoint, type SubPotAmount, type HeatmapPoint, type TransactionStat,
 } from "@/api/stats.api"
 import { formatAmount } from "@/utils"
 import { useCurrency } from "@/auth/currency"
 import {
-    ResponsiveContainer, LineChart, Line, ComposedChart, BarChart, Bar, XAxis, YAxis,
-    CartesianGrid, Tooltip, Legend, ReferenceLine, PieChart, Pie, Cell,
+    ResponsiveContainer, ComposedChart, Line, Area,
+    XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, PieChart, Pie, Cell, Legend,
+    BarChart, Bar,
 } from "recharts"
 
-// Teintes de base pour les sous-pots (HSL hue)
 const SUB_POT_HUES = [145, 200, 30, 270, 160, 0, 45, 310, 180, 60, 240, 15]
 
 function subPotBaseColor(index: number): string {
@@ -22,15 +22,10 @@ function subPotBaseColor(index: number): string {
     return `hsl(${hue}, 50%, 45%)`
 }
 
-// tx_0 = plus grande transaction = teinte la plus sombre
 function subPotTxColor(subPotIndex: number, txIndex: number, maxTx: number): string {
     const hue = SUB_POT_HUES[subPotIndex % SUB_POT_HUES.length]
     const lightness = 30 + (txIndex / Math.max(maxTx - 1, 1)) * 30
     return `hsl(${hue}, 55%, ${lightness}%)`
-}
-
-function monthLabel(year: number, month: number) {
-    return new Date(year, month - 1).toLocaleString("default", { month: "short", year: "2-digit" })
 }
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -87,6 +82,11 @@ function CalendarHeatmap({ data, year }: { data: HeatmapPoint[]; year: number })
     )
 }
 
+function formatDayLabel(dateStr: string): string {
+    const d = new Date(dateStr + "T00:00:00")
+    return `${d.getDate()} ${d.toLocaleString("default", { month: "short" })}`
+}
+
 export default function StatsPage() {
     const { t } = useTranslation()
     const { currencySymbol } = useCurrency()
@@ -97,11 +97,11 @@ export default function StatsPage() {
         `last_month_${selectedAccountId}`, null
     )
 
-    const [balanceHistory, setBalanceHistory] = useState<BalancePoint[]>([])
+    const [dailyBalance, setDailyBalance] = useState<DailyBalancePoint[]>([])
     const [monthlySummary, setMonthlySummary] = useState<MonthlySummaryPoint[]>([])
     const [bySubPot, setBySubPot] = useState<SubPotAmount[]>([])
     const [heatmap, setHeatmap] = useState<HeatmapPoint[]>([])
-    const [topTransactions, setTopTransactions] = useState<TransactionStat[]>([])
+    const [allTransactions, setAllTransactions] = useState<TransactionStat[]>([])
 
     useEffect(() => {
         async function load() {
@@ -128,17 +128,17 @@ export default function StatsPage() {
         if (!selectedAccountId || !currentRefMonth) return
         const { year, month } = currentRefMonth
         Promise.all([
-            getBalanceHistory(selectedAccountId),
+            getDailyBalance(selectedAccountId, year, month),
             getMonthlySummary(selectedAccountId),
             getBySubPot(selectedAccountId, year, month),
             getHeatmap(selectedAccountId, year),
             getTopTransactions(selectedAccountId, year, month),
-        ]).then(([bh, ms, bsp, hm, tt]) => {
-            setBalanceHistory(bh)
+        ]).then(([db, ms, bsp, hm, tt]) => {
+            setDailyBalance(db)
             setMonthlySummary(ms)
             setBySubPot(bsp)
             setHeatmap(hm)
-            setTopTransactions(tt)
+            setAllTransactions(tt)
         })
     }, [selectedAccountId, currentRefMonth])
 
@@ -148,7 +148,6 @@ export default function StatsPage() {
         setCurrentRefMonth({ year: period.year, month: period.month })
     }
 
-    // mois en 1-12 (cohérent avec l'API)
     const changeMonth = (delta: number) => {
         let { year, month } = currentRefMonth!
         month += delta
@@ -161,17 +160,35 @@ export default function StatsPage() {
         ? monthlySummary.find(m => m.year === currentRefMonth.year && m.month === currentRefMonth.month)
         : null
 
-    const currentBalance = currentRefMonth
-        ? balanceHistory.find(m => m.year === currentRefMonth.year && m.month === currentRefMonth.month)
-        : null
+    // Dernier point passé pour la carte "Solde"
+    const lastPastBalance = dailyBalance.filter(p => !p.is_future).at(-1)?.balance ?? null
 
     const monthTitle = currentRefMonth
         ? new Date(currentRefMonth.year, currentRefMonth.month - 1).toLocaleString("default", { month: "long", year: "numeric" })
         : ""
 
-    // Stacked bar : transactions groupées par sous-pot
+    // Données graphique solde journalier : passé (trait plein) + futur (pointillé)
+    const dailyChartData = dailyBalance.map(p => ({
+        label: formatDayLabel(p.date),
+        balance: !p.is_future ? p.balance : undefined,
+        // point de jonction : aujourd'hui apparaît dans les deux séries
+        balanceFuture: p.is_future || (!p.is_future && dailyBalance[dailyBalance.indexOf(p) + 1]?.is_future)
+            ? p.balance
+            : undefined,
+    }))
+
+    const allBalances = dailyBalance.map(p => p.balance)
+    const balanceMin = allBalances.length ? Math.min(...allBalances) : 0
+    const balanceMax = allBalances.length ? Math.max(...allBalances) : 0
+    const balancePad = Math.abs(balanceMax - balanceMin) * 0.08 || 10
+
+    // Transactions sans sous-pot (dépenses directes)
+    const noSubPotTx = allTransactions.filter(tx => tx.sub_pot === "—" && tx.transaction_type === "DEBIT")
+
+    // Stacked bar : transactions DEBIT groupées par sous-pot
+    const debitTx = allTransactions.filter(tx => tx.transaction_type === "DEBIT")
     const subPotGroups = new Map<string, { pot: string; sub_pot: string; txs: TransactionStat[] }>()
-    for (const tx of topTransactions) {
+    for (const tx of debitTx) {
         const key = `${tx.pot}§${tx.sub_pot}`
         if (!subPotGroups.has(key)) subPotGroups.set(key, { pot: tx.pot, sub_pot: tx.sub_pot, txs: [] })
         subPotGroups.get(key)!.txs.push(tx)
@@ -188,18 +205,6 @@ export default function StatsPage() {
         }
         return entry
     })
-
-    const chartData = monthlySummary.map(m => ({
-        label: monthLabel(m.year, m.month),
-        income: m.income,
-        expenses: m.expenses,
-        delta: m.delta,
-    }))
-
-    const balanceData = balanceHistory.map(m => ({
-        label: monthLabel(m.year, m.month),
-        balance: m.balance,
-    }))
 
     return (
         <div className="flex flex-col gap-6 max-w-5xl">
@@ -222,64 +227,91 @@ export default function StatsPage() {
             </div>
 
             {/* Cartes synthèse du mois */}
-            <div className="flex flex-col gap-2">
-                <p className="text-xs opacity-50 uppercase tracking-wide">{monthTitle}</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <StatCard label={t("stats.balance")} value={`${formatAmount(currentBalance?.balance)} ${currencySymbol}`} />
-                    <StatCard label={t("stats.income")} value={`${formatAmount(currentSummary?.income)} ${currencySymbol}`} color="text-success" />
-                    <StatCard label={t("stats.expenses")} value={`${formatAmount(currentSummary?.expenses)} ${currencySymbol}`} color="text-error" />
-                    <StatCard
-                        label={t("stats.delta")}
-                        value={`${formatAmount(currentSummary?.delta)} ${currencySymbol}`}
-                        color={(currentSummary?.delta ?? 0) >= 0 ? "text-success" : "text-error"}
-                    />
-                </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <StatCard label={t("stats.balance")} value={`${formatAmount(lastPastBalance ?? undefined)} ${currencySymbol}`} />
+                <StatCard label={t("stats.income")} value={`${formatAmount(currentSummary?.income)} ${currencySymbol}`} color="text-success" />
+                <StatCard label={t("stats.expenses")} value={`${formatAmount(currentSummary?.expenses)} ${currencySymbol}`} color="text-error" />
+                <StatCard
+                    label={t("stats.delta")}
+                    value={`${formatAmount(currentSummary?.delta)} ${currencySymbol}`}
+                    color={(currentSummary?.delta ?? 0) >= 0 ? "text-success" : "text-error"}
+                />
             </div>
 
-            {/* Évolution du solde (depuis le début) */}
+            {/* Évolution du solde jour par jour (passé plein, futur pointillé) */}
             <SectionCard title={t("stats.balance_history")}>
-                {balanceData.length === 0 ? (
+                {dailyChartData.length === 0 ? (
                     <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
                 ) : (
                     <ResponsiveContainer width="100%" height={220}>
-                        <LineChart data={balanceData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                        <ComposedChart data={dailyChartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                            <defs>
+                                <linearGradient id="balanceGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.25} />
+                                    <stop offset="95%" stopColor="#60a5fa" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
                             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                            <XAxis dataKey="label" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
-                            <YAxis tick={{ fontSize: 11 }} tickFormatter={v => formatAmount(v)} width={70} />
-                            <Tooltip formatter={(v: number) => [`${formatAmount(v)} ${currencySymbol}`, t("stats.balance")]} />
+                            <XAxis dataKey="label" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                            <YAxis
+                                tick={{ fontSize: 11 }}
+                                tickFormatter={v => formatAmount(v)}
+                                width={70}
+                                domain={[Math.floor(balanceMin - balancePad), Math.ceil(balanceMax + balancePad)]}
+                            />
+                            <Tooltip
+                                formatter={(v: number, name: string) => [
+                                    `${formatAmount(v)} ${currencySymbol}`,
+                                    name === "balanceFuture" ? `${t("stats.balance")} (${t("stats.planned")})` : t("stats.balance"),
+                                ]}
+                            />
                             <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
-                            <Line type="monotone" dataKey="balance" stroke="#60a5fa" strokeWidth={2} dot={balanceData.length <= 24 ? { r: 3 } : false} />
-                        </LineChart>
+                            {/* Zone sous la courbe passée */}
+                            <Area
+                                type="monotone"
+                                dataKey="balance"
+                                stroke="#60a5fa"
+                                strokeWidth={2}
+                                fill="url(#balanceGrad)"
+                                dot={false}
+                                connectNulls={false}
+                                isAnimationActive={false}
+                            />
+                            {/* Courbe future en pointillé */}
+                            <Line
+                                type="monotone"
+                                dataKey="balanceFuture"
+                                stroke="#60a5fa"
+                                strokeWidth={2}
+                                strokeDasharray="5 4"
+                                dot={false}
+                                connectNulls={false}
+                                isAnimationActive={false}
+                            />
+                        </ComposedChart>
                     </ResponsiveContainer>
                 )}
             </SectionCard>
 
-            {/* Entrées / Sorties / Delta */}
-            <SectionCard title={t("stats.monthly_summary")}>
-                <ResponsiveContainer width="100%" height={220}>
-                    <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                        <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                        <YAxis tick={{ fontSize: 11 }} tickFormatter={v => formatAmount(v)} width={70} />
-                        <Tooltip formatter={(v: number, name: string) => [`${formatAmount(v)} ${currencySymbol}`, t(`stats.${name}`)]} />
-                        <Legend formatter={(value) => t(`stats.${value}`)} />
-                        <Bar dataKey="income" fill="#34d399" radius={[3, 3, 0, 0]} />
-                        <Bar dataKey="expenses" fill="#f87171" radius={[3, 3, 0, 0]} />
-                        <Line type="monotone" dataKey="delta" stroke="#a78bfa" strokeWidth={2} dot={false} />
-                    </ComposedChart>
-                </ResponsiveContainer>
-            </SectionCard>
-
-            {/* Répartition par sous-pot */}
+            {/* Répartition par sous-pot + Transactions du mois */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
                 <SectionCard title={t("stats.by_subpot")}>
                     {bySubPot.length === 0 ? (
                         <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
                     ) : (
-                        <ResponsiveContainer width="100%" height={260}>
+                        <ResponsiveContainer width="100%" height={280}>
                             <PieChart>
-                                <Pie data={bySubPot} dataKey="amount" nameKey="sub_pot" cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={2}>
+                                <Pie
+                                    data={bySubPot}
+                                    dataKey="amount"
+                                    nameKey="sub_pot"
+                                    cx="50%"
+                                    cy="45%"
+                                    innerRadius={55}
+                                    outerRadius={85}
+                                    paddingAngle={2}
+                                >
                                     {bySubPot.map((_, i) => <Cell key={i} fill={subPotBaseColor(i)} />)}
                                 </Pie>
                                 <Tooltip formatter={(v: number, name: string) => [`${formatAmount(v)} ${currencySymbol}`, name]} />
@@ -289,18 +321,27 @@ export default function StatsPage() {
                     )}
                 </SectionCard>
 
-                <SectionCard title={t("stats.top_transactions")}>
-                    {topTransactions.length === 0 ? (
+                <SectionCard title={t("stats.monthly_transactions")}>
+                    {allTransactions.length === 0 ? (
                         <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
                     ) : (
-                        <div className="flex flex-col divide-y divide-base-300 max-h-64 overflow-y-auto">
-                            {topTransactions.map((tx, i) => (
+                        <div className="flex flex-col divide-y divide-base-300 max-h-72 overflow-y-auto">
+                            {allTransactions.map((tx, i) => (
                                 <div key={i} className="flex items-center justify-between py-2 gap-2">
                                     <div className="flex flex-col min-w-0">
-                                        <span className="text-sm font-medium truncate">{tx.motif || "—"}</span>
-                                        <span className="text-xs opacity-50">{tx.pot} · {tx.sub_pot} · {tx.date}</span>
+                                        <div className="flex items-center gap-1.5">
+                                            {tx.is_planned && (
+                                                <span className="badge badge-xs badge-warning shrink-0">{t("stats.planned")}</span>
+                                            )}
+                                            <span className="text-sm font-medium truncate">{tx.motif || "—"}</span>
+                                        </div>
+                                        <span className="text-xs opacity-50">
+                                            {tx.date} · {tx.pot !== "—" ? `${tx.pot} › ${tx.sub_pot}` : t("stats.no_subpot")}
+                                        </span>
                                     </div>
-                                    <span className="text-sm font-semibold text-error shrink-0">-{formatAmount(tx.amount)} {currencySymbol}</span>
+                                    <span className={`text-sm font-semibold shrink-0 ${tx.transaction_type === "DEBIT" ? "text-error" : "text-success"}`}>
+                                        {tx.transaction_type === "DEBIT" ? "-" : "+"}{formatAmount(tx.amount)} {currencySymbol}
+                                    </span>
                                 </div>
                             ))}
                         </div>
@@ -309,7 +350,7 @@ export default function StatsPage() {
 
             </div>
 
-            {/* Stacked bar : transactions empilées par sous-pot */}
+            {/* Stacked bar : dépenses par sous-pot (détail) */}
             <SectionCard title={t("stats.stacked_by_subpot")}>
                 {stackedData.length === 0 ? (
                     <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
@@ -328,13 +369,13 @@ export default function StatsPage() {
                                     if (!active || !payload?.length) return null
                                     const segments = payload.filter(p => (p.value as number) > 0)
                                     const total = segments.reduce((s, p) => s + (p.value as number), 0)
-                                    const subPotIdx = (segments[0]?.payload as any)?._subPotIdx ?? 0
+                                    const subPotIdx = (segments[0]?.payload as Record<string, unknown>)?._subPotIdx as number ?? 0
                                     return (
                                         <div className="bg-base-200 border border-base-300 rounded p-2 text-xs shadow-lg">
                                             <p className="font-semibold mb-1">{label} — {formatAmount(total)} {currencySymbol}</p>
                                             {segments.map((p, i) => {
                                                 const txIdx = parseInt((p.dataKey as string).replace("tx_", ""))
-                                                const motif = (p.payload as any)[`motif_${txIdx}`] || "—"
+                                                const motif = (p.payload as Record<string, unknown>)[`motif_${txIdx}`] as string || "—"
                                                 const color = subPotTxColor(subPotIdx, txIdx, maxTxPerSubPot)
                                                 return (
                                                     <p key={i} style={{ color }}>
@@ -357,6 +398,25 @@ export default function StatsPage() {
                     </ResponsiveContainer>
                 )}
             </SectionCard>
+
+            {/* Dépenses sans sous-pot */}
+            {noSubPotTx.length > 0 && (
+                <SectionCard title={t("stats.no_subpot_expenses")}>
+                    <div className="flex flex-col divide-y divide-base-300 max-h-64 overflow-y-auto">
+                        {noSubPotTx.map((tx, i) => (
+                            <div key={i} className="flex items-center justify-between py-2 gap-2">
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-sm font-medium truncate">{tx.motif || "—"}</span>
+                                    <span className="text-xs opacity-50">{tx.date}</span>
+                                </div>
+                                <span className="text-sm font-semibold text-error shrink-0">
+                                    -{formatAmount(tx.amount)} {currencySymbol}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </SectionCard>
+            )}
 
             {/* Heatmap */}
             <SectionCard title={`${t("stats.heatmap")} ${currentRefMonth?.year ?? ""}`}>

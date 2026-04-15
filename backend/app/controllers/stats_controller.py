@@ -5,7 +5,7 @@ from typing import Optional
 from app.database import get_session
 from app.security.dependencies import get_current_user
 from app.services.stat_service import StatService
-from app.schemas.stats_schema import BalancePoint, MonthlySummaryPoint, PotAmount, SubPotAmount, HeatmapPoint, TransactionStat
+from app.schemas.stats_schema import BalancePoint, MonthlySummaryPoint, PotAmount, SubPotAmount, HeatmapPoint, TransactionStat, DailyBalancePoint
 from app.models import User, Account
 from app.i18n.messages import msg
 
@@ -45,6 +45,18 @@ def get_monthly_summary(
 ):
     account = _get_account(session, account_id, current_user)
     return StatService.monthly_summary(session, account)
+
+
+@router.get("/accounts/{account_id}/daily-balance", response_model=list[DailyBalancePoint])
+def get_daily_balance(
+    account_id: str,
+    year: int = Query(...),
+    month: int = Query(...),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    account = _get_account(session, account_id, current_user)
+    return StatService.daily_balance_for_month(session, account, year, month)
 
 
 @router.get("/accounts/{account_id}/by-pot", response_model=list[PotAmount])
