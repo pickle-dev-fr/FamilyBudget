@@ -151,9 +151,10 @@ export default function StatsPage() {
     // ── Chargement comptes ──
     useEffect(() => {
         getAccounts().then(data => {
-            setAccounts(data)
-            if (data.length > 0 && !data.find((a: Account) => a.id === selectedAccountId))
-                setSelectedAccountId(data[0].id)
+            const eligible = data.filter((a: Account) => a.account_type !== "INVESTMENT")
+            setAccounts(eligible)
+            if (eligible.length > 0 && !eligible.find((a: Account) => a.id === selectedAccountId))
+                setSelectedAccountId(eligible[0].id)
         })
     }, [])
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import PotsBoard from "./PotsBoard"
-import { getAccounts } from "@/api/accounts.api"
+import { getAccounts, type Account } from "@/api/accounts.api"
 import { createPot } from "@/api/pots.api"
 import { getPeriode } from "@/api/utils.api"
 import { useTranslation } from "react-i18next"
@@ -27,11 +27,12 @@ export default function PotsPage(): React.JSX.Element {
     useEffect(() => {
         async function load() {
             const data = await getAccounts()
-            setAccounts(data)
+            const eligible = data.filter((a: Account) => a.account_type === "NORMAL")
+            setAccounts(eligible)
 
-            if (data.length > 0) {
-                const valid = data.find((a: { id: string }) => a.id === selectedAccountId)
-                if (!valid) setSelectedAccountId(data[0].id)
+            if (eligible.length > 0) {
+                const valid = eligible.find((a: { id: string }) => a.id === selectedAccountId)
+                if (!valid) setSelectedAccountId(eligible[0].id)
             }
         }
 

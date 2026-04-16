@@ -10,7 +10,9 @@
     "name_required": "Le nom du compte est obligatoire.",
     "forbidden": "Accès interdit à ce compte.",
     "savings_goal_negative": "L'objectif d'épargne ne peut pas être négatif.",
-    "interest_rate_negative": "Le taux d'intérêt ne peut pas être négatif."
+    "interest_rate_negative": "Le taux d'intérêt ne peut pas être négatif.",
+    "investment_no_transactions": "Les comptes investissement n'ont pas de transactions.",
+    "no_pots": "Ce type de compte ne supporte pas les pots."
   },
   "investment_asset": {
     "not_found": "Actif introuvable.",

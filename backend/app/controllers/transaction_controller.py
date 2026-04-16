@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 from sqlmodel import Session, select
 from datetime import date
-from app.models import User, Account, Pot, Sub_Pot
+from app.models import User, Account, AccountType, Pot, Sub_Pot
 
 from app.database import get_session
 from app.schemas.transaction_schema import (
@@ -22,6 +22,11 @@ def _check_account_owner(session: Session, account_id: str, user: User) -> Accou
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=msg("account.not_found"),
+        )
+    if account.account_type == AccountType.INVESTMENT:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=msg("account.investment_no_transactions"),
         )
     return account
 

@@ -33,10 +33,11 @@ export default function TransactionsPage(): React.JSX.Element {
     useEffect(() => {
         async function loadAccounts() {
             const data = await getAccounts()
-            setAccounts(data)
-            if (data.length > 0) {
-                const valid = data.find((a: Account) => a.id === selectedAccountId)
-                if (!valid) setSelectedAccountId(data[0].id)
+            const eligible = data.filter((a: Account) => a.account_type !== "INVESTMENT")
+            setAccounts(eligible)
+            if (eligible.length > 0) {
+                const valid = eligible.find((a: Account) => a.id === selectedAccountId)
+                if (!valid) setSelectedAccountId(eligible[0].id)
             }
         }
         loadAccounts()

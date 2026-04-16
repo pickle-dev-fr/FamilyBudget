@@ -5,7 +5,7 @@ from typing import Optional
 
 from app.database import get_session
 from app.security.dependencies import get_current_user
-from app.models import User, Account
+from app.models import User, Account, AccountType
 from app.services.pot_service import PotService
 from app.schemas.pot_schema import PotCreate, PotRead, PotUpdate, ControlPotRead
 from app.schemas.reorder_schema import PotReorderPayload
@@ -26,6 +26,11 @@ def _check_account_owner(session: Session, account_id: str, user: User) -> Accou
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=msg("account.not_found"),
+        )
+    if account.account_type in (AccountType.INVESTMENT, AccountType.SAVINGS):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=msg("account.no_pots"),
         )
     return account
 

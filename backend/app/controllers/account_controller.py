@@ -1,3 +1,4 @@
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from sqlmodel import Session
 
@@ -10,8 +11,11 @@ from app.schemas.account_schema import (
 from app.schemas.reorder_schema import ReorderIds
 from app.security.dependencies import get_current_user
 from app.services.account_service import AccountService
+from app.services.price_update_service import update_investment_prices
 from app.i18n.messages import msg
-from app.models import User, Account
+from app.models import User, Account, AccountType, InvestmentAsset
+
+_PRICE_STALENESS = timedelta(minutes=15)
 
 router = APIRouter(
     prefix="/accounts",
@@ -105,15 +109,20 @@ def get_balance_by_account(
     current_user = Depends(get_current_user),
 ):
     _check_account_owner(session=session, account_id=account_id, user=current_user)
-    account = AccountService.get_by_id(
-        session=session,
-        account_id=account_id,
-    )
+    account = AccountService.get_by_id(session=session, account_id=account_id)
 
-    return AccountService.calculer_balance_account(
-        session=session,
-        account=account,
-    )
+    if account.account_type == AccountType.INVESTMENT:
+        now = datetime.now(timezone.utc)
+        stale = not account.assets or any(
+            a.last_price_update is None
+            or (now - a.last_price_update.replace(tzinfo=timezone.utc)) > _PRICE_STALENESS
+            for a in account.assets
+        )
+        if stale:
+            update_investment_prices(session, account_id=account_id)
+            session.refresh(account)
+
+    return AccountService.calculer_balance_account(session=session, account=account)
 
 @router.delete(
     "/{id}",

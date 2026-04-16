@@ -43,11 +43,12 @@ export default function RecurringPage() {
     useEffect(() => {
         async function loadAccounts() {
             const data = await getAccounts()
-            setAccounts(data)
+            const eligible = data.filter((a: Account) => a.account_type !== "INVESTMENT")
+            setAccounts(eligible)
 
-            if (data.length > 0) {
-                const valid = data.find((a: { id: string }) => a.id === selectedAccountId)
-                if (!valid) setSelectedAccountId(data[0].id)
+            if (eligible.length > 0) {
+                const valid = eligible.find((a: { id: string }) => a.id === selectedAccountId)
+                if (!valid) setSelectedAccountId(eligible[0].id)
             }
         }
 

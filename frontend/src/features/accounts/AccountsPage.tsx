@@ -37,6 +37,7 @@ export default function AccountsPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [balances, setBalances] = useState<Record<string, number>>({});
     const [isLoaded, setIsLoaded] = useState(false);
+    const [activeTab, setActiveTab] = useState<"NORMAL" | "SAVINGS" | "INVESTMENT">("NORMAL");
 
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
@@ -111,6 +112,8 @@ export default function AccountsPage() {
         return null;
     }
 
+    const filteredAccounts = accounts.filter(a => a.account_type === activeTab);
+
     return (
         <div className="page flex flex-col gap-6 p-4">
             {accounts.length === 0 && isLoaded && (
@@ -125,6 +128,22 @@ export default function AccountsPage() {
                 </button>
             </div>
 
+            <div role="tablist" className="tabs tabs-bordered mb-2">
+                {(["NORMAL", "SAVINGS", "INVESTMENT"] as const).map(tab => (
+                    <button
+                        key={tab}
+                        role="tab"
+                        className={`tab${activeTab === tab ? " tab-active" : ""}`}
+                        onClick={() => setActiveTab(tab)}
+                    >
+                        {t(`accounts.type_${tab.toLowerCase()}`)}
+                        <span className="ml-2 badge badge-sm">
+                            {accounts.filter(a => a.account_type === tab).length}
+                        </span>
+                    </button>
+                ))}
+            </div>
+
             <div className="card p-4">
                 <DndContext
                     sensors={sensors}
@@ -136,27 +155,27 @@ export default function AccountsPage() {
                             const oldIndex = prev.findIndex(c => c.id === active.id);
                             const newIndex = prev.findIndex(c => c.id === over.id);
                             const reordered = arrayMove(prev, oldIndex, newIndex);
-                            reorderAccounts(reordered.map(c => c.id));
+                            reorderAccounts(reordered.filter(c => c.account_type === activeTab).map(c => c.id));
                             return reordered;
                         });
                     }}
                 >
-                    <SortableContext items={accounts.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                    <SortableContext items={filteredAccounts.map(c => c.id)} strategy={verticalListSortingStrategy}>
                         <table className="table w-full">
                             <thead>
                                 <tr className="text-left">
                                     <th>{t("accounts.name")}</th>
                                     <th>{t("accounts.balance")}</th>
-                                    <th>{t("accounts.start_day")}</th>
+                                    <th>{activeTab === "NORMAL" ? t("accounts.start_day") : ""}</th>
                                     <th>{t("common.actions")}</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {accounts.length === 0 && (
+                                {filteredAccounts.length === 0 && (
                                     <tr><td colSpan={4} className="text-center text-gray-400 italic">—</td></tr>
                                 )}
 
-                                {accounts.map(a => (
+                                {filteredAccounts.map(a => (
                                     <SortableTableRow key={a.id} id={a.id}>
                                             <td>
                                                 {a.name}
