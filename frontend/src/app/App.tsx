@@ -13,6 +13,7 @@ import RegisterPage from "@/features/auth/RegisterPage";
 import AppLayout from "@/components/layout/AppLayout";
 import HomePage from "@/features/home/HomePage";
 import AccountsPage from "@/features/accounts/AccountsPage";
+import InvestmentPage from "@/features/accounts/InvestmentPage";
 import PotsPage from "@/features/pots/PotsPage";
 import TransactionsPage from "@/features/transactions/TransactionsPage";
 import RecurringPage from "@/features/recurrents/RecurrentsPage";
@@ -41,6 +42,7 @@ export default function App() {
           >
             <Route path="/" element={<HomePage />} />
             <Route path="/accounts" element={<AccountsPage />} />
+            <Route path="/accounts/:accountId/investment" element={<InvestmentPage />} />
             <Route path="/settings" element={<SettingsPage />} />
 
             {/* Requires at least one account */}

@@ -165,7 +165,7 @@ export default function StatsPage() {
         getMonthlySummary(selectedAccountId).then(setMonthlySummary)
         getPeriode(selectedAccountId).then(p => {
             setTodayPeriod({ year: p.year, month: p.month })
-            setDetailMonth(prev => prev ?? { year: p.year, month: p.month })
+            setDetailMonth(detailMonth ?? { year: p.year, month: p.month })
         })
     }, [selectedAccountId])
 
@@ -409,12 +409,13 @@ export default function StatsPage() {
                             <XAxis dataKey="label" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
                             <YAxis tick={{ fontSize: 11 }} tickFormatter={v => formatAmount(v)} width={70}
                                 domain={[Math.floor(bMin - bPad), Math.ceil(bMax + bPad)]} />
-                            <Tooltip formatter={(v: number, name: string) => [
-                                `${formatAmount(v)} ${currencySymbol}`,
+                            <Tooltip formatter={((v: unknown, name: string) => [
+                                `${formatAmount(v as number)} ${currencySymbol}`,
                                 name === "balanceFuture"
                                     ? `${t("stats.balance")} (${t("stats.planned")})`
                                     : t("stats.balance"),
-                            ]} />
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            ]) as any} />
                             <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
                             <Area type="monotone" dataKey="balance" stroke="#60a5fa" strokeWidth={2}
                                 fill="url(#bGrad)" dot={false} connectNulls={false} isAnimationActive={false} />
@@ -447,7 +448,7 @@ export default function StatsPage() {
                                         cx="50%" cy="45%" innerRadius={55} outerRadius={85} paddingAngle={2}>
                                         {bySubPot.map((_, i) => <Cell key={i} fill={subPotBaseColor(i)} />)}
                                     </Pie>
-                                    <Tooltip formatter={(v: number, name: string) => [`${formatAmount(v)} ${currencySymbol}`, name]} />
+                                    <Tooltip formatter={((v: unknown, name: string) => [`${formatAmount(v as number)} ${currencySymbol}`, name]) as any} />
                                     <Legend iconType="circle" iconSize={8} />
                                 </PieChart>
                             </ResponsiveContainer>

@@ -1,7 +1,7 @@
 from sqlmodel import Session, select
 from datetime import date
 
-from app.models import Account, User, Sub_Pot, Pot, Transaction, TypeTransaction
+from app.models import Account, User, Sub_Pot, Pot, Transaction, TypeTransaction, AccountType
 from app.i18n.messages import msg
 from sqlalchemy import or_, func
 
@@ -21,21 +21,22 @@ class AccountService:
         session.add(account)
         session.flush()
 
-        pot_defaut = Pot(
-            name=msg("pot.default"),
-            account_id=account.id,
-            position=0,
-        )
-        session.add(pot_defaut)
-        session.flush()
+        if account.account_type == AccountType.NORMAL:
+            pot_defaut = Pot(
+                name=msg("pot.default"),
+                account_id=account.id,
+                position=0,
+            )
+            session.add(pot_defaut)
+            session.flush()
 
-        sub_pot_defaut = Sub_Pot(
-            name=msg("sub_pot.default"),
-            prevision=0.0,
-            pot_id=pot_defaut.id,
-            position=0,
-        )
-        session.add(sub_pot_defaut)
+            sub_pot_defaut = Sub_Pot(
+                name=msg("sub_pot.default"),
+                prevision=0.0,
+                pot_id=pot_defaut.id,
+                position=0,
+            )
+            session.add(sub_pot_defaut)
 
         session.commit()
         session.refresh(account)
@@ -85,6 +86,19 @@ class AccountService:
                 raise ValueError(msg("account.invalid_start_day"))
             account.start_day = data.start_day
 
+        if data.savings_goal is not None:
+            if data.savings_goal < 0:
+                raise ValueError(msg("account.savings_goal_negative"))
+            account.savings_goal = data.savings_goal
+
+        if data.interest_rate is not None:
+            if data.interest_rate < 0:
+                raise ValueError(msg("account.interest_rate_negative"))
+            account.interest_rate = data.interest_rate
+
+        if data.interest_frequency is not None:
+            account.interest_frequency = data.interest_frequency
+
         session.add(account)
         session.commit()
         session.refresh(account)
@@ -94,12 +108,8 @@ class AccountService:
         session: Session,
         account: Account,
     ) -> float:
-        """
-        Calcule la somme des transactions d'un account.
-        Inclut :
-        - transactions liées directement au account
-        - transactions liées aux sub-pots du account
-        """
+        if account.account_type == AccountType.INVESTMENT:
+            return sum(a.quantity * a.current_price for a in account.assets)
 
         query = (
             select(Transaction)

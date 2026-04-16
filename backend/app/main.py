@@ -10,6 +10,7 @@ from app.controllers.pot_controller import router as pot_router
 from app.controllers.sub_pot_controller import router as sub_pot_router
 from app.controllers.stats_controller import router as stats_router
 from app.controllers.utils_controller import router as utils_router
+from app.controllers.investment_asset_controller import router as investment_asset_router, search_router as investment_search_router
 
 from contextlib import asynccontextmanager
 
@@ -37,6 +38,8 @@ app.include_router(sub_pot_router)
 app.include_router(transaction_router)
 app.include_router(stats_router)
 app.include_router(utils_router)
+app.include_router(investment_asset_router)
+app.include_router(investment_search_router)
 
 origins = os.getenv("CORS_ALLOWED_ORIGINS", "")
 

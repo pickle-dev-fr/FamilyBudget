@@ -5,7 +5,6 @@ import { register, login } from "@/api/auth.api";
 import { setToken } from "@/api/token";
 import { useAuth } from "@/auth/AuthContext";
 import { useTranslation } from "react-i18next";
-import { toast } from "@/lib/toast";
 import { updateSettings } from "@/api/settings.api";
 import { LANGUAGE_I18N } from "@/auth/currency";
 import i18n from "i18next";

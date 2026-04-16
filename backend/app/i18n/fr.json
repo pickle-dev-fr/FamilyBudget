@@ -5,10 +5,16 @@
     "user_not_found": "Utilisateur introuvable"
   },
   "account": {
-    "not_found": "account introuvable.",
+    "not_found": "Compte introuvable.",
     "invalid_start_day": "Le jour de début doit être compris entre 1 et 31.",
-    "name_required": "Le nom du account est obligatoire.",
-    "forbidden": "Accès interdit à ce account."
+    "name_required": "Le nom du compte est obligatoire.",
+    "forbidden": "Accès interdit à ce compte.",
+    "savings_goal_negative": "L'objectif d'épargne ne peut pas être négatif.",
+    "interest_rate_negative": "Le taux d'intérêt ne peut pas être négatif."
+  },
+  "investment_asset": {
+    "not_found": "Actif introuvable.",
+    "account_not_investment": "Ce compte n'est pas un compte investissement."
   },
   "transaction": {
     "error": {

@@ -1,6 +1,6 @@
 # app/models.py
 from typing import List, Optional
-from datetime import date
+from datetime import date, datetime
 from enum import Enum
 from sqlalchemy import Enum as SAEnum
 import ulid
@@ -14,6 +14,21 @@ def generate_ulid() -> str:
     return ulid.new().str
 
 # --- Enums ---
+class AccountType(str, Enum):
+    NORMAL = "NORMAL"
+    SAVINGS = "SAVINGS"
+    INVESTMENT = "INVESTMENT"
+
+class InterestFrequency(str, Enum):
+    DAILY = "DAILY"
+    MONTHLY = "MONTHLY"
+    ANNUAL = "ANNUAL"
+
+class AssetType(str, Enum):
+    STOCK = "STOCK"
+    ETF = "ETF"
+    CRYPTO = "CRYPTO"
+
 class TypeTransaction(str, Enum):
     CREDIT = "CREDIT"
     DEBIT = "DEBIT"
@@ -61,6 +76,17 @@ class Account(SQLModel, table=True):
     archived_value: float = 0.0
     start_day: int = 1  # 1 ≤ start_day ≤ 31
 
+    account_type: AccountType = Field(
+        default=AccountType.NORMAL,
+        sa_column=Column(SAEnum(AccountType, name="accounttype"), nullable=False, server_default="NORMAL"),
+    )
+    savings_goal: Optional[float] = Field(default=None, nullable=True)
+    interest_rate: Optional[float] = Field(default=None, nullable=True)
+    interest_frequency: Optional[InterestFrequency] = Field(
+        default=None,
+        sa_column=Column(SAEnum(InterestFrequency, name="interestfrequency"), nullable=True),
+    )
+
     position: int = Field(index=True)
 
     user_id: str = Field(foreign_key="user.id")
@@ -73,6 +99,11 @@ class Account(SQLModel, table=True):
             "order_by": lambda: Pot.position,
         })
     transactions: List["Transaction"] = Relationship(
+        back_populates="account",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan"
+        })
+    assets: List["InvestmentAsset"] = Relationship(
         back_populates="account",
         sa_relationship_kwargs={
             "cascade": "all, delete-orphan"
@@ -176,3 +207,18 @@ class Transaction(SQLModel, table=True):
 
     sub_pot_id: Optional[str] = Field(default=None, foreign_key="sub_pot.id")
     sub_pot: Optional[Sub_Pot] = Relationship(back_populates="transactions")
+
+
+class InvestmentAsset(SQLModel, table=True):
+    id: str = Field(default_factory=generate_ulid, primary_key=True)
+    ticker: str
+    name: str
+    asset_type: AssetType = Field(
+        sa_column=Column(SAEnum(AssetType, name="assettype"), nullable=False)
+    )
+    quantity: float
+    current_price: float = 0.0
+    last_price_update: Optional[datetime] = Field(default=None, nullable=True)
+
+    account_id: str = Field(foreign_key="account.id")
+    account: Optional[Account] = Relationship(back_populates="assets")
