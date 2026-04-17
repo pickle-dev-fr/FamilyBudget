@@ -18,6 +18,11 @@
     "not_found": "Actif introuvable.",
     "account_not_investment": "Ce compte n'est pas un compte investissement."
   },
+  "savings_interest": {
+    "daily": "Intérêts journaliers",
+    "monthly": "Intérêts mensuels",
+    "annual": "Intérêts annuels"
+  },
   "transaction": {
     "error": {
       "not_found": "La transaction n'a pas été trouvée."

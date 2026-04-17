@@ -7,7 +7,6 @@ export type AccountFormData = {
     name: string;
     startDay: number;
     initialValue: number;
-    decallage: number;
     accountType: AccountType;
     savingsGoal: number | null;
     interestRate: number | null;
@@ -34,7 +33,6 @@ export default function AccountsModal({
     const [name, setName] = useState("");
     const [startDay, setStartDay] = useState(1);
     const [initialValue, setInitialValue] = useState("0");
-    const [decallage] = useState(0);
     const [accountType, setAccountType] = useState<AccountType>("NORMAL");
     const [savingsGoal, setSavingsGoal] = useState("");
     const [interestRate, setInterestRate] = useState("");
@@ -65,7 +63,6 @@ export default function AccountsModal({
             name,
             startDay,
             initialValue: parseFloat(initialValue) || 0,
-            decallage,
             accountType,
             savingsGoal: savingsGoal !== "" ? parseFloat(savingsGoal) : null,
             interestRate: interestRate !== "" ? parseFloat(interestRate) : null,

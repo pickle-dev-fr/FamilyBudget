@@ -1,11 +1,33 @@
+import json
 import logging
-from datetime import datetime, timezone, timedelta
+import os
+import tempfile
+from datetime import datetime, timezone, timedelta, date as date_type
 from sqlmodel import Session, select
-from app.models import InvestmentAsset, Account, AccountType, UserSettings
+from app.models import InvestmentAsset, Account, AccountType, UserSettings, PortfolioSnapshot
 
-# Cache en mémoire des taux de change (TTL 30 min)
-_fx_cache: dict[str, tuple[float, datetime]] = {}
 _FX_TTL = timedelta(minutes=30)
+_FX_CACHE_FILE = os.path.join(tempfile.gettempdir(), "familybudget_fx_cache.json")
+
+
+def _load_fx_cache() -> dict[str, tuple[float, datetime]]:
+    try:
+        with open(_FX_CACHE_FILE) as f:
+            data = json.load(f)
+        return {
+            k: (v[0], datetime.fromisoformat(v[1]).replace(tzinfo=timezone.utc))
+            for k, v in data.items()
+        }
+    except Exception:
+        return {}
+
+
+def _save_fx_cache(cache: dict[str, tuple[float, datetime]]) -> None:
+    try:
+        with open(_FX_CACHE_FILE, "w") as f:
+            json.dump({k: [v[0], v[1].isoformat()] for k, v in cache.items()}, f)
+    except Exception:
+        pass
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +59,32 @@ def _infer_currency(ticker: str) -> str:
         if upper.endswith(suffix.upper()):
             return currency
     return "USD"  # NASDAQ/NYSE par défaut
+
+
+def snapshot_portfolio_today(session: Session, account_id: str) -> None:
+    """Crée ou met à jour le snapshot du portefeuille pour aujourd'hui."""
+    from app.models import Account
+    account = session.get(Account, account_id)
+    if not account:
+        return
+    total = round(sum(a.quantity * a.current_price for a in account.assets), 2)
+    today = date_type.today()
+    existing = session.exec(
+        select(PortfolioSnapshot).where(
+            PortfolioSnapshot.account_id == account_id,
+            PortfolioSnapshot.snapshot_date == today,
+        )
+    ).first()
+    if existing:
+        existing.total_value = total
+        session.add(existing)
+    else:
+        session.add(PortfolioSnapshot(
+            account_id=account_id,
+            snapshot_date=today,
+            total_value=total,
+        ))
+    session.commit()
 
 
 def update_investment_prices(session: Session, account_id: str | None = None) -> None:
@@ -89,6 +137,7 @@ def update_investment_prices(session: Session, account_id: str | None = None) ->
 
     # Taux en cache / à télécharger
     now_dt = datetime.now(timezone.utc)
+    _fx_cache = _load_fx_cache()
     fx_rates: dict[tuple[str, str], float] = {}
     pairs_to_fetch: list[tuple[str, str]] = []
     for pair in needed_pairs:
@@ -103,19 +152,25 @@ def update_investment_prices(session: Session, account_id: str | None = None) ->
     # Un seul appel yfinance : prix actifs + taux FX non cachés
     all_symbols = tickers + fx_symbols
     try:
-        data = yf.download(tickers=all_symbols, period="1d", auto_adjust=True, progress=False)
+        data = yf.download(tickers=all_symbols, period="5d", auto_adjust=True, progress=False)
     except Exception as e:
         logger.error("Erreur lors du téléchargement yfinance : %s", e)
         return
 
     close = data["Close"]
-    single = len(all_symbols) == 1
 
     def get_price(symbol: str) -> float | None:
+        """Retourne le dernier prix de clôture non-NaN du symbole."""
         try:
-            if single:
-                return float(close.iloc[-1, 0])
-            return float(close[symbol].iloc[-1])
+            # close est un DataFrame (multi-ticker) ou une Series (ticker unique)
+            if isinstance(close, type(close)) and hasattr(close, "columns"):
+                series = close[symbol]
+            else:
+                series = close
+            valid = series.dropna()
+            if valid.empty:
+                return None
+            return float(valid.iloc[-1])
         except Exception:
             return None
 
@@ -128,6 +183,7 @@ def update_investment_prices(session: Session, account_id: str | None = None) ->
         else:
             fx_rates[(src, dst)] = 1.0
             logger.warning("Taux %s→%s indisponible", src, dst)
+    _save_fx_cache(_fx_cache)
 
     # Appliquer les prix convertis
     for ticker, asset_list in ticker_to_assets.items():
@@ -143,5 +199,32 @@ def update_investment_prices(session: Session, account_id: str | None = None) ->
             asset.current_price = round(price * rate, 4)
             asset.last_price_update = now_dt
             session.add(asset)
+
+    session.commit()
+
+    # ── Snapshot de portefeuille ──────────────────────────────────────────
+    today = date_type.today()
+    account_totals: dict[str, float] = {}
+    for asset in assets:
+        account_totals[asset.account_id] = (
+            account_totals.get(asset.account_id, 0.0) + asset.quantity * asset.current_price
+        )
+
+    for acc_id, total in account_totals.items():
+        existing = session.exec(
+            select(PortfolioSnapshot).where(
+                PortfolioSnapshot.account_id == acc_id,
+                PortfolioSnapshot.snapshot_date == today,
+            )
+        ).first()
+        if existing:
+            existing.total_value = round(total, 2)
+            session.add(existing)
+        else:
+            session.add(PortfolioSnapshot(
+                account_id=acc_id,
+                snapshot_date=today,
+                total_value=round(total, 2),
+            ))
 
     session.commit()

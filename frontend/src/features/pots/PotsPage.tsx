@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { RotateCcw } from "lucide-react"
 import PotsBoard from "./PotsBoard"
 import { getAccounts, type Account } from "@/api/accounts.api"
 import { createPot } from "@/api/pots.api"
@@ -111,7 +112,7 @@ export default function PotsPage(): React.JSX.Element {
                 </span>
                 <button className="btn btn-sm" onClick={() => changeMonth(1)}>{">"}</button>
                 <button className="btn btn-sm btn-ghost" onClick={goToCurrentMonth} title={t("transactions.current_month")}>
-                    ⌂
+                    <RotateCcw size={14} />
                 </button>
             </div>
 

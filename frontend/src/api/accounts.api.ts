@@ -20,7 +20,6 @@ export type Account = {
   name: string;
   start_day: number;
   initial_value: number;
-  decallage: number;
   account_type: AccountType;
   savings_goal: number | null;
   interest_rate: number | null;
@@ -32,7 +31,6 @@ export type CreateAccountPayload = {
   name: string;
   initial_value: number;
   start_day: number;
-  decallage: number;
   account_type: AccountType;
   savings_goal?: number | null;
   interest_rate?: number | null;
@@ -43,7 +41,6 @@ export type UpdateAccountPayload = {
   name?: string;
   initial_value?: number;
   start_day?: number;
-  decallage?: number;
   savings_goal?: number | null;
   interest_rate?: number | null;
   interest_frequency?: InterestFrequency | null;

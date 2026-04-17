@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
@@ -26,16 +26,12 @@ const CHART_COLORS = [
     "#ec4899", "#14b8a6", "#f97316", "#8b5cf6", "#84cc16",
 ];
 
-const ASSET_TYPE_LABEL: Record<string, string> = {
-    STOCK: "Action",
-    ETF: "ETF",
-    CRYPTO: "Crypto",
-};
 
 function formatLastUpdate(iso: string | null): string {
     if (!iso) return "—";
-    const d = new Date(iso);
-    return d.toLocaleString("fr-FR", {
+    // Le serveur stocke en UTC sans indicateur de fuseau → on force l'interprétation UTC
+    const utcIso = /Z$|[+-]\d{2}:\d{2}$/.test(iso) ? iso : iso + "Z";
+    return new Date(utcIso).toLocaleString(undefined, {
         day: "2-digit", month: "2-digit", year: "numeric",
         hour: "2-digit", minute: "2-digit",
     });
@@ -153,7 +149,7 @@ export default function InvestmentPage() {
                         onClick={handleRefresh}
                         disabled={refreshing}
                     >
-                        <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+                        <RotateCcw size={14} className={refreshing ? "animate-spin" : ""} />
                         {t("accounts.refresh_prices")}
                     </button>
                 </div>
@@ -206,7 +202,7 @@ export default function InvestmentPage() {
                                             <td>{asset.name}</td>
                                             <td>
                                                 <span className="badge badge-xs badge-ghost">
-                                                    {ASSET_TYPE_LABEL[asset.asset_type] ?? asset.asset_type}
+                                                    {t(`accounts.asset_type_${asset.asset_type.toLowerCase()}`)}
                                                 </span>
                                             </td>
                                             <td className="text-right tabular-nums">{asset.quantity}</td>

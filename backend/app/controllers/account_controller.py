@@ -1,8 +1,8 @@
 from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, Depends, HTTPException, Security, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Security, status
 from sqlmodel import Session
 
-from app.database import get_session
+from app.database import get_session, engine
 from app.schemas.account_schema import (
     AccountCreate,
     AccountUpdate,
@@ -13,9 +13,14 @@ from app.security.dependencies import get_current_user
 from app.services.account_service import AccountService
 from app.services.price_update_service import update_investment_prices
 from app.i18n.messages import msg
-from app.models import User, Account, AccountType, InvestmentAsset
+from app.models import User, Account, AccountType
 
 _PRICE_STALENESS = timedelta(minutes=15)
+
+
+def _update_prices_bg(account_id: str) -> None:
+    with Session(engine) as session:
+        update_investment_prices(session, account_id=account_id)
 
 router = APIRouter(
     prefix="/accounts",
@@ -105,6 +110,7 @@ def update_account(
 @router.get("/{account_id}/balance", response_model=float)
 def get_balance_by_account(
     account_id: str,
+    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     current_user = Depends(get_current_user),
 ):
@@ -119,8 +125,7 @@ def get_balance_by_account(
             for a in account.assets
         )
         if stale:
-            update_investment_prices(session, account_id=account_id)
-            session.refresh(account)
+            background_tasks.add_task(_update_prices_bg, account_id)
 
     return AccountService.calculer_balance_account(session=session, account=account)
 

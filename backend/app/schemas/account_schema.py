@@ -1,6 +1,7 @@
 from typing import Optional, List
 from datetime import datetime
 from sqlmodel import SQLModel
+from pydantic import field_validator
 from app.models import AccountType, InterestFrequency, AssetType
 
 
@@ -16,12 +17,26 @@ class InvestmentAssetCreate(SQLModel):
     asset_type: AssetType
     quantity: float
 
+    @field_validator("quantity")
+    @classmethod
+    def quantity_positive(cls, v: float) -> float:
+        if v <= 0:
+            raise ValueError("La quantité doit être strictement positive.")
+        return v
+
 
 class InvestmentAssetUpdate(SQLModel):
     ticker: Optional[str] = None
     name: Optional[str] = None
     asset_type: Optional[AssetType] = None
     quantity: Optional[float] = None
+
+    @field_validator("quantity")
+    @classmethod
+    def quantity_positive(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and v <= 0:
+            raise ValueError("La quantité doit être strictement positive.")
+        return v
 
 
 class InvestmentAssetRead(SQLModel):

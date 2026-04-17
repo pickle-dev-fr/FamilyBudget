@@ -10,6 +10,21 @@ class InvestmentAssetService:
     def add_asset(session: Session, account: Account, data: InvestmentAssetCreate) -> InvestmentAsset:
         if account.account_type != AccountType.INVESTMENT:
             raise ValueError(msg("investment_asset.account_not_investment"))
+
+        existing = session.exec(
+            select(InvestmentAsset).where(
+                InvestmentAsset.account_id == account.id,
+                InvestmentAsset.ticker == data.ticker,
+            )
+        ).first()
+
+        if existing:
+            existing.quantity = round(existing.quantity + data.quantity, 10)
+            session.add(existing)
+            session.commit()
+            session.refresh(existing)
+            return existing
+
         asset = InvestmentAsset(**data.model_dump(), account_id=account.id)
         session.add(asset)
         session.commit()

@@ -3,6 +3,7 @@ from datetime import date, datetime, timezone
 from sqlmodel import Session, select
 from app.models import Account, AccountType, InterestFrequency, Transaction, TypeTransaction
 from app.services.account_service import AccountService
+from app.i18n.messages import msg
 
 logger = logging.getLogger(__name__)
 
@@ -43,17 +44,17 @@ def apply_savings_interest(session: Session) -> None:
         if amount <= 0:
             continue
 
-        motif_labels = {
-            InterestFrequency.DAILY: "Intérêts journaliers",
-            InterestFrequency.MONTHLY: "Intérêts mensuels",
-            InterestFrequency.ANNUAL: "Intérêts annuels",
+        motif_keys = {
+            InterestFrequency.DAILY: "savings_interest.daily",
+            InterestFrequency.MONTHLY: "savings_interest.monthly",
+            InterestFrequency.ANNUAL: "savings_interest.annual",
         }
 
         tx = Transaction(
             amount=amount,
             transaction_date=today,
             transaction_type=TypeTransaction.CREDIT,
-            motif=motif_labels[account.interest_frequency],
+            motif=msg(motif_keys[account.interest_frequency]),
             account_id=account.id,
         )
         session.add(tx)

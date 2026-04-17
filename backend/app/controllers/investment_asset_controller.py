@@ -6,7 +6,7 @@ from app.database import get_session
 from app.security.dependencies import get_current_user
 from app.services.account_service import AccountService
 from app.services.investment_asset_service import InvestmentAssetService
-from app.services.price_update_service import update_investment_prices
+from app.services.price_update_service import update_investment_prices, snapshot_portfolio_today
 from app.schemas.account_schema import InvestmentAssetCreate, InvestmentAssetUpdate, InvestmentAssetRead, TickerSearchResult
 from app.models import User, Account
 from app.i18n.messages import msg
@@ -52,7 +52,9 @@ def add_asset(
 ):
     account = _check_investment_account(session, account_id, user)
     try:
-        return InvestmentAssetService.add_asset(session, account, payload)
+        result = InvestmentAssetService.add_asset(session, account, payload)
+        snapshot_portfolio_today(session, account_id)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -67,7 +69,9 @@ def update_asset(
 ):
     _check_investment_account(session, account_id, user)
     try:
-        return InvestmentAssetService.update_asset(session, asset_id, payload)
+        result = InvestmentAssetService.update_asset(session, asset_id, payload)
+        snapshot_portfolio_today(session, account_id)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -82,6 +86,7 @@ def delete_asset(
     _check_investment_account(session, account_id, user)
     try:
         InvestmentAssetService.delete_asset(session, asset_id)
+        snapshot_portfolio_today(session, account_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 

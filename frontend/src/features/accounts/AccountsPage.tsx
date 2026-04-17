@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -74,7 +74,6 @@ export default function AccountsPage() {
             name: data.name,
             start_day: data.startDay,
             initial_value: data.initialValue,
-            decallage: data.decallage,
             account_type: data.accountType,
             savings_goal: data.savingsGoal,
             interest_rate: data.interestRate,
@@ -102,14 +101,6 @@ export default function AccountsPage() {
         } finally {
             setRefreshing(null);
         }
-    }
-
-    function typeBadge(account: Account) {
-        if (account.account_type === "SAVINGS")
-            return <span className="badge badge-info badge-sm ml-2">{t("accounts.type_savings")}</span>;
-        if (account.account_type === "INVESTMENT")
-            return <span className="badge badge-warning badge-sm ml-2">{t("accounts.type_investment")}</span>;
-        return null;
     }
 
     const filteredAccounts = accounts.filter(a => a.account_type === activeTab);
@@ -155,7 +146,7 @@ export default function AccountsPage() {
                             const oldIndex = prev.findIndex(c => c.id === active.id);
                             const newIndex = prev.findIndex(c => c.id === over.id);
                             const reordered = arrayMove(prev, oldIndex, newIndex);
-                            reorderAccounts(reordered.filter(c => c.account_type === activeTab).map(c => c.id));
+                            reorderAccounts(reordered.map(c => c.id));
                             return reordered;
                         });
                     }}
@@ -179,7 +170,6 @@ export default function AccountsPage() {
                                     <SortableTableRow key={a.id} id={a.id}>
                                             <td>
                                                 {a.name}
-                                                {typeBadge(a)}
                                             </td>
                                             <td>
                                                 <div className={`font-semibold ${(balances[a.id] ?? 0) >= 0 ? "text-green-500" : "text-red-500"}`}>
@@ -195,7 +185,7 @@ export default function AccountsPage() {
                                                         />
                                                         <span className="text-xs opacity-50">
                                                             {formatAmount(balances[a.id] ?? 0)} / {formatAmount(a.savings_goal)} {currencySymbol}
-                                                            {a.interest_rate ? ` · ${a.interest_rate}%/${t(`accounts.freq_short_${(a.interest_frequency ?? "annual").toLowerCase()}`)}` : ""}
+                                                            {a.interest_rate && a.interest_frequency ? ` · ${a.interest_rate}%/${t(`accounts.freq_short_${a.interest_frequency.toLowerCase()}`)}` : ""}
                                                         </span>
                                                     </div>
                                                 )}
@@ -220,7 +210,7 @@ export default function AccountsPage() {
                                                                 disabled={refreshing === a.id}
                                                                 title={t("accounts.refresh_prices")}
                                                             >
-                                                                <RefreshCw size={13} className={refreshing === a.id ? "animate-spin" : ""} />
+                                                                <RotateCcw size={13} className={refreshing === a.id ? "animate-spin" : ""} />
                                                             </button>
                                                         </>
                                                     )}
@@ -248,7 +238,6 @@ export default function AccountsPage() {
                         name: editingAccount.name,
                         startDay: editingAccount.start_day,
                         initialValue: editingAccount.initial_value,
-                        decallage: editingAccount.decallage,
                         accountType: editingAccount.account_type,
                         savingsGoal: editingAccount.savings_goal,
                         interestRate: editingAccount.interest_rate,

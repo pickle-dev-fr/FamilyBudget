@@ -7,7 +7,7 @@ from app.database import get_session
 from app.security.dependencies import get_current_user
 from app.services.stat_service import StatService
 from app.schemas.stats_schema import BalancePoint, MonthlySummaryPoint, PotAmount, SubPotAmount, HeatmapPoint, TransactionStat, DailyBalancePoint
-from app.models import User, Account
+from app.models import User, Account, AccountType
 from app.i18n.messages import msg
 
 router = APIRouter(prefix="/stats", tags=["Statistiques"], dependencies=[Depends(get_current_user)])
@@ -69,6 +69,8 @@ def get_balance_range(
     current_user: User = Depends(get_current_user),
 ):
     account = _get_account(session, account_id, current_user)
+    if account.account_type == AccountType.INVESTMENT:
+        return StatService.balance_for_range_investment(session, account, from_date, to_date)
     return StatService.balance_for_range(session, account, from_date, to_date)
 
 

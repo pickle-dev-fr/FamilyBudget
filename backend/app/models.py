@@ -209,6 +209,20 @@ class Transaction(SQLModel, table=True):
     sub_pot: Optional[Sub_Pot] = Relationship(back_populates="transactions")
 
 
+class PortfolioSnapshot(SQLModel, table=True):
+    """Valeur quotidienne d'un portefeuille investissement (snapshot au moment du refresh des prix)."""
+    __table_args__ = (
+        UniqueConstraint("account_id", "snapshot_date", name="uq_portfolio_snapshot_account_date"),
+    )
+
+    id: str = Field(default_factory=generate_ulid, primary_key=True)
+    account_id: str = Field(foreign_key="account.id", index=True)
+    snapshot_date: date = Field(index=True)
+    total_value: float
+
+    account: Optional["Account"] = Relationship()
+
+
 class InvestmentAsset(SQLModel, table=True):
     id: str = Field(default_factory=generate_ulid, primary_key=True)
     ticker: str

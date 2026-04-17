@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { usePersistedState } from "@/hooks/usePersistedState"
-import { getAccounts, type Account } from "@/api/accounts.api"
+import { getAccounts, type Account, type InvestmentAsset } from "@/api/accounts.api"
 import { getPeriode } from "@/api/utils.api"
 import {
     getBalanceRange, getMonthlySummary, getBySubPot, getHeatmap, getTopTransactions,
@@ -24,6 +24,11 @@ function subPotBaseColor(i: number) { return `hsl(${SUB_POT_HUES[i % SUB_POT_HUE
 function subPotTxColor(si: number, ti: number, max: number) {
     return `hsl(${SUB_POT_HUES[si % SUB_POT_HUES.length]}, 55%, ${30 + (ti / Math.max(max - 1, 1)) * 30}%)`
 }
+
+const CHART_COLORS = [
+    "#6366f1", "#f59e0b", "#10b981", "#ef4444", "#3b82f6",
+    "#ec4899", "#14b8a6", "#f97316", "#8b5cf6", "#84cc16",
+]
 
 // ─── Helpers date ──────────────────────────────────────────────────────────
 function todayStr(): string {
@@ -52,6 +57,14 @@ function formatDayLabel(s: string) {
 }
 function monthLabel(y: number, m: number) {
     return new Date(y, m - 1).toLocaleString("default", { month: "short", year: "2-digit" })
+}
+function formatLastUpdate(iso: string | null): string {
+    if (!iso) return "—"
+    const utcIso = /Z$|[+-]\d{2}:\d{2}$/.test(iso) ? iso : iso + "Z"
+    return new Date(utcIso).toLocaleString(undefined, {
+        day: "2-digit", month: "2-digit", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+    })
 }
 
 // ─── Composants UI ────────────────────────────────────────────────────────
@@ -124,7 +137,7 @@ export default function StatsPage() {
     const [accounts, setAccounts] = useState<Account[]>([])
     const [selectedAccountId, setSelectedAccountId] = usePersistedState<string>("last_account_id", "")
 
-    // ── Données aujourd'hui (cartes du haut) ──
+    // ── Données aujourd'hui ──
     const [todayBalance, setTodayBalance] = useState<number | null>(null)
     const [todayPeriod, setTodayPeriod] = useState<{ year: number; month: number } | null>(null)
     const [monthlySummary, setMonthlySummary] = useState<MonthlySummaryPoint[]>([])
@@ -148,31 +161,54 @@ export default function StatsPage() {
     const [txSortKey, setTxSortKey] = useState<TxSortKey>("date")
     const [txSortDir, setTxSortDir] = useState<TxSortDir>("desc")
 
-    // ── Chargement comptes ──
+    // ── Compte sélectionné ──
+    const selectedAccount = useMemo(
+        () => accounts.find(a => a.id === selectedAccountId) ?? null,
+        [accounts, selectedAccountId]
+    )
+    const accountType = selectedAccount?.account_type ?? "NORMAL"
+    // Vues balance disponibles selon le type
+    const availableBalanceViews: BalanceView[] = accountType === "NORMAL" ? ["day", "month", "year"] : ["month", "year"]
+
+    // ── Chargement comptes (tous types) ──
     useEffect(() => {
-        getAccounts().then(data => {
-            const eligible = data.filter((a: Account) => a.account_type !== "INVESTMENT")
-            setAccounts(eligible)
-            if (eligible.length > 0 && !eligible.find((a: Account) => a.id === selectedAccountId))
-                setSelectedAccountId(eligible[0].id)
+        getAccounts().then((data: Account[]) => {
+            setAccounts(data)
+            if (data.length > 0) {
+                const current = data.find(a => a.id === selectedAccountId)
+                if (!current) {
+                    const first = data[0]
+                    setSelectedAccountId(first.id)
+                    if (first.account_type !== "NORMAL") setBalanceView("month")
+                }
+            }
         })
     }, [])
 
-    // ── Données d'aujourd'hui (indépendantes du mois sélectionné) ──
+    // ── Changement de compte manuel ──
+    function handleAccountChange(id: string) {
+        const acct = accounts.find(a => a.id === id)
+        setSelectedAccountId(id)
+        setBalanceView(acct?.account_type === "NORMAL" ? "day" : "month")
+    }
+
+    // ── Données d'aujourd'hui ──
     useEffect(() => {
         if (!selectedAccountId) return
         getBalanceRange(selectedAccountId, nowISO, nowISO)
             .then(data => setTodayBalance(data[0]?.balance ?? null))
-        getMonthlySummary(selectedAccountId).then(setMonthlySummary)
-        getPeriode(selectedAccountId).then(p => {
-            setTodayPeriod({ year: p.year, month: p.month })
-            setDetailMonth(detailMonth ?? { year: p.year, month: p.month })
-        })
+        if (accountType !== "INVESTMENT") {
+            getMonthlySummary(selectedAccountId).then(setMonthlySummary)
+            getPeriode(selectedAccountId).then(p => {
+                setTodayPeriod({ year: p.year, month: p.month })
+                setDetailMonth(detailMonth ?? { year: p.year, month: p.month })
+            })
+        }
     }, [selectedAccountId])
 
     // ── Données détail mensuel ──
     useEffect(() => {
-        if (!selectedAccountId || !detailMonth) return
+        if (!selectedAccountId || !detailMonth || accountType === "INVESTMENT") return
         const { year, month } = detailMonth
         Promise.all([
             getBySubPot(selectedAccountId, year, month),
@@ -273,7 +309,7 @@ export default function StatsPage() {
         [allTransactions]
     )
 
-    // ── Stacked bar (tri croissant → plus gros en haut dans recharts) ──
+    // ── Stacked bar ──
     const debitTx = allTransactions.filter(tx => tx.transaction_type === "DEBIT")
     const subPotGroups = new Map<string, { pot: string; sub_pot: string; txs: TransactionStat[] }>()
     for (const tx of debitTx) {
@@ -298,6 +334,163 @@ export default function StatsPage() {
         ? new Date(detailMonth.year, detailMonth.month - 1).toLocaleString("default", { month: "long", year: "numeric" })
         : ""
 
+    // ── Données investment ──
+    const investmentAssets: InvestmentAsset[] = selectedAccount?.assets ?? []
+    const investmentTotal = investmentAssets.reduce((s, a) => s + a.quantity * a.current_price, 0)
+    const investmentLastUpdate = useMemo(() => {
+        const dates = investmentAssets
+            .filter(a => a.last_price_update)
+            .map(a => a.last_price_update!)
+            .sort()
+        return dates.at(-1) ?? null
+    }, [investmentAssets])
+    const investmentChartData = investmentAssets
+        .map(a => ({ name: a.ticker, value: a.quantity * a.current_price }))
+        .filter(d => d.value > 0)
+
+    // ── JSX graphique balance (inline pour éviter les remounts) ──
+    const balanceChartJSX = (
+        <SectionCard
+            title={t("stats.balance_history")}
+            headerRight={
+                <div className="flex items-center gap-1">
+                    {availableBalanceViews.map(v => (
+                        <button key={v}
+                            className={`btn btn-xs ${balanceView === v ? "btn-primary" : "btn-ghost"}`}
+                            onClick={() => setBalanceView(v)}
+                        >
+                            {t(`stats.view_${v}`)}
+                        </button>
+                    ))}
+                </div>
+            }
+        >
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+                {balanceView === "day" && (
+                    <>
+                        <input type="date" className="input input-bordered input-sm"
+                            value={dayFrom} onChange={e => setDayFrom(e.target.value)} />
+                        <span className="text-xs opacity-50">→</span>
+                        <input type="date" className="input input-bordered input-sm"
+                            value={dayTo} onChange={e => setDayTo(e.target.value)} />
+                        <button className="btn btn-xs btn-ghost"
+                            onClick={() => { setDayFrom(addDaysToStr(todayStr(), -15)); setDayTo(addDaysToStr(todayStr(), 15)) }}>
+                            <RotateCcw size={13} />
+                        </button>
+                    </>
+                )}
+                {balanceView === "month" && (
+                    <>
+                        <input type="month" className="input input-bordered input-sm"
+                            value={monthFrom} onChange={e => setMonthFrom(e.target.value)} />
+                        <span className="text-xs opacity-50">→</span>
+                        <input type="month" className="input input-bordered input-sm"
+                            value={monthTo} onChange={e => setMonthTo(e.target.value)} />
+                        <button className="btn btn-xs btn-ghost"
+                            onClick={() => {
+                                setMonthFrom(addMonthsStr(now.getFullYear(), now.getMonth() + 1, -6))
+                                setMonthTo(addMonthsStr(now.getFullYear(), now.getMonth() + 1, 6))
+                            }}>
+                            <RotateCcw size={13} />
+                        </button>
+                    </>
+                )}
+                {balanceView === "year" && (
+                    <>
+                        <input type="number" className="input input-bordered input-sm w-24"
+                            value={selectedYear}
+                            onChange={e => setSelectedYear(Number(e.target.value))}
+                            min={2000} max={2100} />
+                        <button className="btn btn-xs btn-ghost"
+                            onClick={() => setSelectedYear(now.getFullYear())}>
+                            <RotateCcw size={13} />
+                        </button>
+                    </>
+                )}
+            </div>
+
+            {balanceChartData.length === 0 ? (
+                <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
+            ) : (
+                <ResponsiveContainer width="100%" height={220}>
+                    <ComposedChart data={balanceChartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                        <defs>
+                            <linearGradient id="bGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.25} />
+                                <stop offset="95%" stopColor="#60a5fa" stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                        <XAxis dataKey="label" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                        <YAxis tick={{ fontSize: 11 }} tickFormatter={v => formatAmount(v)} width={70}
+                            domain={[Math.floor(bMin - bPad), Math.ceil(bMax + bPad)]} />
+                        <Tooltip formatter={((v: unknown, name: string) => [
+                            `${formatAmount(v as number)} ${currencySymbol}`,
+                            name === "balanceFuture"
+                                ? `${t("stats.balance")} (${t("stats.planned")})`
+                                : t("stats.balance"),
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        ]) as any} />
+                        <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
+                        <Area type="monotone" dataKey="balance" stroke="#60a5fa" strokeWidth={2}
+                            fill="url(#bGrad)" dot={false} connectNulls={false} isAnimationActive={false} />
+                        <Line type="monotone" dataKey="balanceFuture" stroke="#60a5fa" strokeWidth={2}
+                            strokeDasharray="5 4" dot={false} connectNulls={false} isAnimationActive={false} />
+                    </ComposedChart>
+                </ResponsiveContainer>
+            )}
+        </SectionCard>
+    )
+
+    // ── JSX liste de transactions ──
+    function txListJSX(showPotInfo: boolean) {
+        return (
+            <SectionCard
+                title={t("stats.monthly_transactions")}
+                headerRight={
+                    <div className="flex items-center gap-1">
+                        {(["date", "amount"] as TxSortKey[]).map(k => (
+                            <button key={k}
+                                className={`btn btn-xs ${txSortKey === k ? "btn-primary" : "btn-ghost"}`}
+                                onClick={() => toggleSort(k)}
+                            >
+                                {t(`stats.sort_${k}`)}
+                                {txSortKey === k && <span className="ml-0.5">{txSortDir === "asc" ? "↑" : "↓"}</span>}
+                            </button>
+                        ))}
+                    </div>
+                }
+            >
+                {sortedTransactions.length === 0 ? (
+                    <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
+                ) : (
+                    <div className="flex flex-col divide-y divide-base-300 max-h-72 overflow-y-auto">
+                        {sortedTransactions.map((tx, i) => (
+                            <div key={i} className="flex items-center justify-between py-2 gap-2">
+                                <div className="flex flex-col min-w-0">
+                                    <div className="flex items-center gap-1.5">
+                                        {tx.is_planned && (
+                                            <span className="badge badge-xs badge-warning shrink-0">{t("stats.planned")}</span>
+                                        )}
+                                        <span className="text-sm font-medium truncate">{tx.motif || "—"}</span>
+                                    </div>
+                                    <span className="text-xs opacity-50">
+                                        {tx.date}
+                                        {showPotInfo && tx.pot !== "—" && ` · ${tx.pot} › ${tx.sub_pot}`}
+                                        {showPotInfo && tx.pot === "—" && ` · ${t("stats.no_subpot")}`}
+                                    </span>
+                                </div>
+                                <span className={`text-sm font-semibold shrink-0 ${tx.transaction_type === "DEBIT" ? "text-error" : "text-success"}`}>
+                                    {tx.transaction_type === "DEBIT" ? "-" : "+"}{formatAmount(tx.amount)} {currencySymbol}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </SectionCard>
+        )
+    }
+
     // ─── Render ────────────────────────────────────────────────────────────
     return (
         <div className="flex flex-col gap-6 max-w-5xl">
@@ -306,273 +499,264 @@ export default function StatsPage() {
             <select
                 className="select select-bordered w-full sm:w-64"
                 value={selectedAccountId}
-                onChange={e => setSelectedAccountId(e.target.value)}
+                onChange={e => handleAccountChange(e.target.value)}
             >
                 {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
 
-            {/* ══ PARTIE 1 : Cartes à la date d'aujourd'hui ══ */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <StatCard
-                    label={t("stats.balance")}
-                    value={`${formatAmount(todayBalance ?? undefined)} ${currencySymbol}`}
-                />
-                <StatCard
-                    label={t("stats.income")}
-                    value={`${formatAmount(todaySummary?.income)} ${currencySymbol}`}
-                    color="text-success"
-                />
-                <StatCard
-                    label={t("stats.expenses")}
-                    value={`${formatAmount(todaySummary?.expenses)} ${currencySymbol}`}
-                    color="text-error"
-                />
-                <StatCard
-                    label={t("stats.delta")}
-                    value={`${formatAmount(todaySummary?.delta)} ${currencySymbol}`}
-                    color={(todaySummary?.delta ?? 0) >= 0 ? "text-success" : "text-error"}
-                />
-            </div>
-
-            {/* ══ PARTIE 2 : Évolution du solde ══ */}
-            <SectionCard
-                title={t("stats.balance_history")}
-                headerRight={
-                    <div className="flex items-center gap-1">
-                        {(["day", "month", "year"] as BalanceView[]).map(v => (
-                            <button key={v}
-                                className={`btn btn-xs ${balanceView === v ? "btn-primary" : "btn-ghost"}`}
-                                onClick={() => setBalanceView(v)}
-                            >
-                                {t(`stats.view_${v}`)}
-                            </button>
-                        ))}
+            {/* ══ VUE INVESTISSEMENT ══ */}
+            {accountType === "INVESTMENT" && (
+                <>
+                    {/* Cartes */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <StatCard
+                            label={t("investment.total_value")}
+                            value={`${formatAmount(todayBalance ?? undefined)} ${currencySymbol}`}
+                            color={(todayBalance ?? 0) >= 0 ? "text-success" : "text-error"}
+                        />
+                        <StatCard
+                            label={t("investment.asset_count")}
+                            value={String(investmentAssets.length)}
+                        />
+                        <StatCard
+                            label={t("investment.last_update")}
+                            value={formatLastUpdate(investmentLastUpdate)}
+                        />
                     </div>
-                }
-            >
-                {/* Sélecteur de période selon la vue */}
-                <div className="flex flex-wrap items-center gap-2 mb-4">
-                    {balanceView === "day" && (
-                        <>
-                            <input type="date" className="input input-bordered input-sm"
-                                value={dayFrom} onChange={e => setDayFrom(e.target.value)} />
-                            <span className="text-xs opacity-50">→</span>
-                            <input type="date" className="input input-bordered input-sm"
-                                value={dayTo} onChange={e => setDayTo(e.target.value)} />
-                            <button className="btn btn-xs btn-ghost"
-                                onClick={() => { setDayFrom(addDaysToStr(todayStr(), -15)); setDayTo(addDaysToStr(todayStr(), 15)) }}>
-                                <RotateCcw size={13} />
-                            </button>
-                        </>
-                    )}
-                    {balanceView === "month" && (
-                        <>
-                            <input type="month" className="input input-bordered input-sm"
-                                value={monthFrom} onChange={e => setMonthFrom(e.target.value)} />
-                            <span className="text-xs opacity-50">→</span>
-                            <input type="month" className="input input-bordered input-sm"
-                                value={monthTo} onChange={e => setMonthTo(e.target.value)} />
-                            <button className="btn btn-xs btn-ghost"
-                                onClick={() => {
-                                    setMonthFrom(addMonthsStr(now.getFullYear(), now.getMonth() + 1, -6))
-                                    setMonthTo(addMonthsStr(now.getFullYear(), now.getMonth() + 1, 6))
-                                }}>
-                                <RotateCcw size={13} />
-                            </button>
-                        </>
-                    )}
-                    {balanceView === "year" && (
-                        <>
-                            <input type="number" className="input input-bordered input-sm w-24"
-                                value={selectedYear}
-                                onChange={e => setSelectedYear(Number(e.target.value))}
-                                min={2000} max={2100} />
-                            <button className="btn btn-xs btn-ghost"
-                                onClick={() => setSelectedYear(now.getFullYear())}>
-                                <RotateCcw size={13} />
-                            </button>
-                        </>
-                    )}
-                </div>
 
-                {balanceChartData.length === 0 ? (
-                    <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
-                ) : (
-                    <ResponsiveContainer width="100%" height={220}>
-                        <ComposedChart data={balanceChartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                            <defs>
-                                <linearGradient id="bGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.25} />
-                                    <stop offset="95%" stopColor="#60a5fa" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                            <XAxis dataKey="label" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-                            <YAxis tick={{ fontSize: 11 }} tickFormatter={v => formatAmount(v)} width={70}
-                                domain={[Math.floor(bMin - bPad), Math.ceil(bMax + bPad)]} />
-                            <Tooltip formatter={((v: unknown, name: string) => [
-                                `${formatAmount(v as number)} ${currencySymbol}`,
-                                name === "balanceFuture"
-                                    ? `${t("stats.balance")} (${t("stats.planned")})`
-                                    : t("stats.balance"),
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            ]) as any} />
-                            <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
-                            <Area type="monotone" dataKey="balance" stroke="#60a5fa" strokeWidth={2}
-                                fill="url(#bGrad)" dot={false} connectNulls={false} isAnimationActive={false} />
-                            <Line type="monotone" dataKey="balanceFuture" stroke="#60a5fa" strokeWidth={2}
-                                strokeDasharray="5 4" dot={false} connectNulls={false} isAnimationActive={false} />
-                        </ComposedChart>
-                    </ResponsiveContainer>
-                )}
-            </SectionCard>
+                    {/* Évolution portefeuille */}
+                    {balanceChartJSX}
 
-            {/* ══ PARTIE 3 : Détail mensuel ══ */}
-            <div className="flex flex-col gap-6">
-                {/* Navigation mois du détail */}
-                <div className="flex items-center gap-2">
-                    <button className="btn btn-sm" onClick={() => changeDetailMonth(-1)}>{"<"}</button>
-                    <span className="font-medium min-w-36 text-center text-sm">{detailMonthTitle}</span>
-                    <button className="btn btn-sm" onClick={() => changeDetailMonth(1)}>{">"}</button>
-                    <button className="btn btn-sm btn-ghost" onClick={resetDetailToNow} title={t("stats.current_month")}><RotateCcw size={14} /></button>
-                </div>
-
-                {/* Répartition par sous-pot + Transactions */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <SectionCard title={t("stats.by_subpot")}>
-                        {bySubPot.length === 0 ? (
-                            <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
-                        ) : (
-                            <ResponsiveContainer width="100%" height={280}>
-                                <PieChart>
-                                    <Pie data={bySubPot} dataKey="amount" nameKey="sub_pot"
-                                        cx="50%" cy="45%" innerRadius={55} outerRadius={85} paddingAngle={2}>
-                                        {bySubPot.map((_, i) => <Cell key={i} fill={subPotBaseColor(i)} />)}
-                                    </Pie>
-                                    <Tooltip formatter={((v: unknown, name: string) => [`${formatAmount(v as number)} ${currencySymbol}`, name]) as any} />
-                                    <Legend iconType="circle" iconSize={8} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        )}
-                    </SectionCard>
-
-                    <SectionCard
-                        title={t("stats.monthly_transactions")}
-                        headerRight={
-                            <div className="flex items-center gap-1">
-                                {(["date", "amount"] as TxSortKey[]).map(k => (
-                                    <button key={k}
-                                        className={`btn btn-xs ${txSortKey === k ? "btn-primary" : "btn-ghost"}`}
-                                        onClick={() => toggleSort(k)}
-                                    >
-                                        {t(`stats.sort_${k}`)}
-                                        {txSortKey === k && <span className="ml-0.5">{txSortDir === "asc" ? "↑" : "↓"}</span>}
-                                    </button>
-                                ))}
-                            </div>
-                        }
-                    >
-                        {sortedTransactions.length === 0 ? (
-                            <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
-                        ) : (
-                            <div className="flex flex-col divide-y divide-base-300 max-h-72 overflow-y-auto">
-                                {sortedTransactions.map((tx, i) => (
-                                    <div key={i} className="flex items-center justify-between py-2 gap-2">
-                                        <div className="flex flex-col min-w-0">
-                                            <div className="flex items-center gap-1.5">
-                                                {tx.is_planned && (
-                                                    <span className="badge badge-xs badge-warning shrink-0">{t("stats.planned")}</span>
-                                                )}
-                                                <span className="text-sm font-medium truncate">{tx.motif || "—"}</span>
-                                            </div>
-                                            <span className="text-xs opacity-50">
-                                                {tx.date} · {tx.pot !== "—" ? `${tx.pot} › ${tx.sub_pot}` : t("stats.no_subpot")}
-                                            </span>
-                                        </div>
-                                        <span className={`text-sm font-semibold shrink-0 ${tx.transaction_type === "DEBIT" ? "text-error" : "text-success"}`}>
-                                            {tx.transaction_type === "DEBIT" ? "-" : "+"}{formatAmount(tx.amount)} {currencySymbol}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </SectionCard>
-                </div>
-
-                {/* Stacked bar */}
-                <SectionCard title={t("stats.stacked_by_subpot")}>
-                    {stackedData.length === 0 ? (
-                        <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
-                    ) : (
-                        <ResponsiveContainer width="100%" height={Math.max(260, stackedData.length * 36)}>
-                            <BarChart data={stackedData} layout="vertical"
-                                margin={{ top: 4, right: 60, left: 0, bottom: 4 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.2} />
-                                <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={v => formatAmount(v)} />
-                                <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={90} />
-                                <Tooltip
-                                    content={({ active, payload, label }) => {
-                                        if (!active || !payload?.length) return null
-                                        const segs = payload.filter(p => (p.value as number) > 0)
-                                        const total = segs.reduce((s, p) => s + (p.value as number), 0)
-                                        const si = (segs[0]?.payload as Record<string, unknown>)?._si as number ?? 0
-                                        return (
-                                            <div className="bg-base-200 border border-base-300 rounded p-2 text-xs shadow-lg">
-                                                <p className="font-semibold mb-1">{label} — {formatAmount(total)} {currencySymbol}</p>
-                                                {segs.map((p, i) => {
-                                                    const ti = parseInt((p.dataKey as string).replace("tx_", ""))
-                                                    const motif = (p.payload as Record<string, unknown>)[`m_${ti}`] as string || "—"
-                                                    return (
-                                                        <p key={i} style={{ color: subPotTxColor(si, ti, maxTxPerSubPot) }}>
-                                                            {motif} : {formatAmount(p.value as number)} {currencySymbol}
-                                                        </p>
-                                                    )
-                                                })}
-                                            </div>
-                                        )
-                                    }}
-                                />
-                                {Array.from({ length: maxTxPerSubPot }, (_, i) => (
-                                    <Bar key={i} dataKey={`tx_${i}`} stackId="a"
-                                        radius={i === maxTxPerSubPot - 1 ? [0, 4, 4, 0] : undefined}>
-                                        {sortedGroups.map((_, j) => (
-                                            <Cell key={j} fill={subPotTxColor(j, i, maxTxPerSubPot)} />
-                                        ))}
-                                    </Bar>
-                                ))}
-                            </BarChart>
-                        </ResponsiveContainer>
-                    )}
-                </SectionCard>
-
-                {/* Dépenses sans sous-pot */}
-                {noSubPotTx.length > 0 && (
-                    <SectionCard title={t("stats.no_subpot_expenses")}>
-                        <div className="flex flex-col divide-y divide-base-300 max-h-64 overflow-y-auto">
-                            {noSubPotTx.map((tx, i) => (
-                                <div key={i} className="flex items-center justify-between py-2 gap-2">
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="text-sm font-medium truncate">{tx.motif || "—"}</span>
-                                        <span className="text-xs opacity-50">{tx.date}</span>
-                                    </div>
-                                    <span className="text-sm font-semibold text-error shrink-0">
-                                        -{formatAmount(tx.amount)} {currencySymbol}
-                                    </span>
+                    {/* Répartition des actifs */}
+                    {investmentChartData.length > 0 && (
+                        <SectionCard title={t("investment.allocation")}>
+                            <div className="flex flex-col lg:flex-row gap-6 items-start">
+                                {/* Donut */}
+                                <div className="w-full lg:w-72 shrink-0">
+                                    <ResponsiveContainer width="100%" height={240}>
+                                        <PieChart>
+                                            <Pie
+                                                data={investmentChartData}
+                                                cx="50%" cy="50%"
+                                                innerRadius={55} outerRadius={85}
+                                                paddingAngle={2} dataKey="value"
+                                            >
+                                                {investmentChartData.map((_, i) => (
+                                                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip formatter={(value: number) => `${formatAmount(value)} ${currencySymbol}`} />
+                                            <Legend />
+                                        </PieChart>
+                                    </ResponsiveContainer>
                                 </div>
-                            ))}
-                        </div>
-                    </SectionCard>
-                )}
 
-                {/* Heatmap */}
-                <SectionCard title={`${t("stats.heatmap")} ${detailMonth?.year ?? ""}`}>
-                    {heatmap.length === 0 ? (
-                        <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
-                    ) : (
-                        <CalendarHeatmap data={heatmap} year={detailMonth?.year ?? now.getFullYear()} />
+                                {/* Table actifs */}
+                                <div className="flex-1 overflow-x-auto">
+                                    <table className="table w-full">
+                                        <thead>
+                                            <tr className="text-left">
+                                                <th>{t("accounts.asset_ticker")}</th>
+                                                <th>{t("accounts.asset_name")}</th>
+                                                <th className="text-right">{t("accounts.asset_quantity")}</th>
+                                                <th className="text-right">{t("accounts.asset_price")}</th>
+                                                <th className="text-right">{t("accounts.asset_total")}</th>
+                                                <th className="text-right">{t("investment.portfolio_pct")}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {investmentAssets.map((asset, i) => {
+                                                const assetValue = asset.quantity * asset.current_price
+                                                const pct = investmentTotal > 0 ? (assetValue / investmentTotal) * 100 : 0
+                                                return (
+                                                    <tr key={asset.id}>
+                                                        <td>
+                                                            <span className="font-mono font-semibold"
+                                                                style={{ color: CHART_COLORS[i % CHART_COLORS.length] }}>
+                                                                {asset.ticker}
+                                                            </span>
+                                                        </td>
+                                                        <td className="text-sm">{asset.name}</td>
+                                                        <td className="text-right tabular-nums">{asset.quantity}</td>
+                                                        <td className="text-right tabular-nums">
+                                                            {formatAmount(asset.current_price)} {currencySymbol}
+                                                        </td>
+                                                        <td className="text-right tabular-nums font-semibold">
+                                                            {formatAmount(assetValue)} {currencySymbol}
+                                                        </td>
+                                                        <td className="text-right tabular-nums">
+                                                            <div className="flex flex-col items-end gap-0.5">
+                                                                <span className="text-sm">{pct.toFixed(1)}%</span>
+                                                                <progress className="progress progress-primary w-16 h-1"
+                                                                    value={pct} max={100} />
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr className="font-bold border-t border-base-300">
+                                                <td colSpan={4} className="text-right pr-2 opacity-60">Total</td>
+                                                <td className="text-right tabular-nums">
+                                                    {formatAmount(investmentTotal)} {currencySymbol}
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </SectionCard>
                     )}
-                </SectionCard>
-            </div>
+                </>
+            )}
+
+            {/* ══ VUE NORMALE & ÉPARGNE ══ */}
+            {accountType !== "INVESTMENT" && (
+                <>
+                    {/* Cartes d'aujourd'hui */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <StatCard
+                            label={t("stats.balance")}
+                            value={`${formatAmount(todayBalance ?? undefined)} ${currencySymbol}`}
+                        />
+                        <StatCard
+                            label={t("stats.income")}
+                            value={`${formatAmount(todaySummary?.income)} ${currencySymbol}`}
+                            color="text-success"
+                        />
+                        <StatCard
+                            label={t("stats.expenses")}
+                            value={`${formatAmount(todaySummary?.expenses)} ${currencySymbol}`}
+                            color="text-error"
+                        />
+                        <StatCard
+                            label={t("stats.delta")}
+                            value={`${formatAmount(todaySummary?.delta)} ${currencySymbol}`}
+                            color={(todaySummary?.delta ?? 0) >= 0 ? "text-success" : "text-error"}
+                        />
+                    </div>
+
+                    {/* Évolution du solde */}
+                    {balanceChartJSX}
+
+                    {/* Détail mensuel */}
+                    <div className="flex flex-col gap-6">
+                        {/* Navigation mois */}
+                        <div className="flex items-center gap-2">
+                            <button className="btn btn-sm" onClick={() => changeDetailMonth(-1)}>{"<"}</button>
+                            <span className="font-medium min-w-36 text-center text-sm">{detailMonthTitle}</span>
+                            <button className="btn btn-sm" onClick={() => changeDetailMonth(1)}>{">"}</button>
+                            <button className="btn btn-sm btn-ghost" onClick={resetDetailToNow} title={t("stats.current_month")}>
+                                <RotateCcw size={14} />
+                            </button>
+                        </div>
+
+                        {/* Compte courant : pots + stacked bar */}
+                        {accountType === "NORMAL" && (
+                            <>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <SectionCard title={t("stats.by_subpot")}>
+                                        {bySubPot.length === 0 ? (
+                                            <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
+                                        ) : (
+                                            <ResponsiveContainer width="100%" height={280}>
+                                                <PieChart>
+                                                    <Pie data={bySubPot} dataKey="amount" nameKey="sub_pot"
+                                                        cx="50%" cy="45%" innerRadius={55} outerRadius={85} paddingAngle={2}>
+                                                        {bySubPot.map((_, i) => <Cell key={i} fill={subPotBaseColor(i)} />)}
+                                                    </Pie>
+                                                    <Tooltip formatter={((v: unknown, name: string) => [`${formatAmount(v as number)} ${currencySymbol}`, name]) as any} />
+                                                    <Legend iconType="circle" iconSize={8} />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        )}
+                                    </SectionCard>
+                                    {txListJSX(true)}
+                                </div>
+
+                                <SectionCard title={t("stats.stacked_by_subpot")}>
+                                    {stackedData.length === 0 ? (
+                                        <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
+                                    ) : (
+                                        <ResponsiveContainer width="100%" height={Math.max(260, stackedData.length * 36)}>
+                                            <BarChart data={stackedData} layout="vertical"
+                                                margin={{ top: 4, right: 60, left: 0, bottom: 4 }}>
+                                                <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.2} />
+                                                <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={v => formatAmount(v)} />
+                                                <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={90} />
+                                                <Tooltip
+                                                    content={({ active, payload, label }) => {
+                                                        if (!active || !payload?.length) return null
+                                                        const segs = payload.filter(p => (p.value as number) > 0)
+                                                        const total = segs.reduce((s, p) => s + (p.value as number), 0)
+                                                        const si = (segs[0]?.payload as Record<string, unknown>)?._si as number ?? 0
+                                                        return (
+                                                            <div className="bg-base-200 border border-base-300 rounded p-2 text-xs shadow-lg">
+                                                                <p className="font-semibold mb-1">{label} — {formatAmount(total)} {currencySymbol}</p>
+                                                                {segs.map((p, i) => {
+                                                                    const ti = parseInt((p.dataKey as string).replace("tx_", ""))
+                                                                    const motif = (p.payload as Record<string, unknown>)[`m_${ti}`] as string || "—"
+                                                                    return (
+                                                                        <p key={i} style={{ color: subPotTxColor(si, ti, maxTxPerSubPot) }}>
+                                                                            {motif} : {formatAmount(p.value as number)} {currencySymbol}
+                                                                        </p>
+                                                                    )
+                                                                })}
+                                                            </div>
+                                                        )
+                                                    }}
+                                                />
+                                                {Array.from({ length: maxTxPerSubPot }, (_, i) => (
+                                                    <Bar key={i} dataKey={`tx_${i}`} stackId="a"
+                                                        radius={i === maxTxPerSubPot - 1 ? [0, 4, 4, 0] : undefined}>
+                                                        {sortedGroups.map((_, j) => (
+                                                            <Cell key={j} fill={subPotTxColor(j, i, maxTxPerSubPot)} />
+                                                        ))}
+                                                    </Bar>
+                                                ))}
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    )}
+                                </SectionCard>
+
+                                {noSubPotTx.length > 0 && (
+                                    <SectionCard title={t("stats.no_subpot_expenses")}>
+                                        <div className="flex flex-col divide-y divide-base-300 max-h-64 overflow-y-auto">
+                                            {noSubPotTx.map((tx, i) => (
+                                                <div key={i} className="flex items-center justify-between py-2 gap-2">
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="text-sm font-medium truncate">{tx.motif || "—"}</span>
+                                                        <span className="text-xs opacity-50">{tx.date}</span>
+                                                    </div>
+                                                    <span className="text-sm font-semibold text-error shrink-0">
+                                                        -{formatAmount(tx.amount)} {currencySymbol}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </SectionCard>
+                                )}
+                            </>
+                        )}
+
+                        {/* Épargne : seulement les transactions (sans info pots) */}
+                        {accountType === "SAVINGS" && txListJSX(false)}
+
+                        {/* Heatmap (compte courant uniquement) */}
+                        {accountType === "NORMAL" && (
+                            <SectionCard title={`${t("stats.heatmap")} ${detailMonth?.year ?? ""}`}>
+                                {heatmap.length === 0 ? (
+                                    <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
+                                ) : (
+                                    <CalendarHeatmap data={heatmap} year={detailMonth?.year ?? now.getFullYear()} />
+                                )}
+                            </SectionCard>
+                        )}
+                    </div>
+                </>
+            )}
 
         </div>
     )

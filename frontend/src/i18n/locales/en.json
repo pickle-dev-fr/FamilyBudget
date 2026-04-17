@@ -141,6 +141,15 @@
         "reste": "Remaining",
         "progression": "Progress"
     },
+    "investment": {
+        "back": "Back to accounts",
+        "total_value": "Total value",
+        "asset_count": "Assets",
+        "last_update": "Last update",
+        "assets_title": "Assets",
+        "portfolio_pct": "% Portfolio",
+        "allocation": "Allocation"
+    },
     "stats": {
         "title": "Statistics",
         "balance": "Balance",

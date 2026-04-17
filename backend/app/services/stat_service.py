@@ -3,7 +3,7 @@ from sqlalchemy import or_, func
 from datetime import date, timedelta
 from collections import defaultdict
 
-from app.models import Account, User, Sub_Pot, Pot, Transaction, TypeTransaction
+from app.models import Account, AccountType, User, Sub_Pot, Pot, Transaction, TypeTransaction, PortfolioSnapshot
 from app.services.account_service import AccountService
 from app.utils.budget_cycle import get_budget_cycle_for_month, previous_month
 from app.schemas.stats_schema import BalancePoint, MonthlySummaryPoint, PotAmount, SubPotAmount, HeatmapPoint, TransactionStat, DailyBalancePoint
@@ -159,6 +159,56 @@ class StatService:
                     result.append(SubPotAmount(pot=pot.name, sub_pot=sp.name, amount=round(float(total), 2)))
 
         return sorted(result, key=lambda x: x.amount, reverse=True)
+
+    @staticmethod
+    def balance_for_range_investment(session: Session, account: Account, from_date: date, to_date: date) -> list[DailyBalancePoint]:
+        """Historique de valeur d'un portefeuille investissement via les snapshots quotidiens."""
+        from app.models import InvestmentAsset
+        today = date.today()
+
+        # Chargement explicite des actifs (ne pas dépendre du lazy-loading)
+        assets = session.exec(
+            select(InvestmentAsset).where(InvestmentAsset.account_id == account.id)
+        ).all()
+        # Valeur live courante (fallback si pas encore de snapshot)
+        live_value = round(sum(a.quantity * a.current_price for a in assets), 2)
+
+        # Tous les snapshots de ce compte (triés)
+        snapshots = session.exec(
+            select(PortfolioSnapshot)
+            .where(PortfolioSnapshot.account_id == account.id)
+            .order_by(PortfolioSnapshot.snapshot_date)
+        ).all()
+
+        snap_by_date: dict[date, float] = {s.snapshot_date: s.total_value for s in snapshots}
+        # Injecter la valeur live pour aujourd'hui si pas encore de snapshot du jour
+        if today not in snap_by_date:
+            snap_by_date[today] = live_value
+
+        # Valeur de départ (dernier snapshot connu avant from_date)
+        last_value = live_value
+        for s in snapshots:
+            if s.snapshot_date < from_date:
+                last_value = s.total_value
+            else:
+                break
+        # Si aucun snapshot avant from_date mais qu'il y en a après, on part de 0
+        if not snapshots or all(s.snapshot_date >= from_date for s in snapshots):
+            last_value = snap_by_date.get(from_date, live_value if from_date == today else 0.0)
+
+        result = []
+        current = from_date
+        while current <= to_date:
+            if current in snap_by_date:
+                last_value = snap_by_date[current]
+            result.append(DailyBalancePoint(
+                date=str(current),
+                balance=round(last_value, 2),
+                is_future=current > today,
+            ))
+            current += timedelta(days=1)
+
+        return result
 
     @staticmethod
     def balance_for_range(session: Session, account: Account, from_date: date, to_date: date) -> list[DailyBalancePoint]:

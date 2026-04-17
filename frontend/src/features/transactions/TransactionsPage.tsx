@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { RotateCcw } from "lucide-react"
 import { deleteTransaction, getTransactionsMois, createTransaction, updateTransaction, type Transaction, type CreateTransactionPayload, type UpdateTransactionPayload, createTransfer } from "@/api/transactions.api"
 import { getAccounts, type Account } from "@/api/accounts.api"
 import { ActionsMenu } from "@/components/layout/ActionsMenu"
@@ -161,7 +162,7 @@ export default function TransactionsPage(): React.JSX.Element {
                 </span>
                 <button className="btn btn-sm" onClick={nextMonth}>{">"}</button>
                 <button className="btn btn-sm btn-ghost" onClick={goToCurrentMonth} title={t("transactions.current_month")}>
-                    ⌂
+                    <RotateCcw size={14} />
                 </button>
             </div>
 
