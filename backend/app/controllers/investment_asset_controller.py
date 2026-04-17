@@ -53,7 +53,7 @@ def add_asset(
     account = _check_investment_account(session, account_id, user)
     try:
         result = InvestmentAssetService.add_asset(session, account, payload)
-        snapshot_portfolio_today(session, account_id)
+        update_investment_prices(session, account_id=account_id)
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -70,7 +70,7 @@ def update_asset(
     _check_investment_account(session, account_id, user)
     try:
         result = InvestmentAssetService.update_asset(session, asset_id, payload)
-        snapshot_portfolio_today(session, account_id)
+        update_investment_prices(session, account_id=account_id)
         return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
