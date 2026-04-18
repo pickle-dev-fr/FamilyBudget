@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { ArrowLeft, Trash2, Plus } from "lucide-react"
 import {
@@ -313,7 +313,18 @@ function SubPotEditRow({ subPot, currentPot, allMovablePots, isInDefaultPot, cur
     const [name, setName] = useState(subPot.name)
     const [prevision, setPrevision] = useState(subPot.prevision)
     const [potId, setPotId] = useState(subPot.pot_id)
-    const [position, setPosition] = useState(currentPot.sub_pots.findIndex(sp => sp.id === subPot.id))
+
+    const originalIndex = currentPot.sub_pots.findIndex(sp => sp.id === subPot.id)
+    const [position, setPosition] = useState(originalIndex)
+
+    // Sync position après reload (l'ordre a pu changer côté serveur)
+    const prevOriginalIndex = useRef(originalIndex)
+    useEffect(() => {
+        if (prevOriginalIndex.current !== originalIndex) {
+            setPosition(originalIndex)
+            prevOriginalIndex.current = originalIndex
+        }
+    }, [originalIndex])
 
     const targetPot = allMovablePots.find(p => p.id === potId) ?? currentPot
     const positionCount = potId === currentPot.id
@@ -325,7 +336,6 @@ function SubPotEditRow({ subPot, currentPot, allMovablePots, isInDefaultPot, cur
     const pctColor = pct > 100 ? "text-error" : pct >= 80 ? "text-warning" : "text-success"
     const barColor = pct > 100 ? "bg-error" : pct >= 80 ? "bg-warning" : "bg-success"
 
-    const originalIndex = currentPot.sub_pots.findIndex(sp => sp.id === subPot.id)
     const isDirty = name !== subPot.name || prevision !== subPot.prevision
         || potId !== subPot.pot_id || position !== originalIndex
 
