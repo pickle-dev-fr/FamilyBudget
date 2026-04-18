@@ -19,6 +19,7 @@ import DeleteRecurringModal from "./DeleteRecurrentModal"
 import TransferModal from "../transactions/TransfertModal"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/auth/currency"
+import { formatAmount } from "@/utils"
 import { useLoading } from "@/context/loading"
 import { usePersistedState } from "@/hooks/usePersistedState"
 
@@ -165,58 +166,88 @@ export default function RecurringPage() {
                 </div>
             </div>
 
-            {/* Tableau */}
+            {/* Tableau / Cartes */}
             <div className="bg-base-100 border border-base-300 rounded-xl overflow-hidden">
                 {transactions.length === 0 ? (
                     <EmptyState icon={Repeat} message={t("recurring.empty")} />
-                ) : (
-                <div className="overflow-x-auto">
-                    <table className="table w-full">
-                        <thead>
-                            <tr>
-                                <th>{t("transactions.type")}</th>
-                                <th>{t("transactions.amount")}</th>
-                                <th>{t("transactions.sub_pot")}</th>
-                                <th>{t("transactions.motif")}</th>
-                                <th>{t("recurring.recurrence_type.label")}</th>
-                                <th>{t("recurring.next_date")}</th>
-                                <th>{t("recurring.end_date")}</th>
-                                <th className="w-12"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {transactions.map(tx => (
-                                <tr key={tx.id}>
-                                    <td>
-                                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full
-                                            ${tx.transaction_type === "DEBIT"
-                                                ? "bg-error/10 text-error"
-                                                : "bg-success/10 text-success"}`}>
-                                            {tx.transaction_type}
+                ) : (<>
+                    {/* Vue carte mobile */}
+                    <div className="md:hidden divide-y divide-base-300/50">
+                        {transactions.map(tx => {
+                            const isCredit = tx.transaction_type === "CREDIT"
+                            const subPotName = subPots.find(sp => sp.id === tx.sub_pot_id)?.name
+                            return (
+                                <div key={tx.id} className="flex items-center gap-3 px-4 py-3 hover:bg-base-200/40 transition-colors">
+                                    <div className={`w-1.5 h-10 rounded-full shrink-0 ${isCredit ? "bg-success" : "bg-error"}`} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium truncate">{tx.motif || "—"}</p>
+                                        <p className="text-xs text-base-content/40 mt-0.5 truncate">
+                                            ↻ {tx.recurrence_type} · {t("recurring.next_date")} {tx.transaction_date}
+                                            {subPotName ? ` · ${subPotName}` : ""}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <span className={`text-sm font-bold tabular-nums ${isCredit ? "text-success" : "text-error"}`}>
+                                            {isCredit ? "+" : "-"}{formatAmount(tx.amount)} {currencySymbol}
                                         </span>
-                                    </td>
-                                    <td className="text-sm font-semibold tabular-nums">
-                                        {tx.amount.toFixed(2)} {currencySymbol}
-                                    </td>
-                                    <td className="text-sm text-base-content/60">
-                                        {subPots.find(sp => sp.id === tx.sub_pot_id)?.name ?? "—"}
-                                    </td>
-                                    <td className="text-sm">{tx.motif}</td>
-                                    <td className="text-sm text-base-content/60">{tx.recurrence_type ?? "—"}</td>
-                                    <td className="text-sm tabular-nums text-base-content/60">{tx.transaction_date}</td>
-                                    <td className="text-sm tabular-nums text-base-content/60">{tx.recurrence_end_date ?? "—"}</td>
-                                    <td>
                                         <ActionsMenu
                                             onEdit={() => { setSelectedTx(tx); setIsModalOpen(true) }}
                                             onDelete={() => { setTxToDelete(tx); setDeleteModalOpen(true) }}
                                         />
-                                    </td>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+
+                    {/* Vue tableau desktop */}
+                    <div className="hidden md:block overflow-x-auto">
+                        <table className="table w-full">
+                            <thead>
+                                <tr>
+                                    <th>{t("transactions.type")}</th>
+                                    <th>{t("transactions.amount")}</th>
+                                    <th>{t("transactions.sub_pot")}</th>
+                                    <th>{t("transactions.motif")}</th>
+                                    <th>{t("recurring.recurrence_type.label")}</th>
+                                    <th>{t("recurring.next_date")}</th>
+                                    <th>{t("recurring.end_date")}</th>
+                                    <th className="w-12"></th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                )}
+                            </thead>
+                            <tbody>
+                                {transactions.map(tx => (
+                                    <tr key={tx.id}>
+                                        <td>
+                                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full
+                                                ${tx.transaction_type === "DEBIT"
+                                                    ? "bg-error/10 text-error"
+                                                    : "bg-success/10 text-success"}`}>
+                                                {tx.transaction_type}
+                                            </span>
+                                        </td>
+                                        <td className="text-sm font-semibold tabular-nums">
+                                            {tx.amount.toFixed(2)} {currencySymbol}
+                                        </td>
+                                        <td className="text-sm text-base-content/60">
+                                            {subPots.find(sp => sp.id === tx.sub_pot_id)?.name ?? "—"}
+                                        </td>
+                                        <td className="text-sm">{tx.motif}</td>
+                                        <td className="text-sm text-base-content/60">{tx.recurrence_type ?? "—"}</td>
+                                        <td className="text-sm tabular-nums text-base-content/60">{tx.transaction_date}</td>
+                                        <td className="text-sm tabular-nums text-base-content/60">{tx.recurrence_end_date ?? "—"}</td>
+                                        <td>
+                                            <ActionsMenu
+                                                onEdit={() => { setSelectedTx(tx); setIsModalOpen(true) }}
+                                                onDelete={() => { setTxToDelete(tx); setDeleteModalOpen(true) }}
+                                            />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </>)}
             </div>
 
             {/* MODAL */}

@@ -164,12 +164,43 @@ export default function TransactionsPage(): React.JSX.Element {
                 </div>
             </div>
 
-            {/* ── Tableau ── */}
+            {/* ── Liste / Tableau ── */}
             <div className="bg-base-100 border border-base-300 rounded-xl overflow-hidden">
                 {transactions.length === 0 ? (
                     <EmptyState icon={Receipt} message={t("transactions.empty")} />
-                ) : (
-                    <table className="table w-full">
+                ) : (<>
+                    {/* Vue carte mobile */}
+                    <div className="md:hidden divide-y divide-base-300/50">
+                        {transactions.map(tx => {
+                            const isCredit = tx.transaction_type === "CREDIT"
+                            const subPotName = sub_pots.find(sp => sp.id === tx.sub_pot_id)?.name
+                            return (
+                                <div key={tx.id} className="flex items-center gap-3 px-4 py-3 hover:bg-base-200/40 transition-colors">
+                                    <div className={`w-1.5 h-10 rounded-full shrink-0 ${isCredit ? "bg-success" : "bg-error"}`} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium truncate">{tx.motif || "—"}</p>
+                                        <p className="text-xs text-base-content/40 mt-0.5 truncate">
+                                            {tx.transaction_date}
+                                            {subPotName ? ` · ${subPotName}` : ""}
+                                            {tx.recurrence_type ? " · ↻" : ""}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <span className={`text-sm font-bold tabular-nums ${isCredit ? "text-success" : "text-error"}`}>
+                                            {isCredit ? "+" : "-"}{formatAmount(tx.amount)} {currencySymbol}
+                                        </span>
+                                        <ActionsMenu
+                                            onDelete={() => setDeleteTarget(tx)}
+                                            onEdit={() => { setModalTarget(tx); setTransactionEditId(tx.id) }}
+                                        />
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+
+                    {/* Vue tableau desktop */}
+                    <table className="table w-full hidden md:table">
                         <thead>
                             <tr>
                                 <th>{t("transactions.date")}</th>
@@ -216,7 +247,7 @@ export default function TransactionsPage(): React.JSX.Element {
                             ))}
                         </tbody>
                     </table>
-                )}
+                </>)}
             </div>
 
             {/* Modales */}

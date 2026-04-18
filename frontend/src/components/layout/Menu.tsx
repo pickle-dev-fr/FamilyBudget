@@ -15,11 +15,8 @@ import {
     BarChart2,
     Settings,
     X,
-    Sun,
-    Moon,
     type LucideIcon,
 } from "lucide-react";
-import type { Theme } from "@/api/settings.api";
 
 type NavItem = {
     to: string;
@@ -51,7 +48,7 @@ export function closeDrawer() {
 export default function Menu() {
     const { t } = useTranslation();
     const { hasAccounts } = useAccount();
-    const { currencySymbol, theme, setTheme } = useCurrency();
+    const { currencySymbol } = useCurrency();
     const [totalBalance, setTotalBalance] = useState<number | null>(null);
 
     useEffect(() => {
@@ -112,20 +109,10 @@ export default function Menu() {
                     </div>
                 )}
 
-                {/* Settings + theme toggle */}
-                <div className="flex items-center gap-1">
-                    <NavLink to="/settings" className={`${navClass} flex-1`} onClick={closeDrawer}>
-                        <Settings size={17} className="shrink-0" />
-                        <span>{t("menu.settings")}</span>
-                    </NavLink>
-                    <button
-                        className="btn btn-ghost btn-sm btn-square text-base-content/50 hover:text-base-content shrink-0"
-                        onClick={() => setTheme(theme === "DARK" ? "LIGHT" : "DARK" as Theme)}
-                        title={theme === "DARK" ? t("theme.light") : t("theme.dark")}
-                    >
-                        {theme === "DARK" ? <Sun size={16} /> : <Moon size={16} />}
-                    </button>
-                </div>
+                <NavLink to="/settings" className={navClass} onClick={closeDrawer}>
+                    <Settings size={17} className="shrink-0" />
+                    <span>{t("menu.settings")}</span>
+                </NavLink>
             </div>
         </nav>
     );
