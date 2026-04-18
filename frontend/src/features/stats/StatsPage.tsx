@@ -8,7 +8,7 @@ import {
     type DailyBalancePoint, type MonthlySummaryPoint, type SubPotAmount,
     type HeatmapPoint, type TransactionStat,
 } from "@/api/stats.api"
-import { RotateCcw } from "lucide-react"
+import { RotateCcw, Wallet, BarChart2, Clock, TrendingUp, TrendingDown, PiggyBank, Target } from "lucide-react"
 import { formatAmount } from "@/utils"
 import { useCurrency } from "@/auth/currency"
 import {
@@ -82,11 +82,18 @@ function SectionCard({ title, headerRight, children }: {
     )
 }
 
-function StatCard({ label, value, color }: { label: string; value: string; color?: string }) {
+function StatCard({ label, value, color, icon: Icon }: { label: string; value: string; color?: string; icon?: React.ElementType }) {
     return (
-        <div className="bg-base-100 border border-base-300 rounded-xl px-4 py-3.5 flex flex-col gap-1">
-            <span className="text-xs font-medium text-base-content/45 uppercase tracking-wider">{label}</span>
-            <span className={`text-xl font-bold ${color ?? ""}`}>{value}</span>
+        <div className="bg-base-100 border border-base-300 rounded-xl px-4 py-3.5 flex items-start gap-3">
+            {Icon && (
+                <div className="shrink-0 mt-0.5 p-2 rounded-lg bg-primary/10">
+                    <Icon size={16} className="text-primary" />
+                </div>
+            )}
+            <div className="min-w-0">
+                <span className="text-xs font-medium text-base-content/45 uppercase tracking-wider block">{label}</span>
+                <span className={`text-xl font-bold ${color ?? ""}`}>{value}</span>
+            </div>
         </div>
     )
 }
@@ -510,15 +517,18 @@ export default function StatsPage() {
                     {/* Cartes */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         <StatCard
+                            icon={Wallet}
                             label={t("investment.total_value")}
                             value={`${formatAmount(todayBalance ?? undefined)} ${currencySymbol}`}
                             color={(todayBalance ?? 0) >= 0 ? "text-success" : "text-error"}
                         />
                         <StatCard
+                            icon={BarChart2}
                             label={t("investment.asset_count")}
                             value={String(investmentAssets.length)}
                         />
                         <StatCard
+                            icon={Clock}
                             label={t("investment.last_update")}
                             value={formatLastUpdate(investmentLastUpdate)}
                         />
@@ -618,20 +628,24 @@ export default function StatsPage() {
                     {/* Cartes d'aujourd'hui */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <StatCard
+                            icon={Wallet}
                             label={t("stats.balance")}
                             value={`${formatAmount(todayBalance ?? undefined)} ${currencySymbol}`}
                         />
                         <StatCard
+                            icon={TrendingUp}
                             label={t("stats.income")}
                             value={`${formatAmount(todaySummary?.income)} ${currencySymbol}`}
                             color="text-success"
                         />
                         <StatCard
+                            icon={TrendingDown}
                             label={t("stats.expenses")}
                             value={`${formatAmount(todaySummary?.expenses)} ${currencySymbol}`}
                             color="text-error"
                         />
                         <StatCard
+                            icon={(todaySummary?.delta ?? 0) >= 0 ? TrendingUp : TrendingDown}
                             label={t("stats.delta")}
                             value={`${formatAmount(todaySummary?.delta)} ${currencySymbol}`}
                             color={(todaySummary?.delta ?? 0) >= 0 ? "text-success" : "text-error"}

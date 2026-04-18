@@ -8,34 +8,18 @@ type Props = {
     children: ReactNode;
 };
 
-export default function SortableTableRow({
-    id,
-    disabled = false,
-    children
-}: Props) {
-    const {
-        setNodeRef,
-        attributes,
-        listeners,
-        transform,
-        transition
-    } = useSortable({
-        id
-    });
+export default function SortableTableRow({ id, disabled = false, children }: Props) {
+    const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id });
 
     return (
         <tr
             ref={setNodeRef}
-            className="bg-bg-soft rounded-md"
-            style={{
-                transform: CSS.Transform.toString(transform),
-                transition,
-            }}
+            className={`transition-opacity ${isDragging ? "opacity-40" : "opacity-100"} ${!disabled ? "cursor-grab active:cursor-grabbing" : ""}`}
+            style={{ transform: CSS.Transform.toString(transform), transition }}
             {...(!disabled ? attributes : {})}
             {...(!disabled ? listeners : {})}
         >
             {children}
         </tr>
-
     );
 }

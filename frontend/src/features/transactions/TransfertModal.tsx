@@ -3,6 +3,7 @@ import Modal from "@/components/ui/Modal"
 import { useState } from "react"
 import type { UIPot } from "../pots/types"
 import { useTranslation } from "react-i18next"
+import { ArrowDown, Repeat } from "lucide-react"
 
 type Props = {
     fixedAccountSourceId: string
@@ -23,8 +24,12 @@ type Props = {
     }) => void
 }
 
+function FieldLabel({ children }: { children: React.ReactNode }) {
+    return <label className="text-sm font-medium text-base-content/70 mb-1 block">{children}</label>;
+}
+
 export default function TransferModal({
-    fixedAccountSourceId: fixedAccountsourceId,
+    fixedAccountSourceId,
     accounts,
     isForcedRecurrent,
     pots,
@@ -32,36 +37,23 @@ export default function TransferModal({
     onCreate
 }: Props) {
     const { t } = useTranslation();
-
     const today = new Date().toISOString().split("T")[0]
 
     const [amount, setAmount] = useState(0)
     const [motif, setMotif] = useState("")
     const [transactionDate, setTransactionDate] = useState(today)
-    const otherAccounts = accounts.filter(
-        c => c.id !== fixedAccountsourceId
-    )
-
-    const [destinationId, setDestinationId] = useState<string>(
-        otherAccounts[0]?.id ?? ""
-    )
-
-    const [selectedSubPotId, setSelectedSubPotId] = useState<string>(
-        pots[0].sub_pots[0]?.id ?? ""
-    )
-
+    const otherAccounts = accounts.filter(c => c.id !== fixedAccountSourceId)
+    const [destinationId, setDestinationId] = useState<string>(otherAccounts[0]?.id ?? "")
+    const [selectedSubPotId, setSelectedSubPotId] = useState<string>(pots[0]?.sub_pots[0]?.id ?? "")
     const [recurrence, setRecurrence] = useState(isForcedRecurrent ?? false)
     const [recurrenceEndDate, setRecurrenceEndDate] = useState<string | null>(null)
 
-    const sourceAccount = accounts.find(c => c.id === fixedAccountsourceId)
+    const sourceAccount = accounts.find(c => c.id === fixedAccountSourceId)
 
     function handleSubmit() {
-        console.log(destinationId)
-        if (!destinationId) return
-        if (amount <= 0) return
-
+        if (!destinationId || amount <= 0) return
         onCreate({
-            account_source_id: fixedAccountsourceId,
+            account_source_id: fixedAccountSourceId,
             account_destination_id: destinationId,
             amount,
             motif,
@@ -71,7 +63,6 @@ export default function TransferModal({
             recurrence_type: recurrence ? "MONTH" : null,
             recurrence_end_date: recurrence ? recurrenceEndDate : null
         })
-
         onClose()
     }
 
@@ -82,45 +73,69 @@ export default function TransferModal({
             title={t("transactions.transfers.add")}
             footer={
                 <>
-                    <button className="btn btn-secondary" onClick={onClose}>
-                        {t("common.cancel")}
-                    </button>
-                    <button className="btn btn-primary" onClick={handleSubmit}>
-                        {t("common.save")}
-                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={onClose}>{t("common.cancel")}</button>
+                    <button className="btn btn-primary btn-sm" onClick={handleSubmit}>{t("common.save")}</button>
                 </>
             }
         >
             <div className="flex flex-col gap-4">
 
-                {/* DATE */}
-                <div>
-                    <label className="label">{t("transactions.date")}</label>
-                    <input
-                        type="date"
-                        className="input input-bordered w-full"
-                        value={transactionDate}
-                        onChange={e => setTransactionDate(e.target.value)}
-                    />
+                {/* ── Flux source → destination ── */}
+                <div className="flex flex-col items-stretch gap-1.5">
+                    <div>
+                        <FieldLabel>{t("transactions.transfers.source_account")}</FieldLabel>
+                        <input
+                            type="text"
+                            className="input input-bordered w-full bg-base-200/60 text-base-content/60 cursor-not-allowed"
+                            value={sourceAccount?.name ?? ""}
+                            disabled
+                        />
+                    </div>
+                    <div className="flex justify-center">
+                        <div className="w-7 h-7 rounded-full bg-base-200 border border-base-300 flex items-center justify-center">
+                            <ArrowDown size={14} className="text-base-content/40" />
+                        </div>
+                    </div>
+                    <div>
+                        <FieldLabel>{t("transactions.transfers.destination_account")}</FieldLabel>
+                        <select
+                            className="select select-bordered w-full"
+                            value={destinationId}
+                            onChange={e => setDestinationId(e.target.value)}
+                        >
+                            {otherAccounts.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
 
-                {/* AMOUNT */}
-                <div>
-                    <label className="label">{t("transactions.amount")}</label>
-                    <input
-                        type="number"
-                        min={0}
-                        className="input input-bordered w-full"
-                        value={amount}
-                        onChange={e =>
-                            setAmount(Math.max(0, Number(e.target.value)))
-                        }
-                    />
+                {/* ── Date + Montant ── */}
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <FieldLabel>{t("transactions.date")}</FieldLabel>
+                        <input
+                            type="date"
+                            className="input input-bordered w-full"
+                            value={transactionDate}
+                            onChange={e => setTransactionDate(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <FieldLabel>{t("transactions.amount")}</FieldLabel>
+                        <input
+                            type="number"
+                            min={0}
+                            className="input input-bordered w-full"
+                            value={amount}
+                            onChange={e => setAmount(Math.max(0, Number(e.target.value)))}
+                        />
+                    </div>
                 </div>
 
-                {/* MOTIF */}
+                {/* ── Motif ── */}
                 <div>
-                    <label className="label">{t("transactions.motif")}</label>
+                    <FieldLabel>{t("transactions.motif")}</FieldLabel>
                     <input
                         type="text"
                         className="input input-bordered w-full"
@@ -129,39 +144,32 @@ export default function TransferModal({
                     />
                 </div>
 
-                {/* SOURCE ACCOUNT */}
+                {/* ── Sous-pot picker ── */}
                 <div>
-                    <label className="label">
-                        {t("transactions.transfers.source_account")}
-                    </label>
-                    <input
-                        type="text"
-                        className="input input-bordered w-full"
-                        value={sourceAccount?.name ?? ""}
-                        disabled
-                    />
-                </div>
-
-                {/* SOUS POT */}
-                <div>
-                    <label className="label">{t("transactions.sub_pot")}</label>
-                    <div className="border rounded p-2 max-h-60 overflow-auto">
+                    <FieldLabel>{t("transactions.sub_pot")}</FieldLabel>
+                    <div className="bg-base-200/50 border border-base-300 rounded-xl p-2 max-h-44 overflow-y-auto space-y-1">
                         {pots.map(pot => (
-                            <div key={pot.id} className="mb-2">
-                                <div className="font-semibold">{pot.name}</div>
-                                <div className="ml-4 flex flex-col gap-1">
+                            <div key={pot.id}>
+                                <p className="text-xs font-semibold text-base-content/40 uppercase tracking-wider px-2 py-1">
+                                    {pot.name}
+                                </p>
+                                <div className="space-y-0.5">
                                     {pot.sub_pots.map(sp => (
-                                        <label key={sp.id} className="flex items-center gap-2">
+                                        <label
+                                            key={sp.id}
+                                            className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer transition-colors
+                                                ${selectedSubPotId === sp.id
+                                                    ? "bg-primary/10 text-primary"
+                                                    : "hover:bg-base-100 text-base-content"}`}
+                                        >
                                             <input
                                                 type="radio"
-                                                name="subPot"
+                                                name="subPotTransfer"
                                                 checked={selectedSubPotId === sp.id}
-                                                onChange={() =>
-                                                    setSelectedSubPotId(sp.id)
-                                                }
-                                                className="radio"
+                                                onChange={() => setSelectedSubPotId(sp.id)}
+                                                className="radio radio-sm radio-primary"
                                             />
-                                            <span>{sp.name}</span>
+                                            <span className="text-sm">{sp.name}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -170,54 +178,34 @@ export default function TransferModal({
                     </div>
                 </div>
 
-                {/* DESTINATION ACCOUNT */}
-                <div>
-                    <label className="label">
-                        {t("transactions.transfers.destination_account")}
-                    </label>
-                    <select
-                        className="select select-bordered w-full"
-                        value={destinationId}
-                        onChange={e => setDestinationId(e.target.value)}
-                    >
-                        {accounts
-                            .filter(c => c.id !== fixedAccountsourceId)
-                            .map(c => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                    </select>
-                </div>
-
-                {/* RECURRENCE */}
-                <div className="flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={recurrence}
-                        disabled={isForcedRecurrent}
-                        onChange={e => setRecurrence(e.target.checked)}
-                    />
-                    <span>{t("transactions.recurrent")}</span>
-                </div>
-
-                {recurrence && (
-                    <div>
-                        <label className="label">
-                            {t("transactions.recurrence_end")}
-                        </label>
+                {/* ── Récurrence ── */}
+                <div className={`rounded-xl transition-all ${recurrence ? "bg-base-200/50 border border-base-300 p-3" : ""}`}>
+                    <label className="flex items-center gap-2.5 cursor-pointer">
                         <input
-                            type="date"
-                            className="input input-bordered w-full"
-                            value={recurrenceEndDate ?? ""}
-                            onChange={e =>
-                                setRecurrenceEndDate(e.target.value)
-                            }
+                            type="checkbox"
+                            className="checkbox checkbox-sm checkbox-primary"
+                            checked={recurrence}
+                            disabled={isForcedRecurrent}
+                            onChange={e => setRecurrence(e.target.checked)}
                         />
-                    </div>
-                )}
+                        <span className="flex items-center gap-1.5 text-sm font-medium">
+                            <Repeat size={14} className="text-base-content/50" />
+                            {t("transactions.recurrent")}
+                        </span>
+                    </label>
 
+                    {recurrence && (
+                        <div className="mt-3">
+                            <FieldLabel>{t("transactions.recurrence_end")}</FieldLabel>
+                            <input
+                                type="date"
+                                className="input input-bordered w-full"
+                                value={recurrenceEndDate ?? ""}
+                                onChange={e => setRecurrenceEndDate(e.target.value)}
+                            />
+                        </div>
+                    )}
+                </div>
             </div>
         </Modal>
     )

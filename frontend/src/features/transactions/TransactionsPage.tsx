@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
-import { RotateCcw, ChevronLeft, ChevronRight, Plus, ArrowLeftRight } from "lucide-react"
+import { RotateCcw, ChevronLeft, ChevronRight, Plus, ArrowLeftRight, Receipt } from "lucide-react"
+import EmptyState from "@/components/ui/EmptyState"
 import { deleteTransaction, getTransactionsMois, createTransaction, updateTransaction, type Transaction, type CreateTransactionPayload, type UpdateTransactionPayload, createTransfer } from "@/api/transactions.api"
 import { getAccounts, type Account } from "@/api/accounts.api"
 import { ActionsMenu } from "@/components/layout/ActionsMenu"
@@ -159,7 +160,7 @@ export default function TransactionsPage(): React.JSX.Element {
             {/* ── Tableau ── */}
             <div className="bg-base-100 border border-base-300 rounded-xl overflow-hidden">
                 {transactions.length === 0 ? (
-                    <div className="text-center text-base-content/30 text-sm py-12">—</div>
+                    <EmptyState icon={Receipt} message={t("transactions.empty")} />
                 ) : (
                     <table className="table w-full">
                         <thead>

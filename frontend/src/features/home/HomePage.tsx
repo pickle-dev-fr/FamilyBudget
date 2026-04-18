@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
-import { TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, CalendarX } from "lucide-react"
+import EmptyState from "@/components/ui/EmptyState"
 
 import { formatAmount } from "@/utils"
 import { getAccounts, getAccountsBalance, type Account } from "@/api/accounts.api"
@@ -166,8 +167,8 @@ function TransactionList({
 
     if (!items.length) {
         return (
-            <div className="bg-base-100 border border-base-300 rounded-xl p-5 text-center text-sm text-base-content/30">
-                —
+            <div className="bg-base-100 border border-base-300 rounded-xl">
+                <EmptyState icon={CalendarX} message={t("home.no_transactions")} />
             </div>
         )
     }

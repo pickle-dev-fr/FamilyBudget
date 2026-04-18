@@ -21,13 +21,19 @@ type AccountsModalProps = {
     defaultValues?: Partial<AccountFormData>;
 };
 
-export default function AccountsModal({
-  open,
-  mode,
-  onClose,
-  onSubmit,
-  defaultValues,
-}: AccountsModalProps) {
+function FieldLabel({ children }: { children: React.ReactNode }) {
+    return <label className="text-sm font-medium text-base-content/70 mb-1 block">{children}</label>;
+}
+
+function SectionHeader({ children }: { children: React.ReactNode }) {
+    return (
+        <div className="text-xs font-semibold text-base-content/40 uppercase tracking-wider pb-1 mb-1 border-b border-base-300">
+            {children}
+        </div>
+    );
+}
+
+export default function AccountsModal({ open, mode, onClose, onSubmit, defaultValues }: AccountsModalProps) {
     const { t } = useTranslation();
 
     const [name, setName] = useState("");
@@ -76,64 +82,87 @@ export default function AccountsModal({
             title={t(mode === "edit" ? "accounts.edit" : "accounts.create")}
             onClose={onClose}
             footer={
-                <div className="flex justify-end gap-2 mt-4">
-                    <button className="btn btn-outline" onClick={onClose}>
+                <>
+                    <button className="btn btn-ghost btn-sm" onClick={onClose}>
                         {t("common.cancel")}
                     </button>
-                    <button className="btn btn-primary" onClick={handleSubmit}>
+                    <button className="btn btn-primary btn-sm" onClick={handleSubmit}>
                         {t("common.save")}
                     </button>
-                </div>
+                </>
             }
         >
-            <div className="flex flex-col gap-3">
-                {/* Nom */}
-                <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium text-text">{t("accounts.name")}</label>
-                    <input
-                        className="input input-bordered w-full bg-bg-soft text-text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                    />
-                </div>
+            <div className="flex flex-col gap-4">
 
-                {/* Type — seulement en création */}
-                {mode === "create" && (
-                    <div className="flex flex-col gap-1">
-                        <label className="text-sm font-medium text-text">{t("accounts.type")}</label>
-                        <select
-                            className="select select-bordered w-full bg-bg-soft text-text"
-                            value={accountType}
-                            onChange={(e) => setAccountType(e.target.value as AccountType)}
-                        >
-                            <option value="NORMAL">{t("accounts.type_normal")}</option>
-                            <option value="SAVINGS">{t("accounts.type_savings")}</option>
-                            <option value="INVESTMENT">{t("accounts.type_investment")}</option>
-                        </select>
-                    </div>
-                )}
+                {/* ── Général ── */}
+                <div className="flex flex-col gap-3">
+                    <SectionHeader>{t("accounts.section_general")}</SectionHeader>
 
-                {/* Début mois — uniquement pour compte courant */}
-                {accountType === "NORMAL" && (
-                    <div className="flex flex-col gap-1">
-                        <label className="text-sm font-medium text-text">{t("accounts.start_day")}</label>
+                    <div>
+                        <FieldLabel>{t("accounts.name")}</FieldLabel>
                         <input
-                            className="input input-bordered w-full bg-bg-soft text-text"
-                            type="number"
-                            min={1}
-                            max={31}
-                            value={startDay}
-                            onChange={(e) => setStartDay(Number(e.target.value))}
+                            className="input input-bordered w-full"
+                            autoFocus
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
                         />
                     </div>
+
+                    {mode === "create" && (
+                        <div>
+                            <FieldLabel>{t("accounts.type")}</FieldLabel>
+                            <select
+                                className="select select-bordered w-full"
+                                value={accountType}
+                                onChange={(e) => setAccountType(e.target.value as AccountType)}
+                            >
+                                <option value="NORMAL">{t("accounts.type_normal")}</option>
+                                <option value="SAVINGS">{t("accounts.type_savings")}</option>
+                                <option value="INVESTMENT">{t("accounts.type_investment")}</option>
+                            </select>
+                        </div>
+                    )}
+                </div>
+
+                {/* ── Paramètres (NORMAL only) ── */}
+                {accountType === "NORMAL" && (
+                    <div className="flex flex-col gap-3">
+                        <SectionHeader>{t("accounts.section_settings")}</SectionHeader>
+
+                        <div>
+                            <FieldLabel>{t("accounts.start_day")}</FieldLabel>
+                            <input
+                                className="input input-bordered w-full"
+                                type="number"
+                                min={1}
+                                max={31}
+                                value={startDay}
+                                onChange={(e) => setStartDay(Number(e.target.value))}
+                            />
+                        </div>
+
+                        <div>
+                            <FieldLabel>{t("accounts.initial_value")}</FieldLabel>
+                            <input
+                                className="input input-bordered w-full"
+                                type="text"
+                                inputMode="decimal"
+                                value={initialValue}
+                                onChange={(e) => {
+                                    const v = e.target.value;
+                                    if (v === "" || v === "-" || /^-?\d*\.?\d*$/.test(v)) setInitialValue(v);
+                                }}
+                            />
+                        </div>
+                    </div>
                 )}
 
-                {/* Valeur initiale — pas pour INVESTMENT (solde calculé depuis les actifs) */}
-                {accountType !== "INVESTMENT" && (
-                    <div className="flex flex-col gap-1">
-                        <label className="text-sm font-medium text-text">{t("accounts.initial_value")}</label>
+                {/* ── Valeur initiale (SAVINGS) ── */}
+                {accountType === "SAVINGS" && (
+                    <div>
+                        <FieldLabel>{t("accounts.initial_value")}</FieldLabel>
                         <input
-                            className="input input-bordered w-full bg-bg-soft text-text"
+                            className="input input-bordered w-full"
                             type="text"
                             inputMode="decimal"
                             value={initialValue}
@@ -145,53 +174,57 @@ export default function AccountsModal({
                     </div>
                 )}
 
-                {/* Champs épargne */}
+                {/* ── Épargne (SAVINGS only) ── */}
                 {accountType === "SAVINGS" && (
-                    <>
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm font-medium text-text">{t("accounts.savings_goal")}</label>
-                            <input
-                                className="input input-bordered w-full bg-bg-soft text-text"
-                                type="text"
-                                inputMode="decimal"
-                                placeholder="0"
-                                value={savingsGoal}
-                                onChange={(e) => {
-                                    const v = e.target.value;
-                                    if (v === "" || /^\d*\.?\d*$/.test(v)) setSavingsGoal(v);
-                                }}
-                            />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm font-medium text-text">{t("accounts.interest_rate")}</label>
-                            <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-3">
+                        <SectionHeader>{t("accounts.section_savings")}</SectionHeader>
+
+                        <div className="border-l-2 border-primary/30 pl-3 flex flex-col gap-3">
+                            <div>
+                                <FieldLabel>{t("accounts.savings_goal")}</FieldLabel>
                                 <input
-                                    className="input input-bordered w-full bg-bg-soft text-text"
+                                    className="input input-bordered w-full"
                                     type="text"
                                     inputMode="decimal"
                                     placeholder="0"
-                                    value={interestRate}
+                                    value={savingsGoal}
                                     onChange={(e) => {
                                         const v = e.target.value;
-                                        if (v === "" || /^\d*\.?\d*$/.test(v)) setInterestRate(v);
+                                        if (v === "" || /^\d*\.?\d*$/.test(v)) setSavingsGoal(v);
                                     }}
                                 />
-                                <span className="text-sm opacity-60">%</span>
+                            </div>
+                            <div>
+                                <FieldLabel>{t("accounts.interest_rate")}</FieldLabel>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        className="input input-bordered flex-1"
+                                        type="text"
+                                        inputMode="decimal"
+                                        placeholder="0"
+                                        value={interestRate}
+                                        onChange={(e) => {
+                                            const v = e.target.value;
+                                            if (v === "" || /^\d*\.?\d*$/.test(v)) setInterestRate(v);
+                                        }}
+                                    />
+                                    <span className="text-sm text-base-content/50 font-medium">%</span>
+                                </div>
+                            </div>
+                            <div>
+                                <FieldLabel>{t("accounts.interest_frequency")}</FieldLabel>
+                                <select
+                                    className="select select-bordered w-full"
+                                    value={interestFrequency}
+                                    onChange={(e) => setInterestFrequency(e.target.value as InterestFrequency)}
+                                >
+                                    <option value="ANNUAL">{t("accounts.frequency_annual")}</option>
+                                    <option value="MONTHLY">{t("accounts.frequency_monthly")}</option>
+                                    <option value="DAILY">{t("accounts.frequency_daily")}</option>
+                                </select>
                             </div>
                         </div>
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm font-medium text-text">{t("accounts.interest_frequency")}</label>
-                            <select
-                                className="select select-bordered w-full bg-bg-soft text-text"
-                                value={interestFrequency}
-                                onChange={(e) => setInterestFrequency(e.target.value as InterestFrequency)}
-                            >
-                                <option value="ANNUAL">{t("accounts.frequency_annual")}</option>
-                                <option value="MONTHLY">{t("accounts.frequency_monthly")}</option>
-                                <option value="DAILY">{t("accounts.frequency_daily")}</option>
-                            </select>
-                        </div>
-                    </>
+                    </div>
                 )}
             </div>
         </Modal>

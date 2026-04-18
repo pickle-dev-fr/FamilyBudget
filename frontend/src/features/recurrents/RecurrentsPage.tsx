@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react"
+import { Repeat } from "lucide-react"
+import EmptyState from "@/components/ui/EmptyState"
 import { getAccounts, type Account } from "@/api/accounts.api"
 import {
     getTransactionsRecurrente,
@@ -165,6 +167,9 @@ export default function RecurringPage() {
 
             {/* Tableau */}
             <div className="bg-base-100 border border-base-300 rounded-xl overflow-hidden">
+                {transactions.length === 0 ? (
+                    <EmptyState icon={Repeat} message={t("recurring.empty")} />
+                ) : (
                 <div className="overflow-x-auto">
                     <table className="table w-full">
                         <thead>
@@ -180,13 +185,6 @@ export default function RecurringPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {transactions.length === 0 && (
-                                <tr>
-                                    <td colSpan={8} className="text-center text-base-content/30 italic text-sm py-10">
-                                        {t("recurring.empty")}
-                                    </td>
-                                </tr>
-                            )}
                             {transactions.map(tx => (
                                 <tr key={tx.id}>
                                     <td>
@@ -218,6 +216,7 @@ export default function RecurringPage() {
                         </tbody>
                     </table>
                 </div>
+                )}
             </div>
 
             {/* MODAL */}

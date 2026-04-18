@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { RotateCcw, ChevronRight } from "lucide-react";
+import { RotateCcw, ChevronRight, Wallet } from "lucide-react";
+import EmptyState from "@/components/ui/EmptyState";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -155,6 +156,9 @@ export default function AccountsPage() {
 
             {/* Tableau */}
             <div className="bg-base-100 border border-base-300 rounded-xl overflow-hidden">
+                {filteredAccounts.length === 0 && isLoaded ? (
+                    <EmptyState icon={Wallet} message={t("accounts.empty_tab")} />
+                ) : (
                 <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -181,11 +185,6 @@ export default function AccountsPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredAccounts.length === 0 && (
-                                    <tr>
-                                        <td colSpan={4} className="text-center text-base-content/30 italic text-sm py-8">—</td>
-                                    </tr>
-                                )}
                                 {filteredAccounts.map(a => {
                                     const bal = balances[a.id] ?? 0;
                                     return (
@@ -248,6 +247,7 @@ export default function AccountsPage() {
                         </table>
                     </SortableContext>
                 </DndContext>
+                )}
             </div>
 
             {/* Modales */}
