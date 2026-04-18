@@ -175,7 +175,42 @@ export default function AccountsPage() {
                     }}
                 >
                     <SortableContext items={filteredAccounts.map(c => c.id)} strategy={verticalListSortingStrategy}>
-                        <table className="table w-full">
+                        {/* Vue carte mobile */}
+                        <div className="md:hidden divide-y divide-base-300/50">
+                            {filteredAccounts.map(a => {
+                                const bal = balances[a.id] ?? 0;
+                                return (
+                                    <div key={a.id} className="flex items-center gap-3 px-4 py-3 hover:bg-base-200/40 transition-colors">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium truncate">{a.name}</p>
+                                            {a.account_type === "SAVINGS" && a.savings_goal != null && a.savings_goal > 0 && (
+                                                <div className="mt-1">
+                                                    <progress className="progress progress-primary w-full h-1" value={Math.min(Math.max(bal, 0), a.savings_goal)} max={a.savings_goal} />
+                                                    <p className="text-xs text-base-content/40">{formatAmount(bal)} / {formatAmount(a.savings_goal)} {currencySymbol}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <span className={`text-sm font-bold tabular-nums ${bal >= 0 ? "text-success" : "text-error"}`}>
+                                                {formatAmount(bal)} {currencySymbol}
+                                            </span>
+                                            <div className="flex items-center gap-0.5">
+                                                {a.account_type === "INVESTMENT" && (
+                                                    <>
+                                                        <button className="btn btn-ghost btn-xs btn-square text-primary" onClick={() => navigate(`/accounts/${a.id}/investment`)}><ChevronRight size={14} /></button>
+                                                        <button className="btn btn-ghost btn-xs btn-square text-base-content/40" onClick={() => handleRefreshPrices(a.id)} disabled={refreshing === a.id}><RotateCcw size={13} className={refreshing === a.id ? "animate-spin" : ""} /></button>
+                                                    </>
+                                                )}
+                                                <ActionsMenu onDelete={() => handleDelete(a.id)} onEdit={() => setEditingAccount(a)} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Vue tableau desktop */}
+                        <table className="table w-full hidden md:table">
                             <thead>
                                 <tr>
                                     <th>{t("accounts.name")}</th>
