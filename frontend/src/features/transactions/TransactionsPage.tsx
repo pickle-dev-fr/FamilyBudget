@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useLocation } from "react-router-dom"
 import { RotateCcw, ChevronLeft, ChevronRight, Plus, ArrowLeftRight, Receipt } from "lucide-react"
 import EmptyState from "@/components/ui/EmptyState"
 import { deleteTransaction, getTransactionsMois, createTransaction, updateTransaction, type Transaction, type CreateTransactionPayload, type UpdateTransactionPayload, createTransfer } from "@/api/transactions.api"
@@ -18,6 +19,8 @@ import { useCurrency } from "@/auth/currency"
 export default function TransactionsPage(): React.JSX.Element {
     const { t } = useTranslation();
     const { currencySymbol } = useCurrency();
+    const location = useLocation();
+    const stateAccountId = (location.state as { accountId?: string } | null)?.accountId;
 
     const [accounts, setAccounts] = useState<Account[]>([])
     const [selectedAccountId, setSelectedAccountId] = usePersistedState<string>("last_account_id", "")
@@ -39,8 +42,12 @@ export default function TransactionsPage(): React.JSX.Element {
             const eligible = data.filter((a: Account) => a.account_type !== "INVESTMENT")
             setAccounts(eligible)
             if (eligible.length > 0) {
-                const valid = eligible.find((a: Account) => a.id === selectedAccountId)
-                if (!valid) setSelectedAccountId(eligible[0].id)
+                if (stateAccountId && eligible.find((a: Account) => a.id === stateAccountId)) {
+                    setSelectedAccountId(stateAccountId)
+                } else {
+                    const valid = eligible.find((a: Account) => a.id === selectedAccountId)
+                    if (!valid) setSelectedAccountId(eligible[0].id)
+                }
             }
         }
         loadAccounts()

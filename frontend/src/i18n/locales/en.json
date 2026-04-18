@@ -56,17 +56,19 @@
         "accounts": "Accounts",
         "pots": "Pots",
         "transactions": "Transactions",
-        "transactions_recurrent": "Recurring transactions",
+        "transactions_recurrent": "Recurring",
         "stats": "Statistics",
         "settings": "Settings",
-        "requires_account": "Create a bank account first"
+        "requires_account": "Create a bank account first",
+        "total_balance": "Total patrimony"
     },
     "home": {
         "title": "Home",
         "total_balance": "Total balance",
         "accounts_list": "My accounts",
         "today_transactions": "Today's transactions",
-        "tomorrow_transactions": "Tomorrow's transactions"
+        "tomorrow_transactions": "Tomorrow's transactions",
+        "no_transactions": "No transactions"
     },
     "accounts": {
         "create": "Create account",
@@ -77,7 +79,8 @@
         "balance": "Balance",
         "start_day": "Month start day",
         "initial_value": "Initial value",
-        "no_account_yet": "You don't have a bank account yet. Create one to access pots, transactions and statistics."
+        "no_account_yet": "You don't have a bank account yet. Create one to access pots, transactions and statistics.",
+        "empty_tab": "No accounts in this category"
     },
     "transactions": {
         "add": "Add transaction",
@@ -102,7 +105,8 @@
         "recurrence_end": "End date",
         "sub_pot": "Sub-pot",
         "transfer": "Make a transfer",
-    "current_month": "Current month"
+        "current_month": "Current month",
+        "empty": "No transactions this month"
     },
     "recurring": {
         "title": "Recurring transactions management",

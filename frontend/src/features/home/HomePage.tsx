@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { TrendingUp, TrendingDown, Minus, CalendarX } from "lucide-react"
 import EmptyState from "@/components/ui/EmptyState"
 
@@ -77,6 +78,7 @@ export default function HomePage() {
         )?.name ?? "-"
     }
 
+    const navigate = useNavigate()
     const dateLabel = now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })
     const timeLabel = now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" })
 
@@ -109,10 +111,16 @@ export default function HomePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {accounts.map((a) => {
                         const balance = balances[a.id] ?? 0
+                        const isClickable = a.account_type !== "INVESTMENT"
                         return (
                             <div
                                 key={a.id}
-                                className="bg-base-100 border border-base-300 rounded-xl p-4 flex items-center justify-between hover:-translate-y-0.5 transition-transform duration-150"
+                                onClick={() => isClickable
+                                    ? navigate("/transactions", { state: { accountId: a.id } })
+                                    : navigate(`/accounts/${a.id}/investment`)
+                                }
+                                className="bg-base-100 border border-base-300 rounded-xl p-4 flex items-center justify-between
+                                    hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30 transition-all duration-150 cursor-pointer"
                             >
                                 <div>
                                     <p className="text-sm font-medium">{a.name}</p>

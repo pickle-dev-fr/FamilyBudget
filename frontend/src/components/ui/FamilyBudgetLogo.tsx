@@ -18,6 +18,11 @@ const sizeConfig: Record<Size, SizeConfig> = {
   lg: { icon: 96,  wordmark: 42, subtitle: 19, gap: 20, subtitleMt: 6, wordmarkGap: 5 },
 };
 
+export function AppIcon({ size = 24 }: { size?: number }) {
+  const { currencySymbol } = useCurrency();
+  return <HouseIcon size={size} currencySymbol={currencySymbol} />;
+}
+
 function HouseIcon({ size, currencySymbol }: { size: number; currencySymbol: string }) {
   return (
     <svg

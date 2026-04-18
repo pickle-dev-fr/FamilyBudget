@@ -60,17 +60,19 @@
     "accounts": "Comptes",
     "pots": "Pots",
     "transactions": "Transactions",
-    "transactions_recurrent": "Transactions récurrentes",
+    "transactions_recurrent": "Récurrentes",
     "stats": "Statistiques",
     "settings": "Options",
-    "requires_account": "Créez d'abord un compte bancaire"
+    "requires_account": "Créez d'abord un compte bancaire",
+    "total_balance": "Patrimoine total"
   },
   "home": {
     "title": "Accueil",
     "total_balance": "Solde total",
     "accounts_list": "Mes comptes",
     "today_transactions": "Transactions aujourd'hui",
-    "tomorrow_transactions": "Transactions demain"
+    "tomorrow_transactions": "Transactions demain",
+    "no_transactions": "Aucune transaction"
   },
   "accounts": {
     "create": "Créer un compte",
@@ -82,6 +84,7 @@
     "start_day": "Début mois",
     "initial_value": "Valeur initiale",
     "no_account_yet": "Vous n'avez pas encore de compte bancaire. Créez-en un pour accéder aux pots, transactions et statistiques.",
+    "empty_tab": "Aucun compte dans cette catégorie",
     "type": "Type de compte",
     "type_normal": "Compte courant",
     "type_savings": "Épargne",
@@ -142,7 +145,8 @@
     "recurrence_end": "Date de fin",
     "sub_pot": "Sous-Pot",
     "transfer": "Effectuer un virement",
-    "current_month": "Mois en cours"
+    "current_month": "Mois en cours",
+    "empty": "Aucune transaction ce mois-ci"
   },
   "recurring": {
     "title": "Gestion des transactions récurrentes",

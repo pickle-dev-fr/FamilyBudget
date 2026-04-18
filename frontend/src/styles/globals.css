@@ -58,3 +58,22 @@ html {
   border-radius: 0.75rem;
   padding: 1.25rem;
 }
+
+/* ─── animation page ─────────────────────────── */
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-fade {
+  animation: pageFadeIn 180ms ease-out both;
+}
+
+/* ─── safe area mobile (iOS notch) ───────────── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .drawer-side aside {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  main {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+}
