@@ -12,8 +12,8 @@ export default function AppLayout() {
             {/* CONTENT */}
             <div className="drawer-content flex flex-col h-full bg-base-200">
                 {/* Mobile topbar */}
-                <div className="lg:hidden flex items-center justify-between px-4 h-14 bg-base-100 border-b border-base-300 shrink-0">
-                    <FamilyBudgetLogo size="sm" />
+                <div className="lg:hidden flex items-center justify-between px-4 h-16 bg-base-100 border-b border-base-300 shrink-0">
+                    <FamilyBudgetLogo size="md" />
                     <label htmlFor="app-drawer" className="btn btn-ghost btn-sm btn-square">
                         <MenuIcon size={20} />
                     </label>
@@ -28,7 +28,7 @@ export default function AppLayout() {
             {/* SIDEBAR */}
             <div className="drawer-side z-40">
                 <label htmlFor="app-drawer" className="drawer-overlay" />
-                <aside className="w-60 min-h-full h-full bg-base-100 border-r border-base-300 flex flex-col overflow-y-auto">
+                <aside className="w-full lg:w-60 min-h-full h-full bg-base-100 lg:border-r border-base-300 flex flex-col overflow-y-auto">
                     <Menu />
                 </aside>
             </div>

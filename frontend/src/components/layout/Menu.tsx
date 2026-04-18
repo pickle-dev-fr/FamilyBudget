@@ -10,6 +10,7 @@ import {
     Repeat,
     BarChart2,
     Settings,
+    X,
     type LucideIcon,
 } from "lucide-react";
 
@@ -31,9 +32,14 @@ const mainNav: NavItem[] = [
 ];
 
 const base = "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150";
-const activeClass  = `${base} bg-primary/10 text-primary`;
-const normalClass  = `${base} text-base-content/60 hover:text-base-content hover:bg-base-200`;
+const activeClass  = `${base} bg-primary/10 text-primary border-l-2 border-primary -ml-px pl-[calc(0.75rem-1px)]`;
+const normalClass  = `${base} text-base-content/60 hover:text-base-content hover:bg-base-200 border-l-2 border-transparent -ml-px pl-[calc(0.75rem-1px)]`;
 const disabledClass = `${base} text-base-content/25 cursor-not-allowed pointer-events-none`;
+
+function closeDrawer() {
+    const drawer = document.getElementById("app-drawer") as HTMLInputElement | null;
+    if (drawer) drawer.checked = false;
+}
 
 export default function Menu() {
     const { t } = useTranslation();
@@ -45,13 +51,20 @@ export default function Menu() {
 
     return (
         <nav className="flex flex-col h-full">
-            {/* Logo */}
-            <div className="px-5 py-5 border-b border-base-300">
+            {/* Logo + bouton fermer (mobile) */}
+            <div className="px-5 py-5 border-b border-base-300 flex items-center justify-between">
                 <FamilyBudgetLogo size="md" />
+                <label
+                    htmlFor="app-drawer"
+                    className="lg:hidden btn btn-ghost btn-sm btn-square text-base-content/50"
+                    aria-label="Fermer le menu"
+                >
+                    <X size={18} />
+                </label>
             </div>
 
             {/* Nav principale */}
-            <div className="flex flex-col gap-0.5 p-3 flex-1">
+            <div className="flex flex-col gap-0.5 p-3 pl-4 flex-1">
                 {mainNav.map(({ to, labelKey, icon: Icon, end, requiresAccount }) => {
                     if (requiresAccount && !hasAccounts) {
                         return (
@@ -62,7 +75,7 @@ export default function Menu() {
                         );
                     }
                     return (
-                        <NavLink key={to} to={to} end={end} className={navClass}>
+                        <NavLink key={to} to={to} end={end} className={navClass} onClick={closeDrawer}>
                             <Icon size={17} className="shrink-0" />
                             <span>{t(labelKey)}</span>
                         </NavLink>
@@ -71,8 +84,8 @@ export default function Menu() {
             </div>
 
             {/* Paramètres en bas */}
-            <div className="p-3 border-t border-base-300">
-                <NavLink to="/settings" className={navClass}>
+            <div className="p-3 pl-4 border-t border-base-300">
+                <NavLink to="/settings" className={navClass} onClick={closeDrawer}>
                     <Settings size={17} className="shrink-0" />
                     <span>{t("menu.settings")}</span>
                 </NavLink>
