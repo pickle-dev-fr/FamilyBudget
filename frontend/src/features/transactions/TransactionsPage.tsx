@@ -109,6 +109,10 @@ export default function TransactionsPage(): React.JSX.Element {
             .toLocaleString("default", { month: "long", year: "numeric" })
         : ""
 
+    const totalIncome  = transactions.filter(tx => tx.transaction_type === "CREDIT").reduce((s, tx) => s + tx.amount, 0)
+    const totalExpense = transactions.filter(tx => tx.transaction_type === "DEBIT").reduce((s, tx) => s + tx.amount, 0)
+    const delta = totalIncome - totalExpense
+
     return (
         <div className="flex flex-col gap-5 max-w-4xl">
 
@@ -249,6 +253,28 @@ export default function TransactionsPage(): React.JSX.Element {
                     </table>
                 </>)}
             </div>
+
+            {/* ── Résumé du mois ── */}
+            {transactions.length > 0 && (
+                <div className="flex flex-wrap items-center gap-3 px-1">
+                    <div className="flex items-center gap-1.5 text-sm">
+                        <span className="text-base-content/40">{t("stats.income")}</span>
+                        <span className="font-semibold text-success tabular-nums">+{formatAmount(totalIncome)} {currencySymbol}</span>
+                    </div>
+                    <span className="text-base-content/20">·</span>
+                    <div className="flex items-center gap-1.5 text-sm">
+                        <span className="text-base-content/40">{t("stats.expenses")}</span>
+                        <span className="font-semibold text-error tabular-nums">-{formatAmount(totalExpense)} {currencySymbol}</span>
+                    </div>
+                    <span className="text-base-content/20">·</span>
+                    <div className="flex items-center gap-1.5 text-sm">
+                        <span className="text-base-content/40">{t("stats.delta")}</span>
+                        <span className={`font-bold tabular-nums ${delta >= 0 ? "text-success" : "text-error"}`}>
+                            {delta >= 0 ? "+" : ""}{formatAmount(delta)} {currencySymbol}
+                        </span>
+                    </div>
+                </div>
+            )}
 
             {/* Modales */}
             {modalTarget && (

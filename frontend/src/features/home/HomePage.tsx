@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { TrendingUp, TrendingDown, Minus, CalendarX } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, CalendarX, Plus } from "lucide-react"
 import EmptyState from "@/components/ui/EmptyState"
 
 import { formatAmount } from "@/utils"
@@ -108,6 +108,18 @@ export default function HomePage() {
                 <h2 className="text-sm font-semibold text-base-content/50 uppercase tracking-wider mb-3">
                     {t("home.accounts_list")}
                 </h2>
+                {accounts.length === 0 && (
+                    <div className="bg-base-100 border border-base-300 rounded-xl p-8 flex flex-col items-center gap-3 text-center">
+                        <p className="text-sm text-base-content/50">{t("accounts.no_account_yet")}</p>
+                        <button
+                            className="btn btn-primary btn-sm gap-1.5"
+                            onClick={() => navigate("/accounts")}
+                        >
+                            <Plus size={14} />
+                            {t("accounts.create")}
+                        </button>
+                    </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {accounts.map((a) => {
                         const balance = balances[a.id] ?? 0
