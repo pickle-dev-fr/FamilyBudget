@@ -4,6 +4,7 @@ import Modal from "@/components/ui/Modal"
 import { useState, useEffect } from "react"
 import type { UIPot } from "../pots/types"
 import { useTranslation } from "react-i18next"
+import { ArrowDownLeft, ArrowUpRight, Repeat } from "lucide-react"
 
 type Props = {
     transaction?: UpdateTransactionPayload
@@ -17,19 +18,15 @@ type Props = {
     onUpdate: (id: string, payload: UpdateTransactionPayload) => void
 }
 
+function FieldLabel({ children }: { children: React.ReactNode }) {
+    return <label className="text-sm font-medium text-base-content/70 mb-1 block">{children}</label>;
+}
+
 export default function TransactionModal({
-    transaction,
-    id,
-    isForcedRecurrent,
-    fixedAccountId,
-    onClose,
-    accounts,
-    pots,
-    onCreate,
-    onUpdate
+    transaction, id, isForcedRecurrent, fixedAccountId,
+    onClose, accounts, pots, onCreate, onUpdate
 }: Props) {
     const { t } = useTranslation();
-
     const today = new Date().toISOString().split("T")[0]
 
     const [transactionType, setTransactionType] = useState<"DEBIT" | "CREDIT">("DEBIT")
@@ -37,37 +34,21 @@ export default function TransactionModal({
     const [motif, setMotif] = useState("")
     const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
     const [selectedSubPotId, setSelectedSubPotId] = useState<string | null>(null)
-
     const [transactionDate, setTransactionDate] = useState(today)
     const [recurrence, setRecurrence] = useState(isForcedRecurrent ?? false)
     const [recurrenceEndDate, setRecurrenceEndDate] = useState<string | null>(null)
 
     useEffect(() => {
         if (!transaction) return
-
         setTransactionType(transaction.transaction_type ?? "DEBIT")
         setAmount(transaction.amount ?? 0)
         setMotif(transaction.motif ?? "")
-        setSelectedAccountId(
-            fixedAccountId ??
-            transaction?.account_id ??
-            accounts[0]?.id
-        )
-        setSelectedSubPotId(transaction.sub_pot_id ?? pots[0].sub_pots[0].id)
-
+        setSelectedAccountId(fixedAccountId ?? transaction?.account_id ?? accounts[0]?.id)
+        setSelectedSubPotId(transaction.sub_pot_id ?? pots[0]?.sub_pots[0]?.id ?? null)
         setTransactionDate(transaction.transaction_date ?? today)
-
-        const isRecurrent = Boolean(transaction.recurrence_type)
-        setRecurrence(isRecurrent)
-
-        setRecurrenceEndDate(
-            transaction.recurrence_end_date ?? null
-        )
+        setRecurrence(Boolean(transaction.recurrence_type))
+        setRecurrenceEndDate(transaction.recurrence_end_date ?? null)
     }, [transaction])
-
-    function isUpdateTransaction(id: string | undefined): boolean {
-        return id !== undefined
-    }
 
     function handleSubmit() {
         if (transactionType === "DEBIT" && !selectedSubPotId) return
@@ -79,30 +60,18 @@ export default function TransactionModal({
             amount,
             motif,
             transaction_date: transactionDate,
-
-            account_id:
-                transactionType === "CREDIT"
-                    ? (fixedAccountId ?? selectedAccountId)
-                    : null,
-
-            sub_pot_id:
-                transactionType === "DEBIT"
-                    ? selectedSubPotId
-                    : null,
-            
+            account_id: transactionType === "CREDIT" ? (fixedAccountId ?? selectedAccountId) : null,
+            sub_pot_id: transactionType === "DEBIT" ? selectedSubPotId : null,
             recurrence_type: recurrence ? "MONTH" : null,
             recurrent: recurrence ?? false,
-            recurrence_end_date: recurrence
-                ? recurrenceEndDate
-                : null
+            recurrence_end_date: recurrence ? recurrenceEndDate : null
         }
 
-        if (isUpdateTransaction(id)) {
-            onUpdate(id!, payload as UpdateTransactionPayload)
+        if (id !== undefined) {
+            onUpdate(id, payload as UpdateTransactionPayload)
         } else {
             onCreate(payload as CreateTransactionPayload)
         }
-
         onClose()
     }
 
@@ -110,67 +79,68 @@ export default function TransactionModal({
         <Modal
             open={true}
             onClose={onClose}
-            title={isUpdateTransaction(id)
-                ? t("transactions.edit")
-                : t("transactions.add")}
+            title={id !== undefined ? t("transactions.edit") : t("transactions.add")}
             footer={
                 <>
-                    <button className="btn btn-secondary" onClick={onClose}>
-                        {t("common.cancel")}
-                    </button>
-                    <button className="btn btn-primary" onClick={handleSubmit}>
-                        {t("common.save")}
-                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={onClose}>{t("common.cancel")}</button>
+                    <button className="btn btn-primary btn-sm" onClick={handleSubmit}>{t("common.save")}</button>
                 </>
             }
         >
             <div className="flex flex-col gap-4">
 
-                {/* TYPE */}
-                <div>
-                    <label className="label">{t("transactions.type")}</label>
-                    <select
-                        className="select select-bordered w-full"
-                        value={transactionType}
-                        onChange={e =>
-                            setTransactionType(
-                                e.target.value as "DEBIT" | "CREDIT"
-                            )
-                        }
+                {/* ── Type toggle pill ── */}
+                <div className="inline-flex w-full bg-base-200 rounded-xl p-1 gap-1">
+                    <button
+                        type="button"
+                        onClick={() => setTransactionType("DEBIT")}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-150
+                            ${transactionType === "DEBIT"
+                                ? "bg-base-100 text-error shadow-sm"
+                                : "text-base-content/45 hover:text-base-content"}`}
                     >
-                        <option value="DEBIT">{t("transactions.debit")}</option>
-                        <option value="CREDIT">{t("transactions.credit")}</option>
-                    </select>
+                        <ArrowDownLeft size={14} />
+                        {t("transactions.debit")}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setTransactionType("CREDIT")}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-150
+                            ${transactionType === "CREDIT"
+                                ? "bg-base-100 text-success shadow-sm"
+                                : "text-base-content/45 hover:text-base-content"}`}
+                    >
+                        <ArrowUpRight size={14} />
+                        {t("transactions.credit")}
+                    </button>
                 </div>
 
-                {/* DATE */}
-                <div>
-                    <label className="label">{t("transactions.date")}</label>
-                    <input
-                        type="date"
-                        className="input input-bordered w-full"
-                        value={transactionDate}
-                        onChange={e => setTransactionDate(e.target.value)}
-                    />
+                {/* ── Date + Montant ── */}
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <FieldLabel>{t("transactions.date")}</FieldLabel>
+                        <input
+                            type="date"
+                            className="input input-bordered w-full"
+                            value={transactionDate}
+                            onChange={e => setTransactionDate(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <FieldLabel>{t("transactions.amount")}</FieldLabel>
+                        <input
+                            type="number"
+                            className="input input-bordered w-full"
+                            value={amount}
+                            min={0}
+                            onChange={e => setAmount(Math.max(0, Number(e.target.value)))}
+                        />
+                    </div>
                 </div>
 
-                {/* AMOUNT */}
+                {/* ── Motif ── */}
                 <div>
-                    <label className="label">{t("transactions.amount")}</label>
-                    <input
-                        type="number"
-                        className="input input-bordered w-full"
-                        value={amount}
-                        min={0}
-                        onChange={e =>
-                            setAmount(Math.max(0, Number(e.target.value)))
-                        }
-                    />
-                </div>
-
-                {/* MOTIF */}
-                <div>
-                    <label className="label">{t("transactions.motif")}</label>
+                    <FieldLabel>{t("transactions.motif")}</FieldLabel>
                     <input
                         type="text"
                         className="input input-bordered w-full"
@@ -179,48 +149,50 @@ export default function TransactionModal({
                     />
                 </div>
 
-                {/* CREDIT */}
+                {/* ── Compte (CREDIT) ── */}
                 {transactionType === "CREDIT" && (
                     <div>
-                        <label className="label">{t("transactions.account")}</label>
+                        <FieldLabel>{t("transactions.account")}</FieldLabel>
                         <select
                             className="select select-bordered w-full"
                             value={selectedAccountId || ""}
-                            disabled={fixedAccountId ? true : false}
-                            onChange={e =>
-                                setSelectedAccountId(e.target.value)
-                            }
+                            disabled={Boolean(fixedAccountId)}
+                            onChange={e => setSelectedAccountId(e.target.value)}
                         >
                             {accounts.map(c => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
+                                <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
                         </select>
                     </div>
                 )}
 
-                {/* DEBIT */}
+                {/* ── Sous-pot picker (DEBIT) ── */}
                 {transactionType === "DEBIT" && (
                     <div>
-                        <label className="label">{t("transactions.sub_pot")}</label>
-                        <div className="border rounded p-2 max-h-60 overflow-auto">
+                        <FieldLabel>{t("transactions.sub_pot")}</FieldLabel>
+                        <div className="bg-base-200/50 border border-base-300 rounded-xl p-2 max-h-52 overflow-y-auto space-y-1">
                             {pots.map(pot => (
-                                <div key={pot.id} className="mb-2">
-                                    <div className="font-semibold">{pot.name}</div>
-                                    <div className="ml-4 flex flex-col gap-1">
+                                <div key={pot.id}>
+                                    <p className="text-xs font-semibold text-base-content/40 uppercase tracking-wider px-2 py-1">
+                                        {pot.name}
+                                    </p>
+                                    <div className="space-y-0.5">
                                         {pot.sub_pots.map(sp => (
-                                            <label key={sp.id} className="flex items-center gap-2">
+                                            <label
+                                                key={sp.id}
+                                                className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer transition-colors
+                                                    ${selectedSubPotId === sp.id
+                                                        ? "bg-primary/10 text-primary"
+                                                        : "hover:bg-base-100 text-base-content"}`}
+                                            >
                                                 <input
                                                     type="radio"
                                                     name="subPot"
                                                     checked={selectedSubPotId === sp.id}
-                                                    onChange={() =>
-                                                        setSelectedSubPotId(sp.id)
-                                                    }
-                                                    className="radio"
+                                                    onChange={() => setSelectedSubPotId(sp.id)}
+                                                    className="radio radio-sm radio-primary"
                                                 />
-                                                <span>{sp.name}</span>
+                                                <span className="text-sm">{sp.name}</span>
                                             </label>
                                         ))}
                                     </div>
@@ -230,34 +202,34 @@ export default function TransactionModal({
                     </div>
                 )}
 
-                {/* RECURRENCE */}
-                <div className="flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={recurrence}
-                        onChange={e => setRecurrence(e.target.checked)}
-                        disabled={isForcedRecurrent ?? false}
-                    />
-                    <span>{t("transactions.recurrent")}</span>
-                </div>
-
-                {recurrence && (
-                    <div>
-                        <label className="label">
-                            {t("transactions.recurrence_end")}
-                        </label>
+                {/* ── Récurrence ── */}
+                <div className={`rounded-xl transition-all ${recurrence ? "bg-base-200/50 border border-base-300 p-3" : ""}`}>
+                    <label className="flex items-center gap-2.5 cursor-pointer">
                         <input
-                            type="date"
-                            className="input input-bordered w-full"
-                            value={recurrenceEndDate ?? ""}
-                            onChange={e =>
-                                setRecurrenceEndDate(e.target.value)
-                            }
+                            type="checkbox"
+                            className="checkbox checkbox-sm checkbox-primary"
+                            checked={recurrence}
+                            onChange={e => setRecurrence(e.target.checked)}
+                            disabled={isForcedRecurrent ?? false}
                         />
-                    </div>
-                )}
+                        <span className="flex items-center gap-1.5 text-sm font-medium">
+                            <Repeat size={14} className="text-base-content/50" />
+                            {t("transactions.recurrent")}
+                        </span>
+                    </label>
 
+                    {recurrence && (
+                        <div className="mt-3">
+                            <FieldLabel>{t("transactions.recurrence_end")}</FieldLabel>
+                            <input
+                                type="date"
+                                className="input input-bordered w-full"
+                                value={recurrenceEndDate ?? ""}
+                                onChange={e => setRecurrenceEndDate(e.target.value)}
+                            />
+                        </div>
+                    )}
+                </div>
             </div>
         </Modal>
     )

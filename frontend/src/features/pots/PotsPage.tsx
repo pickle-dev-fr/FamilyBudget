@@ -1,16 +1,11 @@
 import { useEffect, useState } from "react"
-import { RotateCcw } from "lucide-react"
+import { RotateCcw, ChevronLeft, ChevronRight } from "lucide-react"
 import PotsBoard from "./PotsBoard"
 import { getAccounts, type Account } from "@/api/accounts.api"
 import { createPot } from "@/api/pots.api"
 import { getPeriode } from "@/api/utils.api"
 import { useTranslation } from "react-i18next"
 import { usePersistedState } from "@/hooks/usePersistedState"
-
-type Account = {
-    id: string
-    name: string
-}
 
 export default function PotsPage(): React.JSX.Element {
     const { t } = useTranslation();
@@ -80,83 +75,65 @@ export default function PotsPage(): React.JSX.Element {
     }
 
     return (
-        <div className="flex flex-col gap-6 pots-container">
-            {/* Sélecteur de compte */}
-            <div className="w-full account-selector">
-                <select
-                    value={selectedAccountId}
-                    onChange={(e) => setSelectedAccountId(e.target.value)}
-                    className="select select-bordered w-full account-select"
-                >
-                    {accounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                            {account.name}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            {/* Navigation mois */}
-            <div className="flex items-center gap-2">
-                <button className="btn btn-sm" onClick={() => changeMonth(-1)}>{"<"}</button>
-                <span className="font-medium min-w-36 text-center">
-                    {currentRefMonth && (
-                        new Date(
-                            currentRefMonth.year,
-                            currentRefMonth.month - 1
-                        ).toLocaleString("default", {
-                            month: "long",
-                            year: "numeric"
-                        })
-                    )}
-                </span>
-                <button className="btn btn-sm" onClick={() => changeMonth(1)}>{">"}</button>
-                <button className="btn btn-sm btn-ghost" onClick={goToCurrentMonth} title={t("transactions.current_month")}>
-                    <RotateCcw size={14} />
-                </button>
-            </div>
-
-            {/* Création pot */}
-            <div className="flex flex-col gap-2 pot-creation">
-                {!showCreate && (
-                    <button
-                        className="btn btn-primary pot-add-btn"
-                        onClick={() => setShowCreate(true)}
+        <div className="flex flex-col gap-5 max-w-5xl">
+            {/* ── Barre outils ── */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                    <select
+                        value={selectedAccountId}
+                        onChange={(e) => setSelectedAccountId(e.target.value)}
+                        className="select select-bordered select-sm min-w-40"
                     >
+                        {accounts.map((account) => (
+                            <option key={account.id} value={account.id}>
+                                {account.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    <div className="flex items-center gap-1 bg-base-100 border border-base-300 rounded-lg px-1 py-1">
+                        <button className="btn btn-ghost btn-xs btn-square" onClick={() => changeMonth(-1)}>
+                            <ChevronLeft size={14} />
+                        </button>
+                        <span className="text-sm font-medium min-w-32 text-center capitalize px-1">
+                            {currentRefMonth && (
+                                new Date(currentRefMonth.year, currentRefMonth.month - 1)
+                                    .toLocaleString("default", { month: "long", year: "numeric" })
+                            )}
+                        </span>
+                        <button className="btn btn-ghost btn-xs btn-square" onClick={() => changeMonth(1)}>
+                            <ChevronRight size={14} />
+                        </button>
+                        <button className="btn btn-ghost btn-xs btn-square text-base-content/40" onClick={goToCurrentMonth} title={t("transactions.current_month")}>
+                            <RotateCcw size={12} />
+                        </button>
+                    </div>
+                </div>
+
+                {!showCreate ? (
+                    <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>
                         {t("pots.add")}
                     </button>
-                )}
-
-                {showCreate && (
-                    <div className="flex flex-row gap-2 pot-create-form">
+                ) : (
+                    <div className="flex items-center gap-2">
                         <input
-                            className="input input-bordered flex-1 pot-create-input"
+                            className="input input-bordered input-sm w-40"
                             value={newPotName}
                             onChange={(e) => setNewPotName(e.target.value)}
                             placeholder={t("pots.name")}
+                            onKeyDown={(e) => e.key === "Enter" && handleCreatePot()}
+                            autoFocus
                         />
-
-                        <button
-                            className="btn btn-success pot-create-submit"
-                            onClick={handleCreatePot}
-                        >
+                        <button className="btn btn-success btn-sm" onClick={handleCreatePot}>
                             {t("common.create")}
                         </button>
-
-                        <button
-                            className="btn btn-error pot-create-cancel"
-                            onClick={() => {
-                                setShowCreate(false)
-                                setNewPotName("")
-                            }}
-                        >
+                        <button className="btn btn-ghost btn-sm" onClick={() => { setShowCreate(false); setNewPotName("") }}>
                             {t("common.cancel")}
                         </button>
                     </div>
                 )}
             </div>
 
-            {/* Board */}
             {selectedAccountId && currentRefMonth && (
                 <PotsBoard
                     accountId={selectedAccountId}

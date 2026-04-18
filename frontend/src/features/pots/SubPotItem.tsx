@@ -1,161 +1,133 @@
-import { useSortable } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-import type { UISubPot } from "./types"
+import type { UISubPot, UIPot } from "./types"
 import { ActionsMenu } from "@/components/layout/ActionsMenu"
-import type { UpdateSubPotPayload } from "@/api/sub_pots.api"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/auth/currency"
 import { formatAmount } from "@/utils"
 
 type Props = {
     subPot: UISubPot
-    disabled?: boolean
-    onDelete?: (subPotId: string) => void
-    onUpdate?: (
+    currentPot: UIPot
+    allMovablePots: UIPot[]
+    isInDefaultPot: boolean
+    onDelete: (subPotId: string) => Promise<void>
+    onSave: (
         subPotId: string,
-        payload: UpdateSubPotPayload
+        updatePayload: { name: string; prevision: number } | null,
+        movePayload: { newPotId: string; newPosition: number } | null
     ) => Promise<void>
 }
 
-export default function SubPotItem({
-    subPot,
-    disabled,
-    onDelete,
-    onUpdate
-}: Props) {
-    const { t } = useTranslation();
+export default function SubPotItem({ subPot, currentPot, allMovablePots, isInDefaultPot, onDelete, onSave }: Props) {
+    const { t } = useTranslation()
+    const { currencySymbol } = useCurrency()
     const [isEditing, setIsEditing] = useState(false)
     const [editName, setEditName] = useState(subPot.name)
     const [editPrevision, setEditPrevision] = useState(subPot.prevision)
+    const [editPotId, setEditPotId] = useState(subPot.pot_id)
+    const [editPosition, setEditPosition] = useState(currentPot.sub_pots.findIndex(sp => sp.id === subPot.id))
 
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({
-        id: subPot.id,
-        data: {
-            type: "subpot",
-            potId: subPot.pot_id,
-        },
-        disabled: disabled || isEditing,
-    })
+    const current    = subPot.current ?? 0
+    const percentage = subPot.prevision > 0 ? (current / subPot.prevision) * 100 : current ? 100 : 0
+    const progressColor = percentage > 100 ? "bg-error" : percentage >= 80 ? "bg-warning" : "bg-success"
 
-    const current = subPot.current ?? 0
+    const targetPot = allMovablePots.find(p => p.id === editPotId) ?? currentPot
+    const positionCount = editPotId === currentPot.id
+        ? currentPot.sub_pots.length
+        : (targetPot.sub_pots.length + 1)
 
-    const percentage =
-        subPot.prevision > 0
-            ? (current / subPot.prevision) * 100
-            : current ? 100 : 0
+    async function handleSave() {
+        const originalIndex = currentPot.sub_pots.findIndex(sp => sp.id === subPot.id)
+        const nameChanged = editName.trim() !== subPot.name || editPrevision !== subPot.prevision
+        const moved = editPotId !== subPot.pot_id || editPosition !== originalIndex
 
-    const clamped = Math.min(percentage, 100)
+        await onSave(
+            subPot.id,
+            nameChanged ? { name: editName.trim(), prevision: editPrevision } : null,
+            moved ? { newPotId: editPotId, newPosition: editPosition } : null
+        )
+        setIsEditing(false)
+    }
+
+    if (isEditing) {
+        return (
+            <div className="bg-base-200/40 border border-base-300/60 rounded-lg px-3 py-2.5 my-0.5 flex flex-col gap-2">
+                {/* Nom + prévision */}
+                <div className="flex gap-2 flex-wrap">
+                    <input
+                        className="input input-xs input-bordered flex-1 min-w-28"
+                        value={editName}
+                        onChange={e => setEditName(e.target.value)}
+                        autoFocus
+                    />
+                    <div className="flex items-center gap-1">
+                        <input
+                            type="number" min={0} step="0.01"
+                            className="input input-xs input-bordered w-20"
+                            value={editPrevision}
+                            onChange={e => setEditPrevision(Number(e.target.value))}
+                        />
+                        <span className="text-xs text-base-content/40 shrink-0">{currencySymbol}</span>
+                    </div>
+                </div>
+                {/* Déplacer : pot + position */}
+                {!isInDefaultPot && allMovablePots.length > 0 && (
+                    <div className="flex gap-2 flex-wrap">
+                        <select
+                            className="select select-xs select-bordered flex-1 min-w-28"
+                            value={editPotId}
+                            onChange={e => { setEditPotId(e.target.value); setEditPosition(0) }}
+                        >
+                            {allMovablePots.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                        <select
+                            className="select select-xs select-bordered w-32 shrink-0"
+                            value={editPosition}
+                            onChange={e => setEditPosition(Number(e.target.value))}
+                        >
+                            {Array.from({ length: positionCount }, (_, i) => (
+                                <option key={i} value={i}>{t("pots.position")} {i + 1}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+                <div className="flex gap-1 justify-end">
+                    <button className="btn btn-xs btn-primary" onClick={handleSave}>{t("common.save")}</button>
+                    <button className="btn btn-xs btn-ghost" onClick={() => setIsEditing(false)}>{t("common.cancel")}</button>
+                </div>
+            </div>
+        )
+    }
 
     return (
-        <div
-            ref={setNodeRef}
-            className="flex flex-col gap-1 p-2 rounded-md bg-base-200"
-            style={{
-                transform: CSS.Transform.toString(transform),
-                transition,
-                opacity: disabled ? 0.5 : isDragging ? 0 : 1,
-            }}
-        >
-            <div
-                {...attributes}
-                {...(!isEditing ? listeners : {})}
-                className="grid grid-cols-5 items-center gap-2"
-            >
-                <div className="cursor-grab">
-                    {isEditing ? (
-                        <input
-                            className="input input-sm input-bordered w-full"
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            onPointerDown={(e) => e.stopPropagation()}
-                        />
-                    ) : (
-                        subPot.name
-                    )}
-                </div>
-
-                <div className="text-sm">
-                    {isEditing ? (
-                        <input
-                            type="number"
-                            min={0}
-                            step="0.01"
-                            className="input input-sm input-bordered w-full"
-                            value={editPrevision}
-                            onChange={(e) =>
-                                setEditPrevision(Number(e.target.value))
-                            }
-                            onPointerDown={(e) => e.stopPropagation()}
-                        />
-                    ) : (
-                        formatAmount(subPot.prevision)
-                    )}
-                </div>
-                <div className="text-sm">{formatAmount(current)}</div>
-                <div className="text-sm">{percentage.toFixed(0)} %</div>
-                <div className="ml-auto flex gap-1">
-                    {!disabled && (
-                        isEditing ? (
-                            <>
-                                <button
-                                    className="btn btn-xs btn-primary"
-                                    onClick={async () => {
-                                        if (editPrevision < 0) return
-
-                                        await onUpdate?.(subPot.id, {
-                                            name: editName.trim(),
-                                            prevision: editPrevision,
-                                        })
-
-                                        setIsEditing(false)
-                                    }}
-                                    onPointerDown={(e) => e.stopPropagation()}
-                                >
-                                    {t("common.save")}
-                                </button>
-
-                                <button
-                                    className="btn btn-xs btn-ghost"
-                                    onClick={() => {
-                                        setEditName(subPot.name)
-                                        setEditPrevision(subPot.prevision)
-                                        setIsEditing(false)
-                                    }}
-                                    onPointerDown={(e) => e.stopPropagation()}
-                                >
-                                    {t("common.cancel")}
-                                </button>
-                            </>
-                        ) : (
-                            <ActionsMenu
-                                onDelete={() => onDelete?.(subPot.id)}
-                                onEdit={() => setIsEditing(true)}
-                            />
-                        )
-                    )}
+        <div className="flex items-center gap-2 px-1.5 py-1.5 rounded-lg hover:bg-base-200/50 transition-colors group">
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate leading-tight">{subPot.name}</p>
+                <div className="flex items-center gap-2 mt-1">
+                    <div className="h-1 flex-1 bg-base-300/60 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-300 ${progressColor}`} style={{ width: `${Math.min(percentage, 100)}%` }} />
+                    </div>
+                    <span className="text-xs text-base-content/40 tabular-nums shrink-0">
+                        {formatAmount(current)} / {formatAmount(subPot.prevision)} {currencySymbol}
+                    </span>
                 </div>
             </div>
-
-            <div className="h-2 w-full rounded overflow-hidden">
-                <div
-                    className={`h-full transition-all ${
-                        percentage > 100
-                            ? "bg-error"
-                            : percentage >= 80
-                            ? "bg-warning"
-                            : "bg-success"
-                    }`}
-                    style={{ width: `${clamped}%` }}
-                />
-            </div>
+            {!isInDefaultPot && (
+                <div className="shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                    <ActionsMenu
+                        onEdit={() => {
+                            setEditName(subPot.name)
+                            setEditPrevision(subPot.prevision)
+                            setEditPotId(subPot.pot_id)
+                            setEditPosition(currentPot.sub_pots.findIndex(sp => sp.id === subPot.id))
+                            setIsEditing(true)
+                        }}
+                        onDelete={() => onDelete(subPot.id)}
+                    />
+                </div>
+            )}
         </div>
     )
 }
-

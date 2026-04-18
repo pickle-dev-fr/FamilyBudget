@@ -116,34 +116,36 @@ export default function InvestmentPage() {
     if (!account) return null;
 
     return (
-        <div className="flex flex-col gap-6 p-4">
+        <div className="flex flex-col gap-6 max-w-5xl">
             {/* Header */}
             <div className="flex items-center gap-3 flex-wrap">
                 <button className="btn btn-ghost btn-sm" onClick={() => navigate("/accounts")}>
                     <ArrowLeft size={16} />
                     {t("investment.back")}
                 </button>
-                <h1 className="text-2xl font-bold">{account.name}</h1>
-                <span className="badge badge-warning">{t("accounts.type_investment")}</span>
+                <h1 className="text-xl font-semibold">{account.name}</h1>
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-warning/15 text-warning">
+                    {t("accounts.type_investment")}
+                </span>
             </div>
 
             {/* Stats cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-base-200 rounded-xl p-4">
-                    <p className="text-xs opacity-60 mb-1">{t("investment.total_value")}</p>
-                    <p className={`text-xl font-bold ${totalValue >= 0 ? "text-green-500" : "text-red-500"}`}>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="bg-base-100 border border-base-300 rounded-xl p-4">
+                    <p className="text-xs font-medium text-base-content/45 uppercase tracking-wider mb-1.5">{t("investment.total_value")}</p>
+                    <p className={`text-xl font-bold ${totalValue >= 0 ? "text-success" : "text-error"}`}>
                         {formatAmount(totalValue)} {currencySymbol}
                     </p>
                 </div>
-                <div className="bg-base-200 rounded-xl p-4">
-                    <p className="text-xs opacity-60 mb-1">{t("investment.asset_count")}</p>
+                <div className="bg-base-100 border border-base-300 rounded-xl p-4">
+                    <p className="text-xs font-medium text-base-content/45 uppercase tracking-wider mb-1.5">{t("investment.asset_count")}</p>
                     <p className="text-xl font-bold">{assets.length}</p>
                 </div>
-                <div className="bg-base-200 rounded-xl p-4">
-                    <p className="text-xs opacity-60 mb-1">{t("investment.last_update")}</p>
+                <div className="bg-base-100 border border-base-300 rounded-xl p-4">
+                    <p className="text-xs font-medium text-base-content/45 uppercase tracking-wider mb-1.5">{t("investment.last_update")}</p>
                     <p className="text-sm font-medium">{formatLastUpdate(lastUpdate)}</p>
                 </div>
-                <div className="bg-base-200 rounded-xl p-4 flex items-center justify-center">
+                <div className="bg-base-100 border border-base-300 rounded-xl p-4 flex items-center justify-center">
                     <button
                         className="btn btn-outline btn-sm gap-2"
                         onClick={handleRefresh}
@@ -158,11 +160,11 @@ export default function InvestmentPage() {
             {/* Tableau + graphique */}
             <div className="flex flex-col lg:flex-row gap-6 items-start">
                 {/* Tableau des actifs */}
-                <div className="flex-1 overflow-x-auto">
-                    <div className="flex justify-between items-center mb-3">
-                        <h2 className="text-lg font-semibold">{t("investment.assets_title")}</h2>
+                <div className="flex-1 bg-base-100 border border-base-300 rounded-xl overflow-hidden">
+                    <div className="flex justify-between items-center px-4 py-3 border-b border-base-300 bg-base-200/40">
+                        <h2 className="text-xs font-semibold uppercase tracking-wider text-base-content/50">{t("investment.assets_title")}</h2>
                         <button
-                            className="btn btn-primary btn-sm"
+                            className="btn btn-primary btn-xs"
                             onClick={() => setAssetModalOpen(true)}
                         >
                             + {t("accounts.asset_add")}
@@ -170,7 +172,7 @@ export default function InvestmentPage() {
                     </div>
 
                     {assets.length === 0 ? (
-                        <p className="text-sm opacity-50 italic">{t("accounts.no_assets")}</p>
+                        <p className="text-sm text-base-content/30 italic text-center py-8">{t("accounts.no_assets")}</p>
                     ) : (
                         <table className="table w-full">
                             <thead>
@@ -247,8 +249,8 @@ export default function InvestmentPage() {
 
                 {/* Donut chart */}
                 {chartData.length > 0 && (
-                    <div className="w-full lg:w-72 bg-base-200 rounded-xl p-4">
-                        <h2 className="text-lg font-semibold mb-3">{t("investment.allocation")}</h2>
+                    <div className="w-full lg:w-72 bg-base-100 border border-base-300 rounded-xl p-4">
+                        <h2 className="text-sm font-semibold mb-3">{t("investment.allocation")}</h2>
                         <ResponsiveContainer width="100%" height={260}>
                             <PieChart>
                                 <Pie

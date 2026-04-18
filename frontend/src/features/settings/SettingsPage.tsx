@@ -7,12 +7,34 @@ import Modal from "@/components/ui/Modal";
 import { toast } from "@/lib/toast";
 import { useCurrency } from "@/auth/currency";
 import { useAuth } from "@/auth/AuthContext";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, LogOut } from "lucide-react";
 import type { Currency, Language, Theme } from "@/api/settings.api";
 
+function Section({ title, danger = false, children }: { title: string; danger?: boolean; children: React.ReactNode }) {
+    return (
+        <div className={`rounded-xl overflow-hidden border ${danger ? "border-error/40" : "border-base-300"}`}>
+            <div className={`px-5 py-3 border-b ${danger ? "border-error/40 bg-error/5" : "border-base-300 bg-base-200/50"}`}>
+                <h2 className={`text-xs font-semibold uppercase tracking-wider ${danger ? "text-error" : "text-base-content/50"}`}>
+                    {title}
+                </h2>
+            </div>
+            <div className="bg-base-100 px-5 py-4">
+                {children}
+            </div>
+        </div>
+    );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+    return (
+        <div className="flex items-center justify-between gap-4 py-2">
+            <span className="text-sm font-medium">{label}</span>
+            {children}
+        </div>
+    );
+}
 
 export default function SettingsPage() {
-
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { refreshAuth } = useAuth();
@@ -53,16 +75,12 @@ export default function SettingsPage() {
 
     return (
         <>
-            <div className="max-w-lg flex flex-col gap-6">
+            <div className="max-w-lg flex flex-col gap-5">
 
                 {/* Apparence */}
-                <div className="card bg-base-100 border border-base-300 rounded-lg overflow-hidden">
-                    <div className="bg-base-200 px-4 py-3 border-b border-base-300">
-                        <h2 className="font-semibold text-sm uppercase tracking-wide">{t("settings.appearance")}</h2>
-                    </div>
-                    <div className="px-4 py-4 flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">{t("settings.language")}</span>
+                <Section title={t("settings.appearance")}>
+                    <div className="divide-y divide-base-300/50">
+                        <Row label={t("settings.language")}>
                             <select
                                 className="select select-bordered select-sm"
                                 value={language}
@@ -71,22 +89,20 @@ export default function SettingsPage() {
                                 <option value="FR">{t("languageName", { lng: "fr" })}</option>
                                 <option value="EN">{t("languageName", { lng: "en" })}</option>
                             </select>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">{t("settings.theme")}</span>
+                        </Row>
+                        <Row label={t("settings.theme")}>
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <Sun className={`w-5 h-5 ${theme === "LIGHT" ? "text-yellow-400" : "text-gray-400"}`} />
+                                <Sun size={16} className={theme === "LIGHT" ? "text-warning" : "text-base-content/30"} />
                                 <input
                                     type="checkbox"
-                                    className="toggle toggle-sm"
+                                    className="toggle toggle-sm toggle-primary"
                                     checked={theme === "DARK"}
                                     onChange={() => setTheme(theme === "DARK" ? "LIGHT" : "DARK" as Theme)}
                                 />
-                                <Moon className={`w-5 h-5 ${theme === "DARK" ? "text-blue-400" : "text-gray-400"}`} />
+                                <Moon size={16} className={theme === "DARK" ? "text-primary" : "text-base-content/30"} />
                             </label>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">{t("settings.currency")}</span>
+                        </Row>
+                        <Row label={t("settings.currency")}>
                             <select
                                 className="select select-bordered select-sm"
                                 value={currency}
@@ -100,39 +116,53 @@ export default function SettingsPage() {
                                 <option value="CAD">CAD — CA$</option>
                                 <option value="AUD">AUD — A$</option>
                             </select>
-                        </div>
-                        <p className="text-xs text-base-content/50">{t("settings.currency_current", { symbol: currencySymbol })}</p>
+                        </Row>
+                        <p className="text-xs text-base-content/40 pt-2">
+                            {t("settings.currency_current", { symbol: currencySymbol })}
+                        </p>
                     </div>
-                </div>
+                </Section>
 
                 {/* Mot de passe */}
-                <div className="card bg-base-100 border border-base-300 rounded-lg overflow-hidden">
-                    <div className="bg-base-200 px-4 py-3 border-b border-base-300">
-                        <h2 className="font-semibold text-sm uppercase tracking-wide">{t("settings.change_password")}</h2>
-                    </div>
-                    <form onSubmit={changePassword} className="px-4 py-4 flex flex-col gap-3">
-                        <input type="password" className="input input-bordered w-full" placeholder={t("settings.change_password")} value={password} onChange={(e) => setPassword(e.target.value)} />
-                        <input type="password" className="input input-bordered w-full" placeholder={t("settings.repeat_password")} value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} />
-                        <button className="btn btn-sm self-start" type="submit">{t("common.save")}</button>
+                <Section title={t("settings.change_password")}>
+                    <form onSubmit={changePassword} className="flex flex-col gap-3">
+                        <input
+                            type="password"
+                            className="input input-bordered w-full"
+                            placeholder={t("settings.change_password")}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                        <input
+                            type="password"
+                            className="input input-bordered w-full"
+                            placeholder={t("settings.repeat_password")}
+                            value={repeatPassword}
+                            onChange={(e) => setRepeatPassword(e.target.value)}
+                        />
+                        <div className="flex justify-end">
+                            <button className="btn btn-sm btn-primary" type="submit">
+                                {t("common.save")}
+                            </button>
+                        </div>
                     </form>
-                </div>
+                </Section>
 
                 {/* Déconnexion */}
-                <button className="btn btn-outline w-full" onClick={logout}>
+                <button
+                    className="btn btn-outline w-full gap-2"
+                    onClick={logout}
+                >
+                    <LogOut size={16} />
                     {t("auth.disconnect")}
                 </button>
 
-                {/* Danger zone */}
-                <div className="border border-error rounded-lg overflow-hidden">
-                    <div className="bg-error/10 px-4 py-3 border-b border-error">
-                        <h2 className="text-error font-semibold text-sm uppercase tracking-wide">
-                            {t("settings.danger_zone")}
-                        </h2>
-                    </div>
-                    <div className="px-4 py-4 flex items-center justify-between gap-4">
+                {/* Zone de danger */}
+                <Section title={t("settings.danger_zone")} danger>
+                    <div className="flex items-start justify-between gap-4">
                         <div>
-                            <p className="font-medium text-sm">{t("settings.delete_account")}</p>
-                            <p className="text-xs text-base-content/60 mt-0.5">
+                            <p className="text-sm font-medium">{t("settings.delete_account")}</p>
+                            <p className="text-xs text-base-content/50 mt-0.5">
                                 {t("settings.delete_account_description")}
                             </p>
                         </div>
@@ -143,8 +173,7 @@ export default function SettingsPage() {
                             {t("settings.delete_account")}
                         </button>
                     </div>
-                </div>
-
+                </Section>
             </div>
 
             <Modal
@@ -153,20 +182,20 @@ export default function SettingsPage() {
                 title={t("settings.delete_account_modal_title")}
                 footer={
                     <>
-                        <button className="btn" onClick={() => setShowDeleteModal(false)}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setShowDeleteModal(false)}>
                             {t("common.cancel")}
                         </button>
-                        <button className="btn btn-error" disabled={!isConfirmed} onClick={handleDeleteAccount}>
+                        <button className="btn btn-error btn-sm" disabled={!isConfirmed} onClick={handleDeleteAccount}>
                             {t("settings.delete_account_confirm_button")}
                         </button>
                     </>
                 }
             >
                 <div className="flex flex-col gap-4">
-                    <p className="text-sm">{t("settings.delete_account_modal_description")}</p>
-                    <div className="flex flex-col gap-1">
+                    <p className="text-sm text-base-content/70">{t("settings.delete_account_modal_description")}</p>
+                    <div className="flex flex-col gap-1.5">
                         <label className="text-sm">
-                            <Trans i18nKey="settings.delete_account_confirm_label" components={[<strong key="0" className="font-mono" />]} />
+                            <Trans i18nKey="settings.delete_account_confirm_label" components={[<strong key="0" className="font-mono text-error" />]} />
                         </label>
                         <input
                             type="text"

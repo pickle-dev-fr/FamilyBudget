@@ -14,7 +14,8 @@ import AppLayout from "@/components/layout/AppLayout";
 import HomePage from "@/features/home/HomePage";
 import AccountsPage from "@/features/accounts/AccountsPage";
 import InvestmentPage from "@/features/accounts/InvestmentPage";
-import PotsPage from "@/features/pots/PotsPage";
+import PotsPage from "@/features/pots/PotsPage"
+import PotEditPage from "@/features/pots/PotEditPage";
 import TransactionsPage from "@/features/transactions/TransactionsPage";
 import RecurringPage from "@/features/recurrents/RecurrentsPage";
 import SettingsPage from "@/features/settings/SettingsPage";
@@ -47,6 +48,7 @@ export default function App() {
 
             {/* Requires at least one account */}
             <Route path="/pots" element={<RequiresAccount><PotsPage /></RequiresAccount>} />
+            <Route path="/pots/:potId/edit" element={<RequiresAccount><PotEditPage /></RequiresAccount>} />
             <Route path="/transactions" element={<RequiresAccount><TransactionsPage /></RequiresAccount>} />
             <Route path="/recurring" element={<RequiresAccount><RecurringPage /></RequiresAccount>} />
             <Route path="/stats" element={<RequiresAccount><StatsPage /></RequiresAccount>} />

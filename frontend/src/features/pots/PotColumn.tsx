@@ -1,287 +1,105 @@
-import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-import type { UIPot } from "./types"
-import SubPotItem from "./SubPotItem"
 import { useState } from "react"
-import { ActionsMenu } from "@/components/layout/ActionsMenu"
-import { type UpdateSubPotPayload } from "@/api/sub_pots.api"
-import type { UpdatePotPayload } from "@/api/pots.api"
+import { useNavigate } from "react-router-dom"
+import type { UIPot } from "./types"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/auth/currency"
 import { formatAmount } from "@/utils"
+import { Pencil, Trash2, ChevronDown, ChevronRight } from "lucide-react"
 
 type Props = {
     pot: UIPot
-    onAddSubPot: (potId: string, name: string) => void
-    onPersistSubPot: (
-        potId: string,
-        name: string,
-        prevision: number
-    ) => Promise<void>
-    onUpdateSubPot: (
-        subPotId: string,
-        payload: UpdateSubPotPayload
-    ) => Promise<void>
-    onUpdatePot: (
-        potId: string,
-        payload: UpdatePotPayload
-    ) => Promise<void>
-    onDeleteSubPot: (
-        subPotId: string
-    ) => Promise<void>
-    onDeletePot: (potId: string) => Promise<void>
+    onRequestDelete: (potId: string) => void
 }
 
+export default function PotColumn({ pot, onRequestDelete }: Props) {
+    const { t } = useTranslation()
+    const { currencySymbol } = useCurrency()
+    const navigate = useNavigate()
+    const isDefault = pot.position === 0
+    const [collapsed, setCollapsed] = useState(false)
 
-export default function PotColumn({ pot, onAddSubPot, onPersistSubPot, onUpdateSubPot, onUpdatePot, onDeletePot, onDeleteSubPot }: Props) {
-    const { t } = useTranslation();
-    const disabled = pot.position === 0
-    const [showCreate, setShowCreate] = useState(false)
-    const [newName, setNewName] = useState("")
-    const [newPrevision, setNewPrevision] = useState<number>(0)
-    const [isEditing, setIsEditing] = useState(false)
-    const [editName, setEditName] = useState(pot.name)
-
-
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({
-        id: pot.id,
-        data: { type: "pot" },
-        disabled,
-    })
-    const totalPrevision = Math.round(pot.sub_pots.reduce(
-        (acc, sp) => acc + (sp.prevision ?? 0),
-        0
-    ) * 100) / 100
-
-    const totalCurrent = Math.round(pot.sub_pots.reduce(
-        (acc, sp) => acc + (sp.current ?? 0),
-        0
-    ) * 100) / 100
-
-    const remaining = Math.round((totalPrevision - totalCurrent) * 100) / 100
-
-    const percentage =
-        totalPrevision > 0
-            ? (totalCurrent / totalPrevision) * 100
-            : totalCurrent > 0
-            ? 100
-            : 0
-
-    const clamped = Math.min(percentage, 100)
+    const totalPrevision = Math.round(pot.sub_pots.reduce((s, sp) => s + (sp.prevision ?? 0), 0) * 100) / 100
+    const totalCurrent   = Math.round(pot.sub_pots.reduce((s, sp) => s + (sp.current  ?? 0), 0) * 100) / 100
+    const remaining      = Math.round((totalPrevision - totalCurrent) * 100) / 100
+    const percentage     = totalPrevision > 0 ? (totalCurrent / totalPrevision) * 100 : totalCurrent > 0 ? 100 : 0
+    const progressColor  = percentage > 100 ? "bg-error" : percentage >= 80 ? "bg-warning" : "bg-success"
 
     return (
-        <div
-            ref={setNodeRef}
-            className={`pot-item bg-base-200 border border-base-300 shadow-sm p-4 rounded-lg transition-all
-                ${isDragging ? "opacity-0" : "opacity-100"} 
-                ${disabled ? "cursor-not-allowed" : "cursor-grab"}
-            `}
-            style={{
-                transform: CSS.Transform.toString(transform),
-                transition,
-            }}
-        >
-            {/* HEADER */}
-            <div
-                {...attributes}
-                {...listeners}
-                className="flex justify-between items-center pot-header"
-            >
-                <div
-                    className="flex items-center gap-2 pot-handle"
-                    onPointerDown={(e) => {
-                        if (isEditing) {
-                            e.stopPropagation()
-                            setEditName(pot.name)
-                            setIsEditing(false)
-                        }
-                    }}
-                >
-                    <span className="text-sm">☰</span>
-
-                    {isEditing && !disabled ? (
-                        <input
-                            className="input input-xs input-bordered"
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            onPointerDown={(e) => e.stopPropagation()}
-                        />
-                    ) : (
-                        <span className="font-medium">{pot.name}</span>
+        <div className="bg-base-100 border border-base-300 rounded-xl">
+            {/* ── En-tête ── */}
+            <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+                {/* Chevron collapse pour pot défaut */}
+                {isDefault && (
+                    <button
+                        className="btn btn-ghost btn-xs btn-square text-base-content/35"
+                        onClick={() => setCollapsed(v => !v)}
+                    >
+                        {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                    </button>
+                )}
+                <span className="font-semibold text-sm flex-1 min-w-0 truncate">{pot.name}</span>
+                <div className="flex items-center gap-1 shrink-0">
+                    {!isDefault && (
+                        <button
+                            className="btn btn-ghost btn-xs gap-1.5 text-base-content/50 hover:text-primary"
+                            onClick={() => navigate(`/pots/${pot.id}/edit`)}
+                        >
+                            <Pencil size={13} />
+                            <span className="text-xs">{t("common.edit")}</span>
+                        </button>
+                    )}
+                    {!isDefault && (
+                        <button
+                            className="btn btn-ghost btn-xs btn-square text-base-content/30 hover:text-error"
+                            onClick={() => onRequestDelete(pot.id)}
+                        >
+                            <Trash2 size={13} />
+                        </button>
                     )}
                 </div>
-
-                {isEditing && !disabled ? (
-                    <div className="flex gap-1">
-                        <button
-                            className="btn btn-xs btn-primary"
-                            onClick={async () => {
-                                const trimmed = editName.trim()
-                                if (!trimmed) return
-
-                                await onUpdatePot(pot.id, { name: trimmed })
-                                setIsEditing(false)
-                            }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                        >
-                            {t("common.save")}
-                        </button>
-
-                        <button
-                            className="btn btn-xs btn-ghost"
-                            onClick={() => {
-                                setEditName(pot.name)
-                                setIsEditing(false)
-                            }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                        >
-                            {t("common.cancel")}
-                        </button>
-                    </div>
-                ) : (
-                    !disabled && (
-                        <div className="flex items-center gap-2">
-
-                            {/* ➕ Bouton création SubPot */}
-                            <button
-                                className="btn btn-xs btn-outline"
-                                onClick={() => setShowCreate(true)}
-                                onPointerDown={(e) => e.stopPropagation()}
-                            >
-                                +
-                            </button>
-
-                            <ActionsMenu
-                                onDelete={() => onDeletePot(pot.id)}
-                                onEdit={() => setIsEditing(true)}
-                            />
-                        </div>
-                    )
-                )}
             </div>
 
-            {/* RÉSUMÉ COMPACT */}
-            <div className="mt-2 flex items-center justify-between text-xs">
-
-                <div className="flex gap-4">
-                    <div>
-                        <span className="opacity-60">{t("pots.prevision")} </span>
-                        <span className="font-medium">{formatAmount(totalPrevision)}</span>
-                    </div>
-
-                    <div>
-                        <span className="opacity-60">{t("pots.current")} </span>
-                        <span className="font-medium">{formatAmount(totalCurrent)}</span>
-                    </div>
-
-                    <div>
-                        <span className="opacity-60">{t("pots.reste")} </span>
-                        <span className={`font-medium ${
-                            remaining < 0 ? "text-error" : ""
-                        }`}>
-                            {formatAmount(remaining)}
+            {/* ── Contenu (masqué si replié) ── */}
+            {!collapsed && <>
+                <div className="px-4 pb-3">
+                    <div className="flex items-center justify-between text-xs text-base-content/45 mb-1">
+                        <span className="tabular-nums">
+                            {formatAmount(totalCurrent)}
+                            <span className="text-base-content/25 mx-1">/</span>
+                            {formatAmount(totalPrevision)} {currencySymbol}
+                        </span>
+                        <span className={`font-semibold tabular-nums ${remaining < 0 ? "text-error" : remaining > 0 ? "text-success" : ""}`}>
+                            {remaining >= 0 ? "+" : ""}{formatAmount(remaining)} {currencySymbol}
                         </span>
                     </div>
+                    <div className="h-1.5 w-full bg-base-300/60 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-300 ${progressColor}`} style={{ width: `${Math.min(percentage, 100)}%` }} />
+                    </div>
                 </div>
 
-                <div className="font-medium">
-                    {percentage.toFixed(0)} %
-                </div>
-            </div>
-
-            {/* BARRE */}
-            <div className="mt-1 h-1.5 w-full bg-base-300 rounded overflow-hidden">
-                <div
-                    className={`h-full transition-all ${
-                        percentage > 100
-                            ? "bg-error"
-                            : percentage >= 80
-                            ? "bg-warning"
-                            : "bg-success"
-                    }`}
-                    style={{ width: `${clamped}%` }}
-                />
-            </div>
-
-            {/* TABLEAU */}
-            <div className="mt-3 pt-3 border-t border-base-300 flex flex-col gap-3">
-
-                <div className="grid grid-cols-5 gap-2 text-xs font-medium opacity-70">
-                    <div>{t("sub_pots.name")}</div>
-                    <div>{t("sub_pots.prevision")}</div>
-                    <div>{t("sub_pots.current")}</div>
-                    <div>{t("sub_pots.pourcentage")}</div>
-                    <div>{t("common.actions")}</div>
-                </div>
-
-                {showCreate && (
-                    <div className="flex gap-2">
-                        <input
-                            className="input input-sm input-bordered flex-1"
-                            value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
-                            placeholder={t("sub_pots.name")}
-                        />
-
-                        <input
-                            type="number"
-                            min={0}
-                            step="0.01"
-                            className="input input-sm input-bordered w-28"
-                            value={newPrevision}
-                            onChange={(e) => setNewPrevision(Number(e.target.value))}
-                            placeholder={t("sub_pots.prevision")}
-                        />
-
-                        <button
-                            className="btn btn-sm btn-primary"
-                            onClick={async () => {
-                                const trimmed = newName.trim()
-                                if (!trimmed) return
-
-                                onAddSubPot(pot.id, trimmed)
-                                setNewName("")
-                                setNewPrevision(0)
-                                setShowCreate(false)
-
-                                if (newPrevision < 0) return
-
-                                await onPersistSubPot(
-                                    pot.id,
-                                    trimmed,
-                                    newPrevision
-                                )
-                            }}
-                        >
-                            {t("common.create")}
-                        </button>
+                {pot.sub_pots.length > 0 && (
+                    <div className="border-t border-base-300/60 px-4 py-2 flex flex-col gap-1">
+                        {pot.sub_pots.map(sp => {
+                            const current = sp.current ?? 0
+                            const pct = sp.prevision > 0 ? (current / sp.prevision) * 100 : current ? 100 : 0
+                            const barColor = pct > 100 ? "bg-error" : pct >= 80 ? "bg-warning" : "bg-success"
+                            return (
+                                <div key={sp.id} className="py-1.5">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="text-sm font-medium text-base-content/75 truncate">{sp.name}</span>
+                                        <span className="text-xs text-base-content/40 tabular-nums shrink-0 ml-2">
+                                            {formatAmount(current)} / {formatAmount(sp.prevision)} {currencySymbol}
+                                        </span>
+                                    </div>
+                                    <div className="h-1 w-full bg-base-300/50 rounded-full overflow-hidden">
+                                        <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                                    </div>
+                                </div>
+                            )
+                        })}
                     </div>
                 )}
-
-                <SortableContext
-                    items={pot.sub_pots.map(sp => sp.id)}
-                    strategy={verticalListSortingStrategy}
-                >
-                    <div className="flex flex-col gap-2">
-                        {pot.sub_pots.map(sp => (
-                            <SubPotItem
-                                key={sp.id}
-                                subPot={sp}
-                                disabled={disabled}
-                                onDelete={onDeleteSubPot}
-                                onUpdate={onUpdateSubPot}
-                            />
-                        ))}
-                    </div>
-                </SortableContext>
-
-            </div>
+            </>}
         </div>
     )
 }
