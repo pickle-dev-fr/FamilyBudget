@@ -137,13 +137,9 @@ export default function RecurringPage() {
 
             {/* En-tête */}
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <h1 className="text-xl font-semibold">
-                    {t("recurring.title")}
-                </h1>
-
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     <select
-                        className="select select-bordered select-sm"
+                        className="select select-bordered select-sm min-w-36"
                         value={selectedAccountId ?? ""}
                         onChange={(e) => setSelectedAccountId(e.target.value)}
                     >
@@ -151,6 +147,8 @@ export default function RecurringPage() {
                             <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                     </select>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
                     <button
                         className="btn btn-primary btn-sm"
                         onClick={() => { setSelectedTx(undefined); setIsModalOpen(true) }}
@@ -172,23 +170,26 @@ export default function RecurringPage() {
                     <EmptyState icon={Repeat} message={t("recurring.empty")} />
                 ) : (<>
                     {/* Vue carte mobile */}
-                    <div className="md:hidden divide-y divide-base-300/50">
+                    <div className="md:hidden">
                         {transactions.map(tx => {
                             const isCredit = tx.transaction_type === "CREDIT"
                             const subPotName = subPots.find(sp => sp.id === tx.sub_pot_id)?.name
                             return (
-                                <div key={tx.id} className="flex items-center gap-3 px-4 py-3 hover:bg-base-200/40 transition-colors">
-                                    <div className={`w-1.5 h-10 rounded-full shrink-0 ${isCredit ? "bg-success" : "bg-error"}`} />
+                                <div key={tx.id} className="flex items-center gap-3 px-4 py-3 border-b border-base-300/40 last:border-0">
+                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold
+                                        ${isCredit ? "bg-success/10 text-success" : "bg-error/10 text-error"}`}>
+                                        ↻
+                                    </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate">{tx.motif || "—"}</p>
+                                        <p className="text-sm font-medium leading-tight truncate">{tx.motif || "—"}</p>
                                         <p className="text-xs text-base-content/40 mt-0.5 truncate">
-                                            ↻ {tx.recurrence_type} · {t("recurring.next_date")} {tx.transaction_date}
+                                            {tx.recurrence_type} · {tx.transaction_date}
                                             {subPotName ? ` · ${subPotName}` : ""}
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-2 shrink-0">
+                                    <div className="flex items-center gap-1.5 shrink-0">
                                         <span className={`text-sm font-bold tabular-nums ${isCredit ? "text-success" : "text-error"}`}>
-                                            {isCredit ? "+" : "-"}{formatAmount(tx.amount)} {currencySymbol}
+                                            {isCredit ? "+" : "−"}{formatAmount(tx.amount)} {currencySymbol}
                                         </span>
                                         <ActionsMenu
                                             onEdit={() => { setSelectedTx(tx); setIsModalOpen(true) }}

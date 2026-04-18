@@ -111,7 +111,10 @@
     "asset_type_stock": "Action",
     "asset_type_etf": "ETF",
     "asset_type_crypto": "Cryptomonnaie",
-    "asset_search_placeholder": "Rechercher un ticker…"
+    "asset_search_placeholder": "Rechercher un ticker…",
+    "section_general": "Général",
+    "section_settings": "Paramètres",
+    "section_savings": "Épargne"
   },
   "investment": {
     "back": "Retour aux comptes",

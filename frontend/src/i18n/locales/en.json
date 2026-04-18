@@ -80,7 +80,10 @@
         "start_day": "Month start day",
         "initial_value": "Initial value",
         "no_account_yet": "You don't have a bank account yet. Create one to access pots, transactions and statistics.",
-        "empty_tab": "No accounts in this category"
+        "empty_tab": "No accounts in this category",
+        "section_general": "General",
+        "section_settings": "Settings",
+        "section_savings": "Savings"
     },
     "transactions": {
         "add": "Add transaction",

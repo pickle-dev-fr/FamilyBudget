@@ -174,24 +174,27 @@ export default function TransactionsPage(): React.JSX.Element {
                     <EmptyState icon={Receipt} message={t("transactions.empty")} />
                 ) : (<>
                     {/* Vue carte mobile */}
-                    <div className="md:hidden divide-y divide-base-300/50">
+                    <div className="md:hidden">
                         {transactions.map(tx => {
                             const isCredit = tx.transaction_type === "CREDIT"
                             const subPotName = sub_pots.find(sp => sp.id === tx.sub_pot_id)?.name
                             return (
-                                <div key={tx.id} className="flex items-center gap-3 px-4 py-3 hover:bg-base-200/40 transition-colors">
-                                    <div className={`w-1.5 h-10 rounded-full shrink-0 ${isCredit ? "bg-success" : "bg-error"}`} />
+                                <div key={tx.id} className="flex items-center gap-3 px-4 py-3 border-b border-base-300/40 last:border-0">
+                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold
+                                        ${isCredit ? "bg-success/10 text-success" : "bg-error/10 text-error"}`}>
+                                        {isCredit ? "+" : "−"}
+                                    </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate">{tx.motif || "—"}</p>
+                                        <p className="text-sm font-medium leading-tight truncate">{tx.motif || "—"}</p>
                                         <p className="text-xs text-base-content/40 mt-0.5 truncate">
                                             {tx.transaction_date}
                                             {subPotName ? ` · ${subPotName}` : ""}
                                             {tx.recurrence_type ? " · ↻" : ""}
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-2 shrink-0">
+                                    <div className="flex items-center gap-1.5 shrink-0">
                                         <span className={`text-sm font-bold tabular-nums ${isCredit ? "text-success" : "text-error"}`}>
-                                            {isCredit ? "+" : "-"}{formatAmount(tx.amount)} {currencySymbol}
+                                            {isCredit ? "+" : "−"}{formatAmount(tx.amount)} {currencySymbol}
                                         </span>
                                         <ActionsMenu
                                             onDelete={() => setDeleteTarget(tx)}
@@ -204,7 +207,8 @@ export default function TransactionsPage(): React.JSX.Element {
                     </div>
 
                     {/* Vue tableau desktop */}
-                    <table className="table w-full hidden md:table">
+                    <div className="hidden md:block overflow-x-auto">
+                    <table className="table w-full">
                         <thead>
                             <tr>
                                 <th>{t("transactions.date")}</th>
@@ -251,6 +255,7 @@ export default function TransactionsPage(): React.JSX.Element {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 </>)}
             </div>
 

@@ -6,6 +6,10 @@ import {
     type DragStartEvent,
     DragOverlay,
     rectIntersection,
+    PointerSensor,
+    TouchSensor,
+    useSensor,
+    useSensors,
 } from "@dnd-kit/core"
 import {
     SortableContext,
@@ -34,6 +38,11 @@ type Props = {
 export default function PotsBoard({ accountId, refreshKey, year, month }: Props) {
     const { t } = useTranslation()
     const { currencySymbol } = useCurrency()
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+        useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+    )
 
     const [pots, setPots] = useState<UIPot[]>([])
     const [activeId, setActiveId] = useState<string | null>(null)
@@ -390,6 +399,7 @@ export default function PotsBoard({ accountId, refreshKey, year, month }: Props)
 
     return (
         <DndContext
+            sensors={sensors}
             collisionDetection={rectIntersection}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
