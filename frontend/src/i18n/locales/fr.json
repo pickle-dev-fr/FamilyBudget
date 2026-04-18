@@ -177,10 +177,12 @@
     "empty": "Aucun pot",
     "prevision": "Prévu",
     "current": "Actuel",
-    "reste": "Reste"
+    "reste": "Reste",
+    "position": "Position"
   },
   "sub_pots": {
     "aucun": "Aucun Sous-Pot",
+    "add": "Ajouter un sous-pot",
     "name": "Nom du Sous-Pot",
     "pourcentage": "Pourcentage",
     "prevision": "Prévu",

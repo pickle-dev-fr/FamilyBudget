@@ -137,10 +137,12 @@
         "empty": "No pots",
         "prevision": "Planned",
         "current": "Current",
-        "reste": "Remaining"
+        "reste": "Remaining",
+        "position": "Position"
     },
     "sub_pots": {
         "aucun": "No sub-pot",
+        "add": "Add sub-pot",
         "name": "Sub-pot name",
         "pourcentage": "Percentage",
         "prevision": "Planned",
