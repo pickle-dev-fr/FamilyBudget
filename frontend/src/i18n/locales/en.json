@@ -138,7 +138,12 @@
         "prevision": "Planned",
         "current": "Current",
         "reste": "Remaining",
-        "position": "Position"
+        "position": "Position",
+        "section_pot": "Edit pot",
+        "section_subpots": "Sub-pots",
+        "delete_confirm": "Delete this pot and all its sub-pots?",
+        "delete_subpot_confirm": "Delete this sub-pot?",
+        "empty_subpots": "No sub-pots"
     },
     "sub_pots": {
         "aucun": "No sub-pot",

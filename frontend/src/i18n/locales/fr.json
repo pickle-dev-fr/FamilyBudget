@@ -178,7 +178,12 @@
     "prevision": "Prévu",
     "current": "Actuel",
     "reste": "Reste",
-    "position": "Position"
+    "position": "Position",
+    "section_pot": "Modifier le pot",
+    "section_subpots": "Sous-pots",
+    "delete_confirm": "Supprimer ce pot et tous ses sous-pots ?",
+    "delete_subpot_confirm": "Supprimer ce sous-pot ?",
+    "empty_subpots": "Aucun sous-pot"
   },
   "sub_pots": {
     "aucun": "Aucun Sous-Pot",
