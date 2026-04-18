@@ -399,7 +399,7 @@ export default function PotsBoard({ accountId, refreshKey, year, month }: Props)
 
                 {/* Récapitulatif total */}
                 {pots.length > 0 && (
-                    <div className="card bg-base-200 border border-base-300 rounded-lg px-4 py-3 flex flex-row gap-6 text-sm">
+                    <div className="bg-base-100 border border-base-300 rounded-xl px-4 py-3 flex flex-row flex-wrap gap-5 text-sm">
                         <span>
                             <span className="opacity-60">{t("pots.prevision")} </span>
                             <span className="font-semibold">{formatAmount(totalPrevision)} {currencySymbol}</span>
@@ -455,15 +455,7 @@ export default function PotsBoard({ accountId, refreshKey, year, month }: Props)
             <DragOverlay className="pointer-events-none">
                 {activeId && (
                     <div
-                        className="
-                            bg-base-100
-                            border-2 border-primary
-                            shadow-2xl
-                            rounded-lg
-                            p-4
-                            opacity-100
-                            scale-105
-                        "
+                        className="bg-base-100 border-2 border-primary shadow-2xl rounded-xl p-4 opacity-100 scale-105"
                     >
                         {getActiveLabel(pots, activeId, activeType)}
                     </div>

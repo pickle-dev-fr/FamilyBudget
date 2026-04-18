@@ -72,20 +72,20 @@ function SectionCard({ title, headerRight, children }: {
     title: string; headerRight?: React.ReactNode; children: React.ReactNode
 }) {
     return (
-        <div className="card bg-base-100 border border-base-300 rounded-lg overflow-hidden">
-            <div className="bg-base-200 px-4 py-3 border-b border-base-300 flex items-center justify-between gap-2">
-                <h2 className="font-semibold text-sm uppercase tracking-wide">{title}</h2>
+        <div className="bg-base-100 border border-base-300 rounded-xl overflow-hidden">
+            <div className="bg-base-200/50 px-5 py-3 border-b border-base-300 flex items-center justify-between gap-2">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-base-content/50">{title}</h2>
                 {headerRight}
             </div>
-            <div className="p-4">{children}</div>
+            <div className="p-5">{children}</div>
         </div>
     )
 }
 
 function StatCard({ label, value, color }: { label: string; value: string; color?: string }) {
     return (
-        <div className="card bg-base-200 rounded-lg px-4 py-3 flex flex-col gap-1">
-            <span className="text-xs opacity-60 uppercase tracking-wide">{label}</span>
+        <div className="bg-base-100 border border-base-300 rounded-xl px-4 py-3.5 flex flex-col gap-1">
+            <span className="text-xs font-medium text-base-content/45 uppercase tracking-wider">{label}</span>
             <span className={`text-xl font-bold ${color ?? ""}`}>{value}</span>
         </div>
     )
@@ -497,7 +497,7 @@ export default function StatsPage() {
 
             {/* Sélecteur de compte */}
             <select
-                className="select select-bordered w-full sm:w-64"
+                className="select select-bordered select-sm w-full sm:w-64"
                 value={selectedAccountId}
                 onChange={e => handleAccountChange(e.target.value)}
             >

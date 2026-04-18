@@ -56,7 +56,7 @@ export default function SubPotItem({
     return (
         <div
             ref={setNodeRef}
-            className="flex flex-col gap-1 p-2 rounded-md bg-base-200"
+            className="flex flex-col gap-1 p-2.5 rounded-lg bg-base-200/60 border border-base-300/50"
             style={{
                 transform: CSS.Transform.toString(transform),
                 transition,

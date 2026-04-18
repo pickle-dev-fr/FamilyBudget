@@ -8,65 +8,73 @@ import { useTranslation } from "react-i18next";
 import { updateSettings } from "@/api/settings.api";
 import { LANGUAGE_I18N } from "@/auth/currency";
 import i18n from "i18next";
-
+import { FamilyBudgetLogo } from "@/components/ui/FamilyBudgetLogo";
 
 export default function RegisterPage() {
     const { t } = useTranslation();
     const { refreshAuth } = useAuth();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-
-    const isDisabled = !username || !password;
-
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    const isDisabled = !username || !password || loading;
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-
+        setLoading(true);
         try {
             await register({ username, password });
             const result = await login({ username, password });
             setToken(result.access_token);
-            // Sauvegarder langue + thème choisis sur la page d'inscription
             const currentLang = (Object.entries(LANGUAGE_I18N).find(([, v]) => v === i18n.language)?.[0] ?? "FR") as "FR" | "EN";
             const currentTheme = (localStorage.getItem("theme") === "light" ? "LIGHT" : "DARK") as "DARK" | "LIGHT";
             await updateSettings({ language: currentLang, theme: currentTheme }).catch(() => {});
             await refreshAuth();
             navigate("/", { replace: true });
         } catch {
-            // Le toast d'erreur est géré automatiquement par client.ts
+            // géré par client.ts
+        } finally {
+            setLoading(false);
         }
     }
 
     return (
-        <>
+        <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
             <PublicHeader />
 
-            <div className="flex h-screen items-center justify-center bg-bg">
-                <div className="card bg-bg p-6 rounded-lg shadow-lg w-80">
-                    <h2 className="text-2xl font-bold mb-4 text-text">
+            <div className="w-full max-w-sm">
+                {/* Logo */}
+                <div className="flex justify-center mb-8">
+                    <FamilyBudgetLogo size="lg" />
+                </div>
+
+                {/* Card */}
+                <div className="bg-base-100 border border-base-300 rounded-2xl shadow-sm p-8">
+                    <h1 className="text-lg font-semibold mb-6">
                         {t("auth.register.title")}
-                    </h2>
+                    </h1>
 
                     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm font-medium text-text">
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-medium text-base-content/70">
                                 {t("auth.register.username")}
                             </label>
                             <input
-                                className="input input-bordered w-full bg-bg-soft text-text"
+                                className="input input-bordered w-full"
                                 required
+                                autoFocus
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                             />
                         </div>
 
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm font-medium text-text">
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-medium text-base-content/70">
                                 {t("auth.register.password")}
                             </label>
                             <input
-                                className="input input-bordered w-full bg-bg-soft text-text"
+                                className="input input-bordered w-full"
                                 type="password"
                                 required
                                 value={password}
@@ -76,21 +84,21 @@ export default function RegisterPage() {
 
                         <button
                             type="submit"
-                            className="btn btn-primary mt-2"
+                            className="btn btn-primary w-full mt-2"
                             disabled={isDisabled}
                         >
-                            {t("auth.register.submit")}
+                            {loading ? <span className="loading loading-spinner loading-sm" /> : t("auth.register.submit")}
                         </button>
                     </form>
 
-                    <div className="mt-4 text-center text-sm text-text">
+                    <p className="mt-5 text-center text-sm text-base-content/50">
                         {t("auth.register.already_account")}{" "}
-                        <Link className="link link-primary" to="/login">
+                        <Link className="text-primary hover:underline font-medium" to="/login">
                             {t("auth.register.link_login")}
                         </Link>
-                    </div>
+                    </p>
                 </div>
             </div>
-        </>
+        </div>
     );
 }

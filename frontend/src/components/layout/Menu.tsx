@@ -2,64 +2,81 @@ import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { FamilyBudgetLogo } from "../ui/FamilyBudgetLogo";
 import { useAccount } from "@/auth/AccountContext";
+import {
+    LayoutDashboard,
+    CreditCard,
+    Wallet,
+    ArrowLeftRight,
+    Repeat,
+    BarChart2,
+    Settings,
+    type LucideIcon,
+} from "lucide-react";
+
+type NavItem = {
+    to: string;
+    labelKey: string;
+    icon: LucideIcon;
+    end?: boolean;
+    requiresAccount?: boolean;
+};
+
+const mainNav: NavItem[] = [
+    { to: "/",            labelKey: "menu.home",                   icon: LayoutDashboard, end: true },
+    { to: "/accounts",    labelKey: "menu.accounts",               icon: CreditCard },
+    { to: "/pots",        labelKey: "menu.pots",                   icon: Wallet,          requiresAccount: true },
+    { to: "/transactions",labelKey: "menu.transactions",           icon: ArrowLeftRight,  requiresAccount: true },
+    { to: "/recurring",   labelKey: "menu.transactions_recurrent", icon: Repeat,          requiresAccount: true },
+    { to: "/stats",       labelKey: "menu.stats",                  icon: BarChart2,       requiresAccount: true },
+];
+
+const base = "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150";
+const activeClass  = `${base} bg-primary/10 text-primary`;
+const normalClass  = `${base} text-base-content/60 hover:text-base-content hover:bg-base-200`;
+const disabledClass = `${base} text-base-content/25 cursor-not-allowed pointer-events-none`;
 
 export default function Menu() {
     const { t } = useTranslation();
     const { hasAccounts } = useAccount();
 
-    const disabledLink = "px-3 py-2 rounded opacity-40 cursor-not-allowed text-text pointer-events-none";
-    const activeLink = "px-3 py-2 rounded hover:bg-base-300 bg-base-300 font-bold";
-    const normalLink = "px-3 py-2 rounded hover:bg-base-300 text-text";
-
     function navClass({ isActive }: { isActive: boolean }) {
-        return isActive ? activeLink : normalLink;
+        return isActive ? activeClass : normalClass;
     }
 
     return (
-        <nav className="flex flex-col gap-2 p-4 bg-bg-soft">
-            <div className="flex justify-center py-4">
+        <nav className="flex flex-col h-full">
+            {/* Logo */}
+            <div className="px-5 py-5 border-b border-base-300">
                 <FamilyBudgetLogo size="md" />
             </div>
-            <div className="border-t border-base-300 mb-2" />
 
-            <NavLink to="/" end className={navClass}>
-                {t("menu.home")}
-            </NavLink>
+            {/* Nav principale */}
+            <div className="flex flex-col gap-0.5 p-3 flex-1">
+                {mainNav.map(({ to, labelKey, icon: Icon, end, requiresAccount }) => {
+                    if (requiresAccount && !hasAccounts) {
+                        return (
+                            <span key={to} className={disabledClass} title={t("menu.requires_account")}>
+                                <Icon size={17} className="shrink-0" />
+                                <span>{t(labelKey)}</span>
+                            </span>
+                        );
+                    }
+                    return (
+                        <NavLink key={to} to={to} end={end} className={navClass}>
+                            <Icon size={17} className="shrink-0" />
+                            <span>{t(labelKey)}</span>
+                        </NavLink>
+                    );
+                })}
+            </div>
 
-            <NavLink to="/accounts" className={navClass}>
-                {t("menu.accounts")}
-            </NavLink>
-
-            {hasAccounts ? (
-                <>
-                    <NavLink to="/pots" className={navClass}>
-                        {t("menu.pots")}
-                    </NavLink>
-
-                    <NavLink to="/transactions" className={navClass}>
-                        {t("menu.transactions")}
-                    </NavLink>
-
-                    <NavLink to="/recurring" className={navClass}>
-                        {t("menu.transactions_recurrent")}
-                    </NavLink>
-
-                    <NavLink to="/stats" className={navClass}>
-                        {t("menu.stats")}
-                    </NavLink>
-                </>
-            ) : (
-                <>
-                    <span className={disabledLink} title={t("menu.requires_account")}>{t("menu.pots")}</span>
-                    <span className={disabledLink} title={t("menu.requires_account")}>{t("menu.transactions")}</span>
-                    <span className={disabledLink} title={t("menu.requires_account")}>{t("menu.transactions_recurrent")}</span>
-                    <span className={disabledLink} title={t("menu.requires_account")}>{t("menu.stats")}</span>
-                </>
-            )}
-
-            <NavLink to="/settings" className={navClass}>
-                {t("menu.settings")}
-            </NavLink>
+            {/* Paramètres en bas */}
+            <div className="p-3 border-t border-base-300">
+                <NavLink to="/settings" className={navClass}>
+                    <Settings size={17} className="shrink-0" />
+                    <span>{t("menu.settings")}</span>
+                </NavLink>
+            </div>
         </nav>
     );
 }

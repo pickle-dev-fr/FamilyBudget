@@ -78,8 +78,8 @@ export default function PotColumn({ pot, onAddSubPot, onPersistSubPot, onUpdateS
     return (
         <div
             ref={setNodeRef}
-            className={`pot-item bg-base-200 border border-base-300 shadow-sm p-4 rounded-lg transition-all
-                ${isDragging ? "opacity-0" : "opacity-100"} 
+            className={`pot-item bg-base-100 border border-base-300 shadow-sm p-4 rounded-xl transition-all
+                ${isDragging ? "opacity-0" : "opacity-100"}
                 ${disabled ? "cursor-not-allowed" : "cursor-grab"}
             `}
             style={{

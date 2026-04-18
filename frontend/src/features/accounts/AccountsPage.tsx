@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -27,6 +27,8 @@ import { useAccount } from "@/auth/AccountContext";
 import { toast } from "@/lib/toast";
 import { useLoading } from "@/context/loading";
 
+type TabType = "NORMAL" | "SAVINGS" | "INVESTMENT";
+
 export default function AccountsPage() {
     const { t } = useTranslation();
     const { currencySymbol } = useCurrency();
@@ -37,11 +39,9 @@ export default function AccountsPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [balances, setBalances] = useState<Record<string, number>>({});
     const [isLoaded, setIsLoaded] = useState(false);
-    const [activeTab, setActiveTab] = useState<"NORMAL" | "SAVINGS" | "INVESTMENT">("NORMAL");
-
+    const [activeTab, setActiveTab] = useState<TabType>("NORMAL");
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
-
     const [refreshing, setRefreshing] = useState<string | null>(null);
 
     const sensors = useSensors(
@@ -53,7 +53,6 @@ export default function AccountsPage() {
         try {
             const accountsRes = await getAccounts();
             setAccounts(accountsRes);
-
             const balancesEntries = await Promise.all(
                 accountsRes.map(async (a: Account) => {
                     const balance = await getAccountsBalance(a.id);
@@ -103,39 +102,59 @@ export default function AccountsPage() {
         }
     }
 
+    const tabs: { key: TabType; label: string }[] = [
+        { key: "NORMAL",     label: t("accounts.type_normal") },
+        { key: "SAVINGS",    label: t("accounts.type_savings") },
+        { key: "INVESTMENT", label: t("accounts.type_investment") },
+    ];
+
     const filteredAccounts = accounts.filter(a => a.account_type === activeTab);
 
     return (
-        <div className="page flex flex-col gap-6 p-4">
-            {accounts.length === 0 && isLoaded && (
-                <div role="alert" className="alert alert-info">
-                    <span>{t("accounts.no_account_yet")}</span>
-                </div>
-            )}
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold">{t("accounts.title")}</h1>
-                <button className="btn btn-primary" onClick={() => setCreateOpen(true)}>
+        <div className="flex flex-col gap-6 max-w-4xl">
+
+            {/* En-tête */}
+            <div className="flex items-center justify-between">
+                <h1 className="text-xl font-semibold">{t("accounts.title")}</h1>
+                <button className="btn btn-primary btn-sm" onClick={() => setCreateOpen(true)}>
                     {t("accounts.create")}
                 </button>
             </div>
 
-            <div role="tablist" className="tabs tabs-bordered mb-2">
-                {(["NORMAL", "SAVINGS", "INVESTMENT"] as const).map(tab => (
-                    <button
-                        key={tab}
-                        role="tab"
-                        className={`tab${activeTab === tab ? " tab-active" : ""}`}
-                        onClick={() => setActiveTab(tab)}
-                    >
-                        {t(`accounts.type_${tab.toLowerCase()}`)}
-                        <span className="ml-2 badge badge-sm">
-                            {accounts.filter(a => a.account_type === tab).length}
-                        </span>
-                    </button>
-                ))}
+            {accounts.length === 0 && isLoaded && (
+                <div role="alert" className="alert alert-info text-sm">
+                    <span>{t("accounts.no_account_yet")}</span>
+                </div>
+            )}
+
+            {/* Onglets en pilule */}
+            <div className="inline-flex bg-base-100 border border-base-300 rounded-xl p-1 gap-0.5 self-start">
+                {tabs.map(({ key, label }) => {
+                    const count = accounts.filter(a => a.account_type === key).length;
+                    return (
+                        <button
+                            key={key}
+                            onClick={() => setActiveTab(key)}
+                            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-1.5
+                                ${activeTab === key
+                                    ? "bg-primary text-primary-content shadow-sm"
+                                    : "text-base-content/50 hover:text-base-content hover:bg-base-200"
+                                }`}
+                        >
+                            {label}
+                            {count > 0 && (
+                                <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold
+                                    ${activeTab === key ? "bg-white/20" : "bg-base-300 text-base-content/60"}`}>
+                                    {count}
+                                </span>
+                            )}
+                        </button>
+                    );
+                })}
             </div>
 
-            <div className="card p-4">
+            {/* Tableau */}
+            <div className="bg-base-100 border border-base-300 rounded-xl overflow-hidden">
                 <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -154,58 +173,60 @@ export default function AccountsPage() {
                     <SortableContext items={filteredAccounts.map(c => c.id)} strategy={verticalListSortingStrategy}>
                         <table className="table w-full">
                             <thead>
-                                <tr className="text-left">
+                                <tr>
                                     <th>{t("accounts.name")}</th>
                                     <th>{t("accounts.balance")}</th>
-                                    <th>{activeTab === "NORMAL" ? t("accounts.start_day") : ""}</th>
-                                    <th>{t("common.actions")}</th>
+                                    {activeTab === "NORMAL" && <th>{t("accounts.start_day")}</th>}
+                                    <th className="w-16">{t("common.actions")}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredAccounts.length === 0 && (
-                                    <tr><td colSpan={4} className="text-center text-gray-400 italic">—</td></tr>
+                                    <tr>
+                                        <td colSpan={4} className="text-center text-base-content/30 italic text-sm py-8">—</td>
+                                    </tr>
                                 )}
-
-                                {filteredAccounts.map(a => (
-                                    <SortableTableRow key={a.id} id={a.id}>
+                                {filteredAccounts.map(a => {
+                                    const bal = balances[a.id] ?? 0;
+                                    return (
+                                        <SortableTableRow key={a.id} id={a.id}>
+                                            <td className="font-medium">{a.name}</td>
                                             <td>
-                                                {a.name}
-                                            </td>
-                                            <td>
-                                                <div className={`font-semibold ${(balances[a.id] ?? 0) >= 0 ? "text-green-500" : "text-red-500"}`}>
-                                                    {formatAmount(balances[a.id])} {currencySymbol}
-                                                </div>
-                                                {/* Barre de progression épargne */}
+                                                <span className={`text-sm font-semibold tabular-nums ${bal >= 0 ? "text-success" : "text-error"}`}>
+                                                    {formatAmount(bal)} {currencySymbol}
+                                                </span>
                                                 {a.account_type === "SAVINGS" && a.savings_goal != null && a.savings_goal > 0 && (
-                                                    <div className="mt-1">
+                                                    <div className="mt-1.5">
                                                         <progress
-                                                            className="progress progress-primary w-full h-1.5"
-                                                            value={Math.min(Math.max(balances[a.id] ?? 0, 0), a.savings_goal)}
+                                                            className="progress progress-primary w-full h-1"
+                                                            value={Math.min(Math.max(bal, 0), a.savings_goal)}
                                                             max={a.savings_goal}
                                                         />
-                                                        <span className="text-xs opacity-50">
-                                                            {formatAmount(balances[a.id] ?? 0)} / {formatAmount(a.savings_goal)} {currencySymbol}
-                                                            {a.interest_rate && a.interest_frequency ? ` · ${a.interest_rate}%/${t(`accounts.freq_short_${a.interest_frequency.toLowerCase()}`)}` : ""}
+                                                        <span className="text-xs text-base-content/40">
+                                                            {formatAmount(bal)} / {formatAmount(a.savings_goal)} {currencySymbol}
+                                                            {a.interest_rate && a.interest_frequency
+                                                                ? ` · ${a.interest_rate}%/${t(`accounts.freq_short_${a.interest_frequency.toLowerCase()}`)}`
+                                                                : ""}
                                                         </span>
                                                     </div>
                                                 )}
                                             </td>
-                                            <td>
-                                                {a.account_type === "NORMAL" ? a.start_day : "—"}
-                                            </td>
+                                            {activeTab === "NORMAL" && (
+                                                <td className="text-sm text-base-content/60">{a.start_day}</td>
+                                            )}
                                             <td>
                                                 <div className="flex items-center gap-1">
                                                     {a.account_type === "INVESTMENT" && (
                                                         <>
                                                             <button
-                                                                className="btn btn-xs btn-ghost"
+                                                                className="btn btn-ghost btn-xs text-primary hover:text-primary/80"
                                                                 onClick={() => navigate(`/accounts/${a.id}/investment`)}
                                                                 title={t("investment.assets_title")}
                                                             >
-                                                                {t("accounts.type_investment")}
+                                                                <ChevronRight size={14} />
                                                             </button>
                                                             <button
-                                                                className="btn btn-xs btn-ghost"
+                                                                className="btn btn-ghost btn-xs text-base-content/40 hover:text-base-content"
                                                                 onClick={() => handleRefreshPrices(a.id)}
                                                                 disabled={refreshing === a.id}
                                                                 title={t("accounts.refresh_prices")}
@@ -221,29 +242,28 @@ export default function AccountsPage() {
                                                 </div>
                                             </td>
                                         </SortableTableRow>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </SortableContext>
                 </DndContext>
             </div>
 
-            {/* Modal édition compte */}
+            {/* Modales */}
             <AccountsModal
                 open={!!editingAccount}
                 mode="edit"
                 onClose={() => setEditingAccount(null)}
-                defaultValues={
-                    editingAccount ? {
-                        name: editingAccount.name,
-                        startDay: editingAccount.start_day,
-                        initialValue: editingAccount.initial_value,
-                        accountType: editingAccount.account_type,
-                        savingsGoal: editingAccount.savings_goal,
-                        interestRate: editingAccount.interest_rate,
-                        interestFrequency: editingAccount.interest_frequency,
-                    } : undefined
-                }
+                defaultValues={editingAccount ? {
+                    name: editingAccount.name,
+                    startDay: editingAccount.start_day,
+                    initialValue: editingAccount.initial_value,
+                    accountType: editingAccount.account_type,
+                    savingsGoal: editingAccount.savings_goal,
+                    interestRate: editingAccount.interest_rate,
+                    interestFrequency: editingAccount.interest_frequency,
+                } : undefined}
                 onSubmit={async data => {
                     if (!editingAccount) return;
                     await updateAccount(editingAccount.id, {
@@ -259,15 +279,12 @@ export default function AccountsPage() {
                     toast.success(t("toast.success.account_updated"));
                 }}
             />
-
-            {/* Modal création compte */}
             <AccountsModal
                 open={createOpen}
                 mode="create"
                 onClose={() => setCreateOpen(false)}
                 onSubmit={handleCreate}
             />
-
         </div>
     );
 }
