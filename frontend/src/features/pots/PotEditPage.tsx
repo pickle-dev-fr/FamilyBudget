@@ -7,7 +7,6 @@ import {
 import {
     createSubPot, deleteSubPot, reorderSubPots, updateSubPot,
 } from "@/api/sub_pots.api"
-import { getPotsHistory, type SubPotSnapshotPoint } from "@/api/stats.api"
 import type { UIPot, UISubPot } from "./types"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/auth/currency"
@@ -22,7 +21,6 @@ export default function PotEditPage() {
     const { currencySymbol } = useCurrency()
 
     const [pots, setPots] = useState<UIPot[]>([])
-    const [prevSnapshots, setPrevSnapshots] = useState<SubPotSnapshotPoint[]>([])
     const pot = pots.find(p => p.id === potId)
     const movablePots = pots.filter(p => p.position !== 0)
     const isDefault = pot?.position === 0
@@ -62,18 +60,8 @@ export default function PotEditPage() {
     }, [pot?.id])
 
     async function loadWithAccount(accId: string) {
-        const [data, history] = await Promise.all([
-            getPotsAndSubPotsByAccount(accId, currentRefMonth?.year, currentRefMonth?.month),
-            getPotsHistory(accId, 2),
-        ])
+        const data = await getPotsAndSubPotsByAccount(accId, currentRefMonth?.year, currentRefMonth?.month)
         setPots([...data].sort((a, b) => a.position - b.position))
-        // Garder uniquement le mois le plus ancien (= mois précédent)
-        const months = [...new Set(history.map(h => `${h.year}-${h.month}`))].sort()
-        const prevKey = months[months.length - 2]
-        if (prevKey) {
-            const [py, pm] = prevKey.split("-").map(Number)
-            setPrevSnapshots(history.filter(h => h.year === py && h.month === pm))
-        }
     }
 
     async function reload() {
@@ -273,7 +261,6 @@ export default function PotEditPage() {
                                 allMovablePots={movablePots}
                                 isInDefaultPot={isDefault}
                                 currencySymbol={currencySymbol}
-                                prevMonthCurrent={prevSnapshots.find(s => s.sub_pot_id === sp.id)?.current}
                                 onSave={handleSaveSubPot}
                                 onRequestDelete={setSubPotToDelete}
                             />
@@ -313,12 +300,11 @@ type SubPotRowProps = {
     allMovablePots: UIPot[]
     isInDefaultPot: boolean
     currencySymbol: string
-    prevMonthCurrent?: number
     onSave: (id: string, name: string, prevision: number, newPotId: string, newPosition: number) => Promise<void>
     onRequestDelete: (id: string) => void
 }
 
-function SubPotEditRow({ subPot, currentPot, allMovablePots, isInDefaultPot, currencySymbol, prevMonthCurrent, onSave, onRequestDelete }: SubPotRowProps) {
+function SubPotEditRow({ subPot, currentPot, allMovablePots, isInDefaultPot, currencySymbol, onSave, onRequestDelete }: SubPotRowProps) {
     const { t } = useTranslation()
     const [name, setName] = useState(subPot.name)
     const [prevision, setPrevision] = useState(subPot.prevision)
@@ -345,9 +331,6 @@ function SubPotEditRow({ subPot, currentPot, allMovablePots, isInDefaultPot, cur
     const pct = subPot.prevision > 0 ? (current / subPot.prevision) * 100 : current ? 100 : 0
     const pctColor = pct > 100 ? "text-error" : pct >= 80 ? "text-warning" : "text-success"
     const barColor = pct > 100 ? "bg-error" : pct >= 80 ? "bg-warning" : "bg-success"
-    const trend = prevMonthCurrent !== undefined && prevMonthCurrent > 0
-        ? ((current - prevMonthCurrent) / prevMonthCurrent) * 100
-        : null
 
     const isDirty = name !== subPot.name || prevision !== subPot.prevision
         || potId !== subPot.pot_id || position !== originalIndex
@@ -364,16 +347,9 @@ function SubPotEditRow({ subPot, currentPot, allMovablePots, isInDefaultPot, cur
                     <div className="h-1.5 w-full bg-base-300/60 rounded-full overflow-hidden">
                         <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${Math.min(pct, 100)}%` }} />
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-xs text-base-content/40 tabular-nums">
-                            {formatAmount(current)} / {formatAmount(subPot.prevision)} {currencySymbol}
-                        </p>
-                        {trend !== null && (
-                            <span className={`text-xs tabular-nums font-medium ${trend > 0 ? "text-error" : "text-success"}`}>
-                                {trend > 0 ? "↑" : "↓"}{Math.abs(Math.round(trend))}%
-                            </span>
-                        )}
-                    </div>
+                    <p className="text-xs text-base-content/40 tabular-nums mt-0.5">
+                        {formatAmount(current)} / {formatAmount(subPot.prevision)} {currencySymbol}
+                    </p>
                 </div>
                 {!isInDefaultPot && (
                     <button className="btn btn-ghost btn-xs btn-square text-error/60 hover:text-error shrink-0" onClick={() => onRequestDelete(subPot.id)}>

@@ -82,7 +82,10 @@ function SectionCard({ title, headerRight, children }: {
     )
 }
 
-function StatCard({ label, value, color, icon: Icon }: { label: string; value: string; color?: string; icon?: React.ElementType }) {
+function StatCard({ label, value, color, icon: Icon, trend }: {
+    label: string; value: string; color?: string; icon?: React.ElementType; trend?: number | null
+}) {
+    const trendColor = trend === null || trend === undefined ? "" : trend > 0 ? "text-success" : trend < 0 ? "text-error" : "text-base-content/40"
     return (
         <div className="bg-base-100 border border-base-300 rounded-xl px-4 py-3.5 flex items-start gap-3">
             {Icon && (
@@ -93,6 +96,11 @@ function StatCard({ label, value, color, icon: Icon }: { label: string; value: s
             <div className="min-w-0">
                 <span className="text-xs font-medium text-base-content/45 uppercase tracking-wider block">{label}</span>
                 <span className={`text-xl font-bold ${color ?? ""}`}>{value}</span>
+                {trend !== null && trend !== undefined && (
+                    <span className={`text-xs font-medium block mt-0.5 ${trendColor}`}>
+                        {trend > 0 ? "↑" : trend < 0 ? "↓" : "="} {Math.abs(Math.round(trend))}% vs mois préc.
+                    </span>
+                )}
             </div>
         </div>
     )
@@ -265,6 +273,23 @@ export default function StatsPage() {
         todayPeriod ? monthlySummary.find(m => m.year === todayPeriod.year && m.month === todayPeriod.month) : null,
         [monthlySummary, todayPeriod]
     )
+
+    const prevSummary = useMemo(() => {
+        if (!todaySummary || !monthlySummary.length) return null
+        const idx = monthlySummary.findIndex(m => m.year === todaySummary.year && m.month === todaySummary.month)
+        return idx > 0 ? monthlySummary[idx - 1] : null
+    }, [monthlySummary, todaySummary])
+
+    function pctChange(current?: number, prev?: number): number | null {
+        if (current == null || prev == null || prev === 0) return null
+        return ((current - prev) / Math.abs(prev)) * 100
+    }
+
+    const avgDelta = useMemo(() => {
+        if (monthlySummary.length < 2) return null
+        const recent = monthlySummary.slice(-6)
+        return recent.reduce((s, m) => s + m.delta, 0) / recent.length
+    }, [monthlySummary])
 
     // ── Données graphique formatées ──
     const balanceChartData = useMemo(() => {
@@ -626,7 +651,7 @@ export default function StatsPage() {
             {accountType !== "INVESTMENT" && (
                 <>
                     {/* Cartes d'aujourd'hui */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                         <StatCard
                             icon={Wallet}
                             label={t("stats.balance")}
@@ -637,18 +662,29 @@ export default function StatsPage() {
                             label={t("stats.income")}
                             value={`${formatAmount(todaySummary?.income)} ${currencySymbol}`}
                             color="text-success"
+                            trend={pctChange(todaySummary?.income, prevSummary?.income)}
                         />
                         <StatCard
                             icon={TrendingDown}
                             label={t("stats.expenses")}
                             value={`${formatAmount(todaySummary?.expenses)} ${currencySymbol}`}
                             color="text-error"
+                            trend={pctChange(todaySummary?.expenses, prevSummary?.expenses) !== null
+                                ? -(pctChange(todaySummary?.expenses, prevSummary?.expenses)!)
+                                : null}
                         />
                         <StatCard
                             icon={(todaySummary?.delta ?? 0) >= 0 ? TrendingUp : TrendingDown}
                             label={t("stats.delta")}
                             value={`${formatAmount(todaySummary?.delta)} ${currencySymbol}`}
                             color={(todaySummary?.delta ?? 0) >= 0 ? "text-success" : "text-error"}
+                            trend={pctChange(todaySummary?.delta, prevSummary?.delta)}
+                        />
+                        <StatCard
+                            icon={BarChart2}
+                            label={t("stats.avg_delta")}
+                            value={avgDelta !== null ? `${formatAmount(avgDelta)} ${currencySymbol}` : "—"}
+                            color={avgDelta !== null ? (avgDelta >= 0 ? "text-success" : "text-error") : ""}
                         />
                     </div>
 
