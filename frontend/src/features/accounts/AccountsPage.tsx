@@ -155,7 +155,7 @@ export default function AccountsPage() {
             </div>
 
             {/* Tableau */}
-            <div className="bg-base-100 border border-base-300 rounded-xl overflow-hidden">
+            <div className="bg-base-100 border border-base-300 rounded-xl">
                 {filteredAccounts.length === 0 && isLoaded ? (
                     <EmptyState icon={Wallet} message={t("accounts.empty_tab")} />
                 ) : (

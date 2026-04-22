@@ -169,7 +169,7 @@ export default function TransactionsPage(): React.JSX.Element {
             </div>
 
             {/* ── Liste / Tableau ── */}
-            <div className="bg-base-100 border border-base-300 rounded-xl overflow-hidden">
+            <div className="bg-base-100 border border-base-300 rounded-xl">
                 {transactions.length === 0 ? (
                     <EmptyState icon={Receipt} message={t("transactions.empty")} />
                 ) : (<>

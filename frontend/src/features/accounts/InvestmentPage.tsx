@@ -160,7 +160,7 @@ export default function InvestmentPage() {
             {/* Tableau + graphique */}
             <div className="flex flex-col lg:flex-row gap-6 items-start">
                 {/* Tableau des actifs */}
-                <div className="flex-1 bg-base-100 border border-base-300 rounded-xl overflow-hidden">
+                <div className="flex-1 bg-base-100 border border-base-300 rounded-xl">
                     <div className="flex justify-between items-center px-4 py-3 border-b border-base-300 bg-base-200/40">
                         <h2 className="text-xs font-semibold uppercase tracking-wider text-base-content/50">{t("investment.assets_title")}</h2>
                         <button

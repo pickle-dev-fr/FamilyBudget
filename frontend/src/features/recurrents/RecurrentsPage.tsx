@@ -165,7 +165,7 @@ export default function RecurringPage() {
             </div>
 
             {/* Tableau / Cartes */}
-            <div className="bg-base-100 border border-base-300 rounded-xl overflow-hidden">
+            <div className="bg-base-100 border border-base-300 rounded-xl">
                 {transactions.length === 0 ? (
                     <EmptyState icon={Repeat} message={t("recurring.empty")} />
                 ) : (<>
