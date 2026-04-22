@@ -18,9 +18,11 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     const refreshAccounts = useCallback(async () => {
         if (!authenticated) {
             setHasAccounts(false);
-            setLoadingAccounts(false);
+            // Ne pas mettre loadingAccounts à false ici : RequiresAccount rendrait
+            // avec hasAccounts=false avant que l'auth ait le temps de résoudre
             return;
         }
+        setLoadingAccounts(true);
         try {
             const accounts = await getAccounts();
             setHasAccounts(accounts.length > 0);
@@ -32,7 +34,6 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     }, [authenticated]);
 
     useEffect(() => {
-        setLoadingAccounts(true);
         refreshAccounts();
     }, [refreshAccounts]);
 
