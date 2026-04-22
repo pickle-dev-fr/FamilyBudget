@@ -6,6 +6,17 @@ export type MonthlySummaryPoint = { year: number; month: number; income: number;
 export type PotAmount = { pot: string; amount: number };
 export type SubPotAmount = { pot: string; sub_pot: string; amount: number };
 export type HeatmapPoint = { date: string; amount: number; count: number };
+export type SubPotSnapshotPoint = {
+  sub_pot_id: string
+  sub_pot: string
+  pot: string
+  year: number
+  month: number
+  prevision: number
+  current: number
+  remaining: number
+}
+
 export type TransactionStat = {
   date: string;
   amount: number;
@@ -50,4 +61,12 @@ export function getTopTransactions(accountId: string, year: number, month: numbe
 
 export function getHeatmap(accountId: string, year: number): Promise<HeatmapPoint[]> {
   return apiClient.get(`/stats/accounts/${accountId}/heatmap?year=${year}`);
+}
+
+export function getPotsHistory(accountId: string, nMonths = 12): Promise<SubPotSnapshotPoint[]> {
+  return apiClient.get(`/stats/accounts/${accountId}/pots-history?n_months=${nMonths}`);
+}
+
+export function triggerSnapshot(accountId: string, year: number, month: number): Promise<void> {
+  return apiClient.post(`/stats/accounts/${accountId}/pots-history/snapshot?year=${year}&month=${month}`, {});
 }

@@ -211,6 +211,22 @@ class Transaction(SQLModel, table=True):
     linked_transaction_id: Optional[str] = Field(default=None, foreign_key="transaction.id", nullable=True)
 
 
+class SubPotSnapshot(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("sub_pot_id", "year", "month", name="uq_subpot_snapshot"),
+    )
+
+    id: str = Field(default_factory=generate_ulid, primary_key=True)
+    sub_pot_id: str = Field(foreign_key="sub_pot.id", index=True)
+    pot_id: str = Field(foreign_key="pot.id", index=True)
+    account_id: str = Field(foreign_key="account.id", index=True)
+    year: int
+    month: int
+    prevision: float
+    current: float
+    remaining: float
+
+
 class PortfolioSnapshot(SQLModel, table=True):
     """Valeur quotidienne d'un portefeuille investissement (snapshot au moment du refresh des prix)."""
     __table_args__ = (

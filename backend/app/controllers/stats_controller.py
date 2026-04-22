@@ -6,7 +6,8 @@ from datetime import date as DateType
 from app.database import get_session
 from app.security.dependencies import get_current_user
 from app.services.stat_service import StatService
-from app.schemas.stats_schema import BalancePoint, MonthlySummaryPoint, PotAmount, SubPotAmount, HeatmapPoint, TransactionStat, DailyBalancePoint
+from app.services.snapshot_service import SnapshotService
+from app.schemas.stats_schema import BalancePoint, MonthlySummaryPoint, PotAmount, SubPotAmount, HeatmapPoint, TransactionStat, DailyBalancePoint, SubPotSnapshotPoint
 from app.models import User, Account, AccountType
 from app.i18n.messages import msg
 
@@ -108,6 +109,30 @@ def get_by_subpot(
 ):
     account = _get_account(session, account_id, current_user)
     return StatService.by_subpot(session, account, year, month)
+
+
+@router.get("/accounts/{account_id}/pots-history", response_model=list[SubPotSnapshotPoint])
+def get_pots_history(
+    account_id: str,
+    n_months: int = Query(12, ge=1, le=60),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    _get_account(session, account_id, current_user)
+    return SnapshotService.get_history(session, account_id, n_months)
+
+
+@router.post("/accounts/{account_id}/pots-history/snapshot", status_code=204)
+def trigger_snapshot(
+    account_id: str,
+    year: int = Query(...),
+    month: int = Query(...),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Déclenche manuellement un snapshot pour un mois donné."""
+    account = _get_account(session, account_id, current_user)
+    SnapshotService.take_for_account(session, account, year, month)
 
 
 @router.get("/accounts/{account_id}/heatmap", response_model=list[HeatmapPoint])

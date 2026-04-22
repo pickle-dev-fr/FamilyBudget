@@ -10,6 +10,7 @@ type Props = {
     currentPot: UIPot
     allMovablePots: UIPot[]
     isInDefaultPot: boolean
+    prevMonthCurrent?: number
     onDelete: (subPotId: string) => Promise<void>
     onSave: (
         subPotId: string,
@@ -18,7 +19,7 @@ type Props = {
     ) => Promise<void>
 }
 
-export default function SubPotItem({ subPot, currentPot, allMovablePots, isInDefaultPot, onDelete, onSave }: Props) {
+export default function SubPotItem({ subPot, currentPot, allMovablePots, isInDefaultPot, prevMonthCurrent, onDelete, onSave }: Props) {
     const { t } = useTranslation()
     const { currencySymbol } = useCurrency()
     const [isEditing, setIsEditing] = useState(false)
@@ -30,6 +31,10 @@ export default function SubPotItem({ subPot, currentPot, allMovablePots, isInDef
     const current    = subPot.current ?? 0
     const percentage = subPot.prevision > 0 ? (current / subPot.prevision) * 100 : current ? 100 : 0
     const progressColor = percentage > 100 ? "bg-error" : percentage >= 80 ? "bg-warning" : "bg-success"
+
+    const trend = prevMonthCurrent !== undefined && prevMonthCurrent > 0
+        ? ((current - prevMonthCurrent) / prevMonthCurrent) * 100
+        : null
 
     const targetPot = allMovablePots.find(p => p.id === editPotId) ?? currentPot
     const positionCount = editPotId === currentPot.id
@@ -112,6 +117,11 @@ export default function SubPotItem({ subPot, currentPot, allMovablePots, isInDef
                     <span className="text-xs text-base-content/40 tabular-nums shrink-0">
                         {formatAmount(current)} / {formatAmount(subPot.prevision)} {currencySymbol}
                     </span>
+                    {trend !== null && (
+                        <span className={`text-xs tabular-nums shrink-0 ${trend > 0 ? "text-error" : "text-success"}`}>
+                            {trend > 0 ? "↑" : "↓"}{Math.abs(Math.round(trend))}%
+                        </span>
+                    )}
                 </div>
             </div>
             {!isInDefaultPot && (

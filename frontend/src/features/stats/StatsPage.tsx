@@ -4,9 +4,9 @@ import { usePersistedState } from "@/hooks/usePersistedState"
 import { getAccounts, type Account, type InvestmentAsset } from "@/api/accounts.api"
 import { getPeriode } from "@/api/utils.api"
 import {
-    getBalanceRange, getMonthlySummary, getBySubPot, getHeatmap, getTopTransactions,
+    getBalanceRange, getMonthlySummary, getBySubPot, getHeatmap, getTopTransactions, getPotsHistory, triggerSnapshot,
     type DailyBalancePoint, type MonthlySummaryPoint, type SubPotAmount,
-    type HeatmapPoint, type TransactionStat,
+    type HeatmapPoint, type TransactionStat, type SubPotSnapshotPoint,
 } from "@/api/stats.api"
 import { RotateCcw, Wallet, BarChart2, Clock, TrendingUp, TrendingDown, PiggyBank, Target } from "lucide-react"
 import { formatAmount } from "@/utils"
@@ -128,6 +128,67 @@ function CalendarHeatmap({ data, year }: { data: HeatmapPoint[]; year: number })
     )
 }
 
+// ─── Composant historique pots ─────────────────────────────────────────────
+function PotsHistoryChart({ data, currencySymbol, onSnapshot, t }: {
+    data: SubPotSnapshotPoint[]
+    currencySymbol: string
+    onSnapshot: () => Promise<void>
+    t: (k: string) => string
+}) {
+    const [snapshotting, setSnapshotting] = useState(false)
+
+    const months = [...new Set(data.map(d => `${d.year}-${String(d.month).padStart(2, "0")}`))]
+        .sort()
+
+    // Agréger par mois : somme prevision et current de tous les sous-pots
+    const chartData = months.map(key => {
+        const [y, m] = key.split("-").map(Number)
+        const pts = data.filter(d => d.year === y && d.month === m)
+        return {
+            label: new Date(y, m - 1).toLocaleString("default", { month: "short", year: "2-digit" }),
+            prevision: Math.round(pts.reduce((s, p) => s + p.prevision, 0) * 100) / 100,
+            current: Math.round(pts.reduce((s, p) => s + p.current, 0) * 100) / 100,
+        }
+    })
+
+    async function handleSnapshot() {
+        setSnapshotting(true)
+        try { await onSnapshot() } finally { setSnapshotting(false) }
+    }
+
+    return (
+        <SectionCard
+            title={t("stats.pots_history")}
+            headerRight={
+                <button
+                    className="btn btn-xs btn-ghost"
+                    onClick={handleSnapshot}
+                    disabled={snapshotting}
+                    title={t("stats.pots_history_snapshot")}
+                >
+                    {snapshotting ? "…" : "↻"}
+                </button>
+            }
+        >
+            {chartData.length === 0 ? (
+                <p className="text-sm opacity-50 text-center py-4">{t("stats.no_data")}</p>
+            ) : (
+                <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                        <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                        <YAxis tick={{ fontSize: 11 }} tickFormatter={v => String(Math.round(v))} width={60} />
+                        <Tooltip formatter={(v: unknown) => [`${v} ${currencySymbol}`]} />
+                        <Legend iconType="square" iconSize={10} />
+                        <Bar dataKey="prevision" name={t("stats.prevision")} fill="#6366f1" opacity={0.6} radius={[3, 3, 0, 0]} />
+                        <Bar dataKey="current" name={t("stats.current")} fill="#10b981" radius={[3, 3, 0, 0]} />
+                    </BarChart>
+                </ResponsiveContainer>
+            )}
+        </SectionCard>
+    )
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────
 type BalanceView = "day" | "month" | "year"
 type TxSortKey = "date" | "amount"
@@ -167,6 +228,9 @@ export default function StatsPage() {
     const [allTransactions, setAllTransactions] = useState<TransactionStat[]>([])
     const [txSortKey, setTxSortKey] = useState<TxSortKey>("date")
     const [txSortDir, setTxSortDir] = useState<TxSortDir>("desc")
+
+    // ── Historique pots ──
+    const [potsHistory, setPotsHistory] = useState<SubPotSnapshotPoint[]>([])
 
     // ── Compte sélectionné ──
     const selectedAccount = useMemo(
@@ -227,6 +291,12 @@ export default function StatsPage() {
             setAllTransactions(tt)
         })
     }, [selectedAccountId, detailMonth])
+
+    // ── Historique pots ──
+    useEffect(() => {
+        if (!selectedAccountId || accountType !== "NORMAL") return
+        getPotsHistory(selectedAccountId, 12).then(setPotsHistory)
+    }, [selectedAccountId])
 
     // ── Données graphique solde ──
     useEffect(() => {
@@ -767,6 +837,21 @@ export default function StatsPage() {
                                     <CalendarHeatmap data={heatmap} year={detailMonth?.year ?? now.getFullYear()} />
                                 )}
                             </SectionCard>
+                        )}
+
+                        {/* Historique prévision vs réel par pot */}
+                        {accountType === "NORMAL" && (
+                            <PotsHistoryChart
+                                data={potsHistory}
+                                currencySymbol={currencySymbol}
+                                onSnapshot={async () => {
+                                    if (!selectedAccountId || !detailMonth) return
+                                    await triggerSnapshot(selectedAccountId, detailMonth.year, detailMonth.month)
+                                    const updated = await getPotsHistory(selectedAccountId, 12)
+                                    setPotsHistory(updated)
+                                }}
+                                t={t}
+                            />
                         )}
                     </div>
                 </>

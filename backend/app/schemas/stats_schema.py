@@ -46,3 +46,14 @@ class TransactionStat(BaseModel):
     pot: str
     transaction_type: str
     is_planned: bool = False
+
+
+class SubPotSnapshotPoint(BaseModel):
+    sub_pot_id: str
+    sub_pot: str
+    pot: str
+    year: int
+    month: int
+    prevision: float
+    current: float
+    remaining: float
