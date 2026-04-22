@@ -19,8 +19,7 @@ export function ActionsMenu({ onDelete, onEdit }: ActionsMenuProps) {
     function handleToggle() {
         if (!open && containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();
-            const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
-            setOpenUpward(rect.bottom + 120 > viewportHeight);
+            setOpenUpward(rect.bottom + 120 > window.innerHeight);
         }
         setOpen(prev => !prev);
     }
