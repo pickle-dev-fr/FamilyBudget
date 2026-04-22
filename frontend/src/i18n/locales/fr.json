@@ -219,7 +219,9 @@
     "sort_date": "Date",
     "sort_amount": "Valeur",
     "no_data": "Aucune donnée",
-    "current_month": "Mois en cours"
+    "current_month": "Mois en cours",
+    "avg_delta": "Δ moyen (6m)",
+    "vs_prev_month": "vs mois préc."
   },
   "settings": {
     "appearance": "Apparence",

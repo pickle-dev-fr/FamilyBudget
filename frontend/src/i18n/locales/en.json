@@ -188,7 +188,9 @@
         "sort_date": "Date",
         "sort_amount": "Amount",
         "no_data": "No data",
-        "current_month": "Current month"
+        "current_month": "Current month",
+        "avg_delta": "Avg Δ (6m)",
+        "vs_prev_month": "vs prev. month"
     },
     "settings": {
         "appearance": "Appearance",

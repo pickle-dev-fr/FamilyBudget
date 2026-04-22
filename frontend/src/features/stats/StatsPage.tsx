@@ -85,7 +85,8 @@ function SectionCard({ title, headerRight, children }: {
 function StatCard({ label, value, color, icon: Icon, trend }: {
     label: string; value: string; color?: string; icon?: React.ElementType; trend?: number | null
 }) {
-    const trendColor = trend === null || trend === undefined ? "" : trend > 0 ? "text-success" : trend < 0 ? "text-error" : "text-base-content/40"
+    const { t } = useTranslation()
+    const trendColor = trend == null ? "" : trend > 0 ? "text-success" : trend < 0 ? "text-error" : "text-base-content/40"
     return (
         <div className="bg-base-100 border border-base-300 rounded-xl px-4 py-3.5 flex items-start gap-3">
             {Icon && (
@@ -96,9 +97,9 @@ function StatCard({ label, value, color, icon: Icon, trend }: {
             <div className="min-w-0">
                 <span className="text-xs font-medium text-base-content/45 uppercase tracking-wider block">{label}</span>
                 <span className={`text-xl font-bold ${color ?? ""}`}>{value}</span>
-                {trend !== null && trend !== undefined && (
+                {trend != null && (
                     <span className={`text-xs font-medium block mt-0.5 ${trendColor}`}>
-                        {trend > 0 ? "↑" : trend < 0 ? "↓" : "="} {Math.abs(Math.round(trend))}% vs mois préc.
+                        {trend > 0 ? "↑" : trend < 0 ? "↓" : "="} {Math.abs(Math.round(trend))}% {t("stats.vs_prev_month")}
                     </span>
                 )}
             </div>
@@ -281,7 +282,7 @@ export default function StatsPage() {
     }, [monthlySummary, todaySummary])
 
     function pctChange(current?: number, prev?: number): number | null {
-        if (current == null || prev == null || prev === 0) return null
+        if (current == null || prev == null || Math.abs(prev) < 0.01) return null
         return ((current - prev) / Math.abs(prev)) * 100
     }
 
