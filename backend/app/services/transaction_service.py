@@ -354,10 +354,14 @@ class TransactionService:
         if transaction.linked_transaction_id:
             linked = session.get(Transaction, transaction.linked_transaction_id)
             if linked:
+                # Briser les deux FK avant de supprimer, sinon PostgreSQL rejette la contrainte
+                transaction.linked_transaction_id = None
                 linked.linked_transaction_id = None
+                session.add(transaction)
                 session.add(linked)
                 session.flush()
                 session.delete(linked)
+                session.flush()
         session.delete(transaction)
         session.commit()
 
