@@ -44,6 +44,7 @@ class TransactionRead(SQLModel):
     recurrent: bool
     recurrence_type: Optional[TypeRecurrence]
     recurrence_end_date: Optional[date]
+    linked_transaction_id: Optional[str] = None
 
 class TransferCreate(SQLModel):
     amount: float

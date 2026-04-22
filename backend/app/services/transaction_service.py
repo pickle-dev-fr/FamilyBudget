@@ -145,6 +145,14 @@ class TransactionService:
             **credit_payload
         )
 
+        debit.linked_transaction_id = credit.id
+        credit.linked_transaction_id = debit.id
+        session.add(debit)
+        session.add(credit)
+        session.commit()
+        session.refresh(debit)
+        session.refresh(credit)
+
         return [debit, credit]
 
     @staticmethod
@@ -324,6 +332,17 @@ class TransactionService:
             transaction.recurrence_type = payload.recurrence_type
             transaction.recurrence_end_date = payload.recurrence_end_date
 
+        if transaction.linked_transaction_id:
+            linked = session.get(Transaction, transaction.linked_transaction_id)
+            if linked:
+                if payload.amount is not None:
+                    linked.amount = transaction.amount
+                if payload.transaction_date is not None:
+                    linked.transaction_date = transaction.transaction_date
+                if payload.motif is not None:
+                    linked.motif = transaction.motif
+                session.add(linked)
+
         session.add(transaction)
         session.commit()
         session.refresh(transaction)
@@ -332,6 +351,13 @@ class TransactionService:
 
     @staticmethod
     def delete(session: Session, transaction: Transaction) -> None:
+        if transaction.linked_transaction_id:
+            linked = session.get(Transaction, transaction.linked_transaction_id)
+            if linked:
+                linked.linked_transaction_id = None
+                session.add(linked)
+                session.flush()
+                session.delete(linked)
         session.delete(transaction)
         session.commit()
 

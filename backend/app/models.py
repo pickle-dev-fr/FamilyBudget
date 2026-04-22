@@ -208,6 +208,8 @@ class Transaction(SQLModel, table=True):
     sub_pot_id: Optional[str] = Field(default=None, foreign_key="sub_pot.id")
     sub_pot: Optional[Sub_Pot] = Relationship(back_populates="transactions")
 
+    linked_transaction_id: Optional[str] = Field(default=None, foreign_key="transaction.id", nullable=True)
+
 
 class PortfolioSnapshot(SQLModel, table=True):
     """Valeur quotidienne d'un portefeuille investissement (snapshot au moment du refresh des prix)."""
