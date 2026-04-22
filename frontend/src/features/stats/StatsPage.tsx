@@ -428,7 +428,7 @@ export default function StatsPage() {
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                        <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={Math.max(0, Math.floor(balanceChartData.length / 10) - 1)} />
+                        <XAxis dataKey="label" tick={{ fontSize: 10, angle: -35, textAnchor: "end", dy: 4 }} interval={Math.max(0, Math.floor(balanceChartData.length / 10) - 1)} height={45} />
                         <YAxis tick={{ fontSize: 11 }} tickFormatter={v => formatAmount(v)} width={70}
                             domain={[Math.floor(bMin - bPad), Math.ceil(bMax + bPad)]} />
                         <Tooltip formatter={((v: unknown, name: string) => [
