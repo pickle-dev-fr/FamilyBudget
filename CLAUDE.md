@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Conventions de développement
+Lire et appliquer strictement : ~/.claude/skills/senior-dev/references/CONVENTIONS.md
+
 ## Project Overview
 
 FamilyBudget is a self-hosted personal budget management app for families. It uses a budget envelope/pot system to organize spending.
